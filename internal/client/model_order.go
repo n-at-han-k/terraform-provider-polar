@@ -4,7 +4,7 @@ package client
 
 // Order - Order struct
 type Order struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Status string `json:"status,omitempty"`

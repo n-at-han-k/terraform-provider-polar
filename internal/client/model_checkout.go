@@ -4,7 +4,7 @@ package client
 
 // Checkout - Checkout session data retrieved using an access token.
 type Checkout struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`

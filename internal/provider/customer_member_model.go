@@ -39,8 +39,8 @@ func (m *CustomerMemberModel) ToClientModel() (*client.MemberCreateFromCustomer,
 }
 
 // ToUpdateModel converts a Terraform model to the UPDATE client model, which is
-// a different shape from the create one: RT's update bodies have no
-// inboundProtocolConfiguration and no id, and sending the create model to the
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
 // patch endpoint is answered with "provided request body content is not in the
 // expected format".
 //
@@ -62,7 +62,7 @@ func (m *CustomerMemberModel) ToUpdateModel() (*client.MemberUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CustomerMemberModel) FromClientModel(c *client.Member) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.CustomerId = types.StringValue(c.CustomerId)

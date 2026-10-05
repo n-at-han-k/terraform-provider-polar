@@ -4,7 +4,7 @@ package client
 
 // ProductMediaFileRead - File to be used as a product media file.
 type ProductMediaFileRead struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Path string `json:"path,omitempty"`

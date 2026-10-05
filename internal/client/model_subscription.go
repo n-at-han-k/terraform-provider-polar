@@ -6,7 +6,7 @@ package client
 type Subscription struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	Amount int32 `json:"amount,omitempty"`
 	Currency string `json:"currency,omitempty"`
 	RecurringInterval string `json:"recurring_interval,omitempty"`

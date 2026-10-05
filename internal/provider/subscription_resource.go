@@ -750,7 +750,7 @@ func (r *SubscriptionResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	// AN UPDATE'S ANSWER IS NOT THE READ'S. RT answers a PUT with the list of
+	// AN UPDATE'S ANSWER IS NOT ALWAYS THE READ'S. An API may answer a PUT with the list of
 	// changes it made -- ["Description changed from 'a' to 'b'"] -- and some
 	// updates answer nothing at all; neither is the resource, and
 	// unmarshalling either one is "Error parsing response" AFTER the server

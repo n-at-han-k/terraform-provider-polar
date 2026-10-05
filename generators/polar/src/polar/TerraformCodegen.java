@@ -110,6 +110,14 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             nestedMaxDepth = Integer.parseInt(String.valueOf(depth).trim());
         }
 
+        // THE AUTH SCHEME IS THE DOCUMENT'S, not a guess. Polar declares every
+        // token scheme as `type: http, scheme: bearer`, so the header is
+        // `Authorization: Bearer <token>`. That is NOT what this generator's
+        // ancestor sent: it was written for Request Tracker, whose scheme is the
+        // literal word `token`, and a Bearer API answers 401 to that with
+        // nothing useful in the body.
+        additionalProperties().put("authHeaderPrefix", bearerPrefix());
+
         Object json = additionalProperties().get("jsonAttributes");
         if (json != null) {
             for (String name : String.valueOf(json).split(",")) {
@@ -593,7 +601,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
             unpoint(attribute);
             retype(attribute);
-            identifiers(attribute);
         }
 
         // What the create body takes and no response ever answers.
@@ -993,7 +1000,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
     /**
      * One attribute inside a nested block. The same shaping the top level gets
-     * -- a pointer to a scalar is that scalar, an identifier is an RTID -- and
+     * -- a pointer to a scalar is that scalar -- and
      * then anything still composite is JSON, because this is depth one and
      * there is nowhere further to go.
      */
@@ -1024,7 +1031,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         unpoint(attribute);
         retype(attribute);
-        identifiers(attribute);
 
         return attribute;
     }
@@ -1033,6 +1039,28 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     private List<Map<String, Object>> nestedOf(Map<String, Object> attribute) {
         Object nested = attribute.get("nested");
         return nested == null ? new ArrayList<>() : (List<Map<String, Object>>) nested;
+    }
+
+    /**
+     * The word that precedes the token in an Authorization header, read from
+     * {@code components.securitySchemes}. An HTTP security scheme names it
+     * (`bearer`, `basic`); for anything else the token is sent as the whole
+     * header value verbatim, which is the only honest answer for a scheme this
+     * client does not spell.
+     */
+    private String bearerPrefix() {
+        if (openAPI == null || openAPI.getComponents() == null
+                || openAPI.getComponents().getSecuritySchemes() == null) {
+            return "Bearer";
+        }
+
+        return openAPI.getComponents().getSecuritySchemes().values().stream()
+                .filter(scheme -> scheme != null && scheme.getScheme() != null)
+                .map(scheme -> scheme.getScheme().toLowerCase(Locale.ROOT))
+                .filter(scheme -> scheme.equals("bearer") || scheme.equals("basic"))
+                .findFirst()
+                .map(scheme -> scheme.substring(0, 1).toUpperCase(Locale.ROOT) + scheme.substring(1))
+                .orElse("Bearer");
     }
 
     /**
@@ -1139,14 +1167,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         unpoint(attribute);
         retype(attribute);
-        identifiers(attribute);
 
         return attribute;
-    }
-
-    /** RT spells every identifier `id`, and types it however it feels. */
-    private boolean isIdentifier(String baseName) {
-        return "id".equalsIgnoreCase(baseName);
     }
 
     /** A composition with branches that disagree, not one that only narrows. */
@@ -1176,22 +1198,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             return "bool";
         }
         return "interface{}";
-    }
-
-    /**
-     * An identifier is a {@code client.RTID}, which is a string with a
-     * tolerant unmarshaller rather than a {@code string} -- so the schema is
-     * still a StringAttribute, and the conversion has to spell the cast.
-     */
-    private void identifiers(Map<String, Object> attribute) {
-        if (!"RTID".equals(String.valueOf(attribute.get("goType")))) {
-            return;
-        }
-
-        attribute.put("isString", false);
-        attribute.put("isRtid", true);
-        attribute.put("terraformType", "types.String");
-        attribute.put("terraformAttrType", "schema.StringAttribute");
     }
 
     private String goType(String dataType) {
@@ -1255,22 +1261,20 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 if (property.dataType != null
                         && (property.dataType.startsWith("AnyOf") || property.dataType.startsWith("OneOf"))) {
                     property.dataType = unionType(property);
-                } else if (isIdentifier(property.baseName)) {
-                    // See RTID in client.go: RT types its identifiers
-                    // inconsistently -- a number in one response, a quoted
-                    // string in the next, both in one array -- and every
-                    // model that commits to one of them fails to parse the
-                    // other. This is a rule about the API, not a list of
-                    // exceptions: RT spells every identifier `id`.
-                    property.dataType = "RTID";
                 } else if (isGenuineUnion(property)) {
                     // A composition with BRANCHES, as opposed to the
-                    // validation-only kind above: RT answers a queue's
-                    // `_hyperlinks[].id` as the number 3 and the same
-                    // object's `TicketCustomFields[].id` as the string "2".
-                    // openapi-generator collapses that to whichever branch it
-                    // saw last, and the client then fails to parse half the
-                    // responses the API actually sends.
+                    // validation-only kind above. openapi-generator collapses
+                    // one to whichever branch it saw last, and the client then
+                    // fails to parse half the responses the API sends, so a
+                    // genuine union travels as JSON instead.
+                    //
+                    // NOTHING COERCES AN IDENTIFIER HERE. Polar types every id
+                    // as a string with `format: uuid4`, consistently, so an id
+                    // is whatever the document says it is. The generator this
+                    // one descends from forced every `id` to a bespoke type
+                    // because Request Tracker answered a number in one response
+                    // and a quoted string in the next; that is a fact about RT
+                    // and has no business in a Polar client.
                     property.dataType = "interface{}";
                 }
 
@@ -1297,7 +1301,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
                 if ((property.isModel || property.complexType != null)
                         && !property.isArray && !property.isMap
-                        && !"RTID".equals(property.dataType)
                         && !"interface{}".equals(property.dataType)
                         && !"string".equals(property.dataType)
                         && !"int64".equals(property.dataType)

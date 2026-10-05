@@ -775,7 +775,7 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *BenefitModel) FromClientModel(c *client.Benefit) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.Description = types.StringValue(c.Description)

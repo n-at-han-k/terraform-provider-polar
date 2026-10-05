@@ -707,7 +707,7 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationUpdate, error) 
 func (m *OrganizationModel) FromClientModel(c *client.Organization) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Name = types.StringValue(c.Name)
 	m.Slug = types.StringValue(c.Slug)
 	m.AvatarUrl = types.StringValue(c.AvatarUrl)

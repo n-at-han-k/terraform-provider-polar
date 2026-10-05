@@ -136,7 +136,7 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CustomerModel) FromClientModel(c *client.Customer) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	// The create body takes this and no response of the same shape answers it --

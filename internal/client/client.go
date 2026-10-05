@@ -12,61 +12,23 @@ import (
 	"strings"
 )
 
-// RTID is an identifier as RT actually sends it: sometimes a JSON number,
-// sometimes a quoted string, sometimes both in one array.
+// IDFromCreate is the identifier a create answered with: in the body for an API
+// that returns the object it just made, in the Location header for one that
+// returns only where to find it.
 //
-//	GET /ticket/1  ->  "id": 1        and  "_hyperlinks":[{"ref":"self","id":1},
-//	                                                      {"ref":"customfield","id":"2"}]
-//	POST /asset    ->  "id": "5"
-//
-// A model that commits to either one fails to parse half of what the API
-// answers, and a create whose RESPONSE will not parse is a resource that
-// exists in RT with nothing in state recording it. This accepts both and keeps
-// the text, because a Terraform identifier is a string whatever the wire said.
-type RTID string
-
-func (i RTID) String() string { return string(i) }
-
-func (i *RTID) UnmarshalJSON(data []byte) error {
-	text := strings.TrimSpace(string(data))
-
-	if text == "null" {
-		*i = ""
-		return nil
-	}
-
-	// A quoted string: unquote it rather than keeping the quotes.
-	if strings.HasPrefix(text, `"`) {
-		var unquoted string
-		if err := json.Unmarshal(data, &unquoted); err != nil {
-			return err
-		}
-		*i = RTID(unquoted)
-		return nil
-	}
-
-	// Anything else is a bare JSON literal -- a number, in practice.
-	*i = RTID(text)
-
-	return nil
-}
-
-// MarshalJSON writes a string, which is what RT accepts everywhere it takes an
-// id in a body.
-func (i RTID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(i))
-}
-
-// IDFromCreate is the identifier a create answered with: RT puts it in the
-// body ({"id": 5} or {"id": "5"}, as the mood takes it) and everything else
-// puts it in the Location header.
+// A PLAIN STRING, because that is what the document says an id is. The generator
+// this one descends from had a bespoke `RTID` type here, with an unmarshaller
+// that accepted a JSON number as well as a string, because Request Tracker
+// answered `"id": 1` on one route and `"id": "5"` on the next. Polar types every
+// id as a string with `format: uuid4`, so none of that applies and all of it is
+// gone -- see the note in TerraformCodegen's retype pass.
 func IDFromCreate(body []byte, location string) string {
 	var answered struct {
-		ID RTID `json:"id"`
+		ID string `json:"id"`
 	}
 
 	if err := json.Unmarshal(body, &answered); err == nil && answered.ID != "" {
-		return string(answered.ID)
+		return answered.ID
 	}
 
 	return IDFromLocation(location)
@@ -119,7 +81,8 @@ func (c *Client) DoRequest(ctx context.Context, method, path string, body interf
 	return respBody, err
 }
 
-// DoCreateRequest also hands back the Location header. RT answers a ticket
+// DoCreateRequest also hands back the Location header, for an API that answers
+// a create with where to find the thing rather than the thing.
 // and an application create with 201 and no body at all, so that header is the
 // only place the new resource's identifier appears.
 func (c *Client) DoCreateRequest(ctx context.Context, method, path string, body interface{}) ([]byte, string, error) {
@@ -158,13 +121,14 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 	}
 	req.Header.Set("Accept", "application/json")
 
-	// Authentication
-	// RT's scheme is `token <key>`, not Bearer -- an RT that does not
-	// recognise the header answers 200 and the anonymous user's view of the
-	// world, which reads as an empty resource rather than as a refusal.
+	// Authentication. The prefix comes from the document's own
+	// `components.securitySchemes` (Bearer here), not from a
+	// guess -- see bearerPrefix() in the generator.
 	if c.Token != "" {
-		req.Header.Set("Authorization", "token "+c.Token)
+		req.Header.Set("Authorization", "Bearer "+c.Token)
 	} else if c.ApiKey != "" {
+		// The whole header value, verbatim, for a scheme this client does not
+		// spell.
 		req.Header.Set("Authorization", c.ApiKey)
 	} else if c.Username != "" {
 		req.SetBasicAuth(c.Username, c.Password)

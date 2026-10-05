@@ -4,7 +4,7 @@ package client
 
 // Benefit - Benefit struct
 type Benefit struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Description string `json:"description,omitempty"`

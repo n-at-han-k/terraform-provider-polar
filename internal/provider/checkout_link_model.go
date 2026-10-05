@@ -90,7 +90,7 @@ func (m *CheckoutLinkDiscountModel) ToClientModel() (*client.CheckoutLinkDiscoun
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
@@ -150,7 +150,7 @@ func (m *CheckoutLinkDiscountModel) FromClientModel(c *client.CheckoutLinkDiscou
 	}
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	if encoded, err := json.Marshal(c.Metadata); err == nil {
 		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
 			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
@@ -227,7 +227,7 @@ func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkUpdate, error) 
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CheckoutLinkModel) FromClientModel(c *client.CheckoutLink) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)

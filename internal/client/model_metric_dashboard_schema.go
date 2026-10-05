@@ -6,7 +6,7 @@ package client
 type MetricDashboardSchema struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Metrics []string `json:"metrics,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`

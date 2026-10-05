@@ -213,7 +213,7 @@ type CheckoutProductsModel struct {
 func (m *CheckoutProductsModel) ToClientModel() (*client.CheckoutProduct, error) {
 	out := &client.CheckoutProduct{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -287,7 +287,7 @@ func (m *CheckoutProductsModel) ToClientModel() (*client.CheckoutProduct, error)
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CheckoutProductsModel) FromClientModel(c *client.CheckoutProduct) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)
@@ -360,7 +360,7 @@ type CheckoutProductModel struct {
 func (m *CheckoutProductModel) ToClientModel() (*client.CheckoutProduct, error) {
 	out := &client.CheckoutProduct{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -434,7 +434,7 @@ func (m *CheckoutProductModel) ToClientModel() (*client.CheckoutProduct, error) 
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CheckoutProductModel) FromClientModel(c *client.CheckoutProduct) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)
@@ -517,7 +517,7 @@ func (m *CheckoutProductPriceModel) ToClientModel() (*client.CheckoutProductPric
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.Source.IsNull() && !m.Source.IsUnknown() {
 		out.Source = m.Source.ValueString()
@@ -584,7 +584,7 @@ func (m *CheckoutProductPriceModel) ToClientModel() (*client.CheckoutProductPric
 func (m *CheckoutProductPriceModel) FromClientModel(c *client.CheckoutProductPrice) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Source = types.StringValue(c.Source)
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
@@ -652,7 +652,7 @@ func (m *CheckoutDiscountModel) ToClientModel() (*client.CheckoutDiscount, error
 		}
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
@@ -686,7 +686,7 @@ func (m *CheckoutDiscountModel) FromClientModel(c *client.CheckoutDiscount) {
 			m.Amounts = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Name = types.StringValue(c.Name)
 	m.Code = types.StringValue(c.Code)
 	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
@@ -852,7 +852,7 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an

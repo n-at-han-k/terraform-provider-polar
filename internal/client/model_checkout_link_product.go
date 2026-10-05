@@ -5,7 +5,7 @@ package client
 // CheckoutLinkProduct - Product data for a checkout link.
 type CheckoutLinkProduct struct {
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`

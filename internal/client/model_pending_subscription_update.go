@@ -6,7 +6,7 @@ package client
 type PendingSubscriptionUpdate struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	AppliesAt string `json:"applies_at,omitempty"`
 	ProductId string `json:"product_id,omitempty"`
 	Seats int32 `json:"seats,omitempty"`

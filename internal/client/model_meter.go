@@ -7,7 +7,7 @@ type Meter struct {
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Unit string `json:"unit,omitempty"`
 	CustomLabel string `json:"custom_label,omitempty"`

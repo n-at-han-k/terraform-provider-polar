@@ -4,7 +4,7 @@ package client
 
 // CheckoutLink - Checkout link data.
 type CheckoutLink struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`

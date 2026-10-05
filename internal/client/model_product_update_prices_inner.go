@@ -4,7 +4,7 @@ package client
 
 // ProductUpdatePricesInner - ProductUpdatePricesInner struct
 type ProductUpdatePricesInner struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
 	TaxBehavior string `json:"tax_behavior,omitempty"`
 	PriceAmount int32 `json:"price_amount,omitempty"`

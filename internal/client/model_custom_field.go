@@ -6,7 +6,7 @@ package client
 type CustomField struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
 	Slug string `json:"slug,omitempty"`
 	Name string `json:"name,omitempty"`

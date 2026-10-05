@@ -4,7 +4,7 @@ package client
 
 // SubscriptionCustomer - SubscriptionCustomer struct
 type SubscriptionCustomer struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`

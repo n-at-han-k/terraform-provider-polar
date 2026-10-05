@@ -88,7 +88,7 @@ type SubscriptionCustomerModel struct {
 func (m *SubscriptionCustomerModel) ToClientModel() (*client.SubscriptionCustomer, error) {
 	out := &client.SubscriptionCustomer{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -155,7 +155,7 @@ func (m *SubscriptionCustomerModel) ToClientModel() (*client.SubscriptionCustome
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *SubscriptionCustomerModel) FromClientModel(c *client.SubscriptionCustomer) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	if encoded, err := json.Marshal(c.Metadata); err == nil {
@@ -220,7 +220,7 @@ type SubscriptionProductModel struct {
 func (m *SubscriptionProductModel) ToClientModel() (*client.Product, error) {
 	out := &client.Product{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -306,7 +306,7 @@ func (m *SubscriptionProductModel) ToClientModel() (*client.Product, error) {
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *SubscriptionProductModel) FromClientModel(c *client.Product) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)
@@ -416,7 +416,7 @@ func (m *SubscriptionDiscountModel) ToClientModel() (*client.SubscriptionDiscoun
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
@@ -476,7 +476,7 @@ func (m *SubscriptionDiscountModel) FromClientModel(c *client.SubscriptionDiscou
 	}
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	if encoded, err := json.Marshal(c.Metadata); err == nil {
 		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
 			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
@@ -535,7 +535,7 @@ func (m *SubscriptionPricesModel) ToClientModel() (*client.SubscriptionPricesIte
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.Source.IsNull() && !m.Source.IsUnknown() {
 		out.Source = m.Source.ValueString()
@@ -602,7 +602,7 @@ func (m *SubscriptionPricesModel) ToClientModel() (*client.SubscriptionPricesIte
 func (m *SubscriptionPricesModel) FromClientModel(c *client.SubscriptionPricesItem) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Source = types.StringValue(c.Source)
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
@@ -656,7 +656,7 @@ func (m *SubscriptionMetersModel) ToClientModel() (*client.SubscriptionMeter, er
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.ConsumedUnits.IsNull() && !m.ConsumedUnits.IsUnknown() {
 		out.ConsumedUnits = float32(m.ConsumedUnits.ValueFloat64())
@@ -682,7 +682,7 @@ func (m *SubscriptionMetersModel) ToClientModel() (*client.SubscriptionMeter, er
 func (m *SubscriptionMetersModel) FromClientModel(c *client.SubscriptionMeter) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.ConsumedUnits = types.Float64Value(float64(c.ConsumedUnits))
 	m.CreditedUnits = types.Int64Value(int64(c.CreditedUnits))
 	m.Amount = types.Int64Value(int64(c.Amount))
@@ -713,7 +713,7 @@ func (m *SubscriptionPendingUpdateModel) ToClientModel() (*client.PendingSubscri
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.AppliesAt.IsNull() && !m.AppliesAt.IsUnknown() {
 		out.AppliesAt = m.AppliesAt.ValueString()
@@ -736,7 +736,7 @@ func (m *SubscriptionPendingUpdateModel) ToClientModel() (*client.PendingSubscri
 func (m *SubscriptionPendingUpdateModel) FromClientModel(c *client.PendingSubscriptionUpdate) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.AppliesAt = types.StringValue(c.AppliesAt)
 	m.ProductId = types.StringValue(c.ProductId)
 	m.Seats = types.Int64Value(int64(c.Seats))
@@ -804,7 +804,7 @@ func (m *SubscriptionModel) ToClientModel() (*client.SubscriptionUpdate, error) 
 func (m *SubscriptionModel) FromClientModel(c *client.Subscription) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Amount = types.Int64Value(int64(c.Amount))
 	m.Currency = types.StringValue(c.Currency)
 	m.RecurringInterval = types.StringValue(c.RecurringInterval)

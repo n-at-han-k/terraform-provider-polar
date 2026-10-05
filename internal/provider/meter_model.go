@@ -162,7 +162,7 @@ func (m *MeterModel) FromClientModel(c *client.Meter) {
 	}
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Name = types.StringValue(c.Name)
 	m.Unit = types.StringValue(c.Unit)
 	m.CustomLabel = types.StringValue(c.CustomLabel)

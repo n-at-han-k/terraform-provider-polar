@@ -335,7 +335,7 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldUpdate, error) {
 func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once

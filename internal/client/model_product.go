@@ -4,7 +4,7 @@ package client
 
 // Product - A product.
 type Product struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`

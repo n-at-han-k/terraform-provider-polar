@@ -12,7 +12,7 @@ func TestJsonSupersetOf(t *testing.T) {
 		want       bool
 	}{
 		{
-			// The case this exists for: RT answering its own defaults.
+			// The case this exists for: a server answering its own defaults.
 			name:       "server adds keys",
 			server:     `{"skipLoginConsent":true,"skipLogoutConsent":true,"saas":false,"fragment":false}`,
 			configured: `{"skipLoginConsent":true,"skipLogoutConsent":true}`,

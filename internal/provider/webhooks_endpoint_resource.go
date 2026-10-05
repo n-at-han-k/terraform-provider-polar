@@ -127,7 +127,7 @@ func (r *WebhooksEndpointResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// RT's create answers a 201 whose body is an identifier and a link, not
+	// A create may answer a 201 whose body is an identifier and a link, not
 	// the resource -- and sometimes only a Location header. Either way what
 	// was created has to be READ BACK, not taken from the create's own
 	// answer: taking it wrote empty strings over the values just sent,
@@ -235,7 +235,7 @@ func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// AN UPDATE'S ANSWER IS NOT THE READ'S. RT answers a PUT with the list of
+	// AN UPDATE'S ANSWER IS NOT ALWAYS THE READ'S. An API may answer a PUT with the list of
 	// changes it made -- ["Description changed from 'a' to 'b'"] -- and some
 	// updates answer nothing at all; neither is the resource, and
 	// unmarshalling either one is "Error parsing response" AFTER the server

@@ -4,7 +4,7 @@ package client
 
 // ProductPriceMeter - A meter associated to a metered price.
 type ProductPriceMeter struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Unit string `json:"unit,omitempty"`
 	CustomLabel string `json:"custom_label,omitempty"`

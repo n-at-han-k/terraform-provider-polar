@@ -7,7 +7,7 @@ import "encoding/json"
 // THE SERVER ANSWERS MORE THAN IT WAS ASKED, and for a JSON attribute that is
 // fatal unless it is handled here.
 //
-// RT takes a partial object, fills in every default it has an opinion about,
+// AN API TAKES A PARTIAL OBJECT, fills in every default it has an opinion about,
 // and hands the whole thing back. Send
 //
 //	{"skipLoginConsent":true,"skipLogoutConsent":true}
@@ -42,7 +42,7 @@ func jsonSupersetOf(server, configured string) bool {
 	return jsonContains(s, c)
 }
 
-// Recursive, because the expansion happens at every depth: RT answers a
+// Recursive, because the expansion happens at every depth: a server answers a
 // claim mapping the configuration never mentioned inside an object it did.
 //
 // A LIST MUST MATCH ELEMENT FOR ELEMENT. Only objects are treated as

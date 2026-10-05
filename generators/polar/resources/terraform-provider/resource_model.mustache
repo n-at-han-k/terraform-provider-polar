@@ -59,11 +59,6 @@ func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) 
 		out.{{goName}} = m.{{goName}}.ValueString()
 	}
 {{/isString}}
-{{#isRtid}}
-	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
-	}
-{{/isRtid}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
@@ -103,9 +98,6 @@ func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
 {{#isString}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
 {{/isString}}
-{{#isRtid}}
-	m.{{goName}} = types.StringValue(string(c.{{goName}}))
-{{/isRtid}}
 {{#isInt64}}
 	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
 {{/isInt64}}
@@ -142,11 +134,6 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 		out.{{goName}} = m.{{goName}}.ValueString()
 	}
 {{/isString}}
-{{#isRtid}}
-	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
-	}
-{{/isRtid}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
@@ -206,8 +193,8 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 
 {{#hasSeparateUpdateModel}}
 // ToUpdateModel converts a Terraform model to the UPDATE client model, which is
-// a different shape from the create one: RT's update bodies have no
-// inboundProtocolConfiguration and no id, and sending the create model to the
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
 // patch endpoint is answered with "provided request body content is not in the
 // expected format".
 //
@@ -222,11 +209,6 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 		out.{{goName}} = m.{{goName}}.ValueString()
 	}
 {{/isString}}
-{{#isRtid}}
-	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
-	}
-{{/isRtid}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
@@ -287,9 +269,6 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 {{#isString}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
 {{/isString}}
-{{#isRtid}}
-	m.{{goName}} = types.StringValue(string(c.{{goName}}))
-{{/isRtid}}
 {{#isInt64}}
 	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
 {{/isInt64}}
@@ -377,7 +356,7 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 	// the apply is over: "provider returned invalid result object after apply".
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.{{goName}}.IsUnknown() {
-		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isRtid}}types.StringNull(){{/isRtid}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}
+		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}
 	}
 {{/isComputed}}
 {{/isNested}}

@@ -139,7 +139,7 @@ type OrderCustomerModel struct {
 func (m *OrderCustomerModel) ToClientModel() (*client.OrderCustomer, error) {
 	out := &client.OrderCustomer{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -206,7 +206,7 @@ func (m *OrderCustomerModel) ToClientModel() (*client.OrderCustomer, error) {
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrderCustomerModel) FromClientModel(c *client.OrderCustomer) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	if encoded, err := json.Marshal(c.Metadata); err == nil {
@@ -273,7 +273,7 @@ func (m *OrderProductModel) ToClientModel() (*client.OrderProduct, error) {
 		}
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -335,7 +335,7 @@ func (m *OrderProductModel) FromClientModel(c *client.OrderProduct) {
 			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)
@@ -415,7 +415,7 @@ func (m *OrderDiscountModel) ToClientModel() (*client.OrderDiscount, error) {
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
@@ -475,7 +475,7 @@ func (m *OrderDiscountModel) FromClientModel(c *client.OrderDiscount) {
 	}
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	if encoded, err := json.Marshal(c.Metadata); err == nil {
 		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
 			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
@@ -549,7 +549,7 @@ func (m *OrderSubscriptionModel) ToClientModel() (*client.OrderSubscription, err
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
 		out.Amount = int32(m.Amount.ValueInt64())
@@ -652,7 +652,7 @@ func (m *OrderSubscriptionModel) FromClientModel(c *client.OrderSubscription) {
 	}
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Amount = types.Int64Value(int64(c.Amount))
 	m.Currency = types.StringValue(c.Currency)
 	m.RecurringInterval = types.StringValue(c.RecurringInterval)
@@ -716,7 +716,7 @@ func (m *OrderItemsModel) ToClientModel() (*client.OrderItemSchema, error) {
 		out.ModifiedAt = m.ModifiedAt.ValueString()
 	}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.Label.IsNull() && !m.Label.IsUnknown() {
 		out.Label = m.Label.ValueString()
@@ -746,7 +746,7 @@ func (m *OrderItemsModel) ToClientModel() (*client.OrderItemSchema, error) {
 func (m *OrderItemsModel) FromClientModel(c *client.OrderItemSchema) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Label = types.StringValue(c.Label)
 	m.Amount = types.Int64Value(int64(c.Amount))
 	m.TaxAmount = types.Int64Value(int64(c.TaxAmount))
@@ -777,7 +777,7 @@ func (m *OrderModel) ToClientModel() (*client.OrderUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *OrderModel) FromClientModel(c *client.Order) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.Status = types.StringValue(c.Status)

@@ -60,7 +60,7 @@ type ProductPricesModel struct {
 func (m *ProductPricesModel) ToClientModel() (*client.ProductUpdatePricesInner, error) {
 	out := &client.ProductUpdatePricesInner{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
 		out.PriceCurrency = m.PriceCurrency.ValueString()
@@ -105,7 +105,7 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductUpdatePricesInner, 
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductPricesModel) FromClientModel(c *client.ProductUpdatePricesInner) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
 	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
@@ -155,7 +155,7 @@ type ProductBenefitsModel struct {
 func (m *ProductBenefitsModel) ToClientModel() (*client.Benefit, error) {
 	out := &client.Benefit{}
 	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = client.RTID(m.Id.ValueString())
+		out.Id = m.Id.ValueString()
 	}
 	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
 		out.CreatedAt = m.CreatedAt.ValueString()
@@ -213,7 +213,7 @@ func (m *ProductBenefitsModel) ToClientModel() (*client.Benefit, error) {
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductBenefitsModel) FromClientModel(c *client.Benefit) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.Description = types.StringValue(c.Description)
@@ -364,7 +364,7 @@ func (m *ProductModel) ToClientModel() (*client.ProductUpdate, error) {
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *ProductModel) FromClientModel(c *client.Product) {
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.TrialInterval = types.StringValue(c.TrialInterval)

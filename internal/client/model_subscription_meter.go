@@ -6,7 +6,7 @@ package client
 type SubscriptionMeter struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	ConsumedUnits float32 `json:"consumed_units,omitempty"`
 	CreditedUnits int32 `json:"credited_units,omitempty"`
 	Amount int32 `json:"amount,omitempty"`

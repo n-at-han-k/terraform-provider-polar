@@ -53,8 +53,8 @@ func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, 
 }
 
 // ToUpdateModel converts a Terraform model to the UPDATE client model, which is
-// a different shape from the create one: RT's update bodies have no
-// inboundProtocolConfiguration and no id, and sending the create model to the
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
 // patch endpoint is answered with "provided request body content is not in the
 // expected format".
 //
@@ -87,7 +87,7 @@ func (m *WebhooksEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, 
 func (m *WebhooksEndpointModel) FromClientModel(c *client.WebhookEndpoint) {
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(string(c.Id))
+	m.Id = types.StringValue(c.Id)
 	m.Url = types.StringValue(c.Url)
 	m.Name = types.StringValue(c.Name)
 	m.Format = types.StringValue(c.Format)

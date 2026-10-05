@@ -4,7 +4,7 @@ package client
 
 // Member - A member of a customer.
 type Member struct {
-	Id RTID `json:"id,omitempty"`
+	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	CustomerId string `json:"customer_id,omitempty"`
