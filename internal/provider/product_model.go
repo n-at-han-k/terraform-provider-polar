@@ -39,6 +39,10 @@ type ProductModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type ProductPricesModel struct {
+	FixedAmountType types.String `tfsdk:"fixed_amount_type"`
+	CustomAmountType types.String `tfsdk:"custom_amount_type"`
+	SeatBasedAmountType types.String `tfsdk:"seat_based_amount_type"`
+	MeteredUnitAmountType types.String `tfsdk:"metered_unit_amount_type"`
 	PriceCurrency types.String `tfsdk:"price_currency"`
 	TaxBehavior types.String `tfsdk:"tax_behavior"`
 	PriceAmount types.Int64 `tfsdk:"price_amount"`
@@ -49,12 +53,23 @@ type ProductPricesModel struct {
 	MeterId types.String `tfsdk:"meter_id"`
 	UnitAmount types.String `tfsdk:"unit_amount"`
 	CapAmount types.Int64 `tfsdk:"cap_amount"`
-	AmountType types.String `tfsdk:"amount_type"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *ProductPricesModel) ToClientModel() (*client.ProductCreatePricesItem, error) {
-	out := &client.ProductCreatePricesItem{}
+func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPrices, error) {
+	out := &client.ProductCreateRecurringPrices{}
+	if !m.FixedAmountType.IsNull() && !m.FixedAmountType.IsUnknown() {
+		out.FixedAmountType = m.FixedAmountType.ValueString()
+	}
+	if !m.CustomAmountType.IsNull() && !m.CustomAmountType.IsUnknown() {
+		out.CustomAmountType = m.CustomAmountType.ValueString()
+	}
+	if !m.SeatBasedAmountType.IsNull() && !m.SeatBasedAmountType.IsUnknown() {
+		out.SeatBasedAmountType = m.SeatBasedAmountType.ValueString()
+	}
+	if !m.MeteredUnitAmountType.IsNull() && !m.MeteredUnitAmountType.IsUnknown() {
+		out.MeteredUnitAmountType = m.MeteredUnitAmountType.ValueString()
+	}
 	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
 		out.PriceCurrency = m.PriceCurrency.ValueString()
 	}
@@ -82,9 +97,6 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreatePricesItem, e
 	if !m.CapAmount.IsNull() && !m.CapAmount.IsUnknown() {
 		out.CapAmount = int32(m.CapAmount.ValueInt64())
 	}
-	if !m.AmountType.IsNull() && !m.AmountType.IsUnknown() {
-		out.AmountType = m.AmountType.ValueString()
-	}
 	return out, nil
 }
 
@@ -94,7 +106,11 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreatePricesItem, e
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *ProductPricesModel) FromClientModel(c *client.ProductCreatePricesItem) {
+func (m *ProductPricesModel) FromClientModel(c *client.ProductCreateRecurringPrices) {
+	m.FixedAmountType = types.StringValue(c.FixedAmountType)
+	m.CustomAmountType = types.StringValue(c.CustomAmountType)
+	m.SeatBasedAmountType = types.StringValue(c.SeatBasedAmountType)
+	m.MeteredUnitAmountType = types.StringValue(c.MeteredUnitAmountType)
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
 	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
@@ -104,7 +120,6 @@ func (m *ProductPricesModel) FromClientModel(c *client.ProductCreatePricesItem) 
 	m.MeterId = types.StringValue(c.MeterId)
 	m.UnitAmount = types.StringValue(c.UnitAmount)
 	m.CapAmount = types.Int64Value(int64(c.CapAmount))
-	m.AmountType = types.StringValue(c.AmountType)
 }
 // ProductAttachedCustomFieldsModel is one `attached_custom_fields` block.
 //
@@ -166,7 +181,7 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 		out.Visibility = m.Visibility.ValueString()
 	}
 	if len(m.Prices) > 0 {
-		out.Prices = make([]client.ProductCreatePricesItem, 0, len(m.Prices))
+		out.Prices = make([]client.ProductCreateRecurringPrices, 0, len(m.Prices))
 		for index := range m.Prices {
 			converted, err := m.Prices[index].ToClientModel()
 			if err != nil {
@@ -276,18 +291,13 @@ func (m *ProductModel) FromClientModel(c *client.Product) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Name = types.StringValue(c.Name)
 	m.Description = types.StringValue(c.Description)

@@ -185,6 +185,12 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 	}
 {{/isNestedObject}}
 {{/isNested}}
+{{#isScalarList}}
+	out.{{goName}} = m.{{goName}}
+{{/isScalarList}}
+{{#isScalarMap}}
+	out.{{goName}} = m.{{goName}}
+{{/isScalarMap}}
 {{/inRequest}}
 {{/tfAttributes}}
 	return out, nil
@@ -255,6 +261,12 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 	}
 {{/isNestedObject}}
 {{/isNested}}
+{{#isScalarList}}
+	out.{{goName}} = m.{{goName}}
+{{/isScalarList}}
+{{#isScalarMap}}
+	out.{{goName}} = m.{{goName}}
+{{/isScalarMap}}
 {{/inUpdateRequest}}
 {{/tfAttributes}}
 	return out, nil
@@ -301,6 +313,12 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 		}
 	}
 {{/isJson}}
+{{#isScalarList}}
+	m.{{goName}} = c.{{goName}}
+{{/isScalarList}}
+{{#isScalarMap}}
+	m.{{goName}} = c.{{goName}}
+{{/isScalarMap}}
 {{#isNested}}
 {{#isNestedList}}
 	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute

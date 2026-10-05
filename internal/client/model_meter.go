@@ -4,7 +4,7 @@ package client
 
 // Meter - Meter struct
 type Meter struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id string `json:"id,omitempty"`

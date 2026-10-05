@@ -7,18 +7,19 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# THE DOCUMENT AS THE GENERATOR SHOULD SEE IT, written by bin/generate-config
-# from the vendored one along with the configuration values the generator is told
-# (reference/generator-config.yaml). Those are the answers the generator cannot
-# work out accurately for itself -- which collections are resources, how each
-# union maps onto attributes, which positions cannot be a typed block.
-# reference/resources.md is the thing to read when Polar publishes a new
-# description.
-SPEC=reference/polar-pruned.json
+# THE VENDORED DOCUMENT, UNTOUCHED. The generator reads it and applies the
+# configuration bin/generate-config computed from it -- which collections are
+# resources, how each union maps onto attributes, which positions cannot be a
+# typed block. Nothing rewrites the description on disk any more;
+# generators/polar/config.schema.json is the contract between the two sides, and
+# reference/resources.md is the thing to read when Polar publishes a new one.
+SPEC=reference/polar-openapi.json
+CONFIG=reference/generator-config.json
 
 bin/generate-config
 
-test -f "$SPEC" || { echo "missing $SPEC -- bin/generate-config did not write it"; exit 1; }
+test -f "$SPEC" || { echo "missing $SPEC -- run bin/vendor-spec"; exit 1; }
+test -f "$CONFIG" || { echo "missing $CONFIG -- bin/generate-config did not write it"; exit 1; }
 
 # Everything under internal/ is generated, and a rename leaves the old file
 # behind -- a stale resource compiles just as well as the new one.
@@ -32,10 +33,10 @@ openapi-generator-polar generate \
   -i "$SPEC" \
   -g polar-terraform \
   -o . \
-  -c reference/generator-config.yaml \
   --git-host github.com \
   --git-user-id n-at-han-k \
-  --git-repo-id terraform-provider-polar
+  --git-repo-id terraform-provider-polar \
+  --additional-properties="polarConfig=$CONFIG"
 
 # The generator cannot write a go.sum -- only the toolchain knows the hashes,
 # and the Dockerfile builds with no network for the module cache.

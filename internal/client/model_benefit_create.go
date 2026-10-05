@@ -4,7 +4,7 @@ package client
 
 // BenefitCreate - BenefitCreate struct
 type BenefitCreate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Description string `json:"description,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	Visibility string `json:"visibility,omitempty"`

@@ -4,6 +4,7 @@ package client
 
 // CheckoutProductsCreatePricesValueInner - CheckoutProductsCreatePricesValueInner struct
 type CheckoutProductsCreatePricesValueInner struct {
+	AmountType string `json:"amount_type,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
 	TaxBehavior string `json:"tax_behavior,omitempty"`
 	PriceAmount int32 `json:"price_amount,omitempty"`
@@ -14,5 +15,4 @@ type CheckoutProductsCreatePricesValueInner struct {
 	MeterId string `json:"meter_id,omitempty"`
 	UnitAmount string `json:"unit_amount,omitempty"`
 	CapAmount int32 `json:"cap_amount,omitempty"`
-	AmountType string `json:"amount_type,omitempty"`
 }

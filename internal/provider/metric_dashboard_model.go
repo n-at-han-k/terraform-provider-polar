@@ -2,11 +2,7 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -17,7 +13,7 @@ type MetricDashboardModel struct {
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
 	Name types.String `tfsdk:"name"`
-	Metrics jsontypes.Normalized `tfsdk:"metrics"`
+	Metrics []string `tfsdk:"metrics"`
 	OrganizationId types.String `tfsdk:"organization_id"`
 }
 
@@ -28,14 +24,7 @@ func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, e
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metrics.ValueString()), &out.Metrics); err != nil {
-			return out, fmt.Errorf("metrics: %w", err)
-		}
-	}
+	out.Metrics = m.Metrics
 	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
 		out.OrganizationId = m.OrganizationId.ValueString()
 	}
@@ -55,11 +44,7 @@ func (m *MetricDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, e
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	if !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metrics.ValueString()), &out.Metrics); err != nil {
-			return out, fmt.Errorf("metrics: %w", err)
-		}
-	}
+	out.Metrics = m.Metrics
 	return out, nil
 }
 
@@ -69,18 +54,6 @@ func (m *MetricDashboardModel) FromClientModel(c *client.MetricDashboardSchema) 
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
 	m.Name = types.StringValue(c.Name)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metrics); err == nil {
-		if m.Metrics.IsNull() || m.Metrics.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metrics.ValueString()) {
-			m.Metrics = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
+	m.Metrics = c.Metrics
 	m.OrganizationId = types.StringValue(c.OrganizationId)
 }

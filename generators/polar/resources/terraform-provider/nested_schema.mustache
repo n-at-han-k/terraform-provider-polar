@@ -31,6 +31,9 @@
 {{#isOptional}}
 							Optional:    true,
 {{/isOptional}}
+{{#isList}}
+							ElementType: {{listElementType}},
+{{/isList}}
 {{#isNested}}
 {{>nested_schema}}
 {{/isNested}}
@@ -56,6 +59,9 @@
 {{#isOptional}}
 						Optional:    true,
 {{/isOptional}}
+{{#isList}}
+						ElementType: {{listElementType}},
+{{/isList}}
 {{#isNested}}
 {{>nested_schema}}
 {{/isNested}}

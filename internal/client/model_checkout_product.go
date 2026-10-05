@@ -19,7 +19,7 @@ type CheckoutProduct struct {
 	IsRecurring *bool `json:"is_recurring,omitempty"`
 	IsArchived *bool `json:"is_archived,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
-	Prices []CheckoutProductPricesItem `json:"prices,omitempty"`
+	Prices []CheckoutPricesValueInner `json:"prices,omitempty"`
 	Benefits []BenefitPublic `json:"benefits,omitempty"`
 	Medias []ProductMediaFileRead `json:"medias,omitempty"`
 }

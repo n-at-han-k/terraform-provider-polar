@@ -32,8 +32,8 @@ type Order struct {
 	SubscriptionId string `json:"subscription_id,omitempty"`
 	CheckoutId string `json:"checkout_id,omitempty"`
 	NextPaymentAttemptAt string `json:"next_payment_attempt_at,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
+	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
 	PlatformFeeAmount int32 `json:"platform_fee_amount,omitempty"`
 	PlatformFeeCurrency string `json:"platform_fee_currency,omitempty"`
 	Customer *OrderCustomer `json:"customer,omitempty"`

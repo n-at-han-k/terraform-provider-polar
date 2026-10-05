@@ -16,7 +16,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -59,10 +58,10 @@ func (r *MetricDashboardResource) Schema(_ context.Context, _ resource.SchemaReq
 				Required:    true,
 				Description: "Display name for the dashboard.",
 			},
-			"metrics": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metrics": schema.ListAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "List of metric slugs displayed in this dashboard.",
 			},
 			"organization_id": schema.StringAttribute{

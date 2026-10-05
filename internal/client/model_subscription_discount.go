@@ -12,7 +12,7 @@ type SubscriptionDiscount struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id string `json:"id,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
 	Name string `json:"name,omitempty"`
 	Code string `json:"code,omitempty"`
 	StartsAt string `json:"starts_at,omitempty"`

@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/n-at-han-k/terraform-provider-polar/generators/polar/config.schema.json",
+  "title": "Polar provider generator configuration",
+  "description": "The contract between bin/generate-config, which computes these values from the vendored OpenAPI description, and the generator, which is told them rather than inferring them. Everything here is something the generator cannot work out accurately from the document alone; anything it CAN work out does not belong in this file. bin/generate-config validates its output against this schema before writing it, so a drift between the two sides fails at generation rather than at `tofu plan`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "provider",
+    "document",
+    "resources",
+    "attributes",
+    "unions"
+  ],
+  "properties": {
+    "version": {
+      "description": "Schema version of this file. The generator refuses a version it does not know, because silently ignoring a key it has never heard of is how a provider comes out subtly wrong.",
+      "const": 1
+    },
+    "provider": {
+      "description": "What the provider is called and where it is served from. Not derived from the document -- these are ours to choose, and the address has to agree with the filesystem mirror on both sides.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "address",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "description": "The provider's type name, as a configuration spells it in `provider \"polar\"` and in every resource prefix.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*$"
+        },
+        "address": {
+          "description": "The full source address OpenTofu resolves, e.g. ghcr.io/n-at-han-k/polar. Must match the mirror path the binary is installed into.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The version in the mirror path, which is also the release tag the binary comes from.",
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "document": {
+      "description": "Facts about the shape of the description that the generator would otherwise have to guess at.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "versionPrefix",
+        "excludePrefixes"
+      ],
+      "properties": {
+        "versionPrefix": {
+          "description": "The leading path segment that is the API version rather than part of a resource's name. Lifted off every path and onto the server URLs, so a resource is `polar_product` and not `polar_v1_product` -- a version belongs in the base URL the client carries. Empty string when the document has none.",
+          "type": "string",
+          "pattern": "^(/[a-z0-9]+)?$"
+        },
+        "excludePrefixes": {
+          "description": "Path prefixes dropped wholesale, for reasons no response code reveals. Polar's /v1/customer-portal paths are creatable and readable, so every structural rule keeps them -- but they authenticate with a customer session token rather than the organization token this provider holds, and only a human knows that.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "resources": {
+      "description": "Which collections become Terraform resources.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include"
+      ],
+      "properties": {
+        "include": {
+          "description": "Collection paths, version prefix included, exactly as the document spells them (trailing slash and all -- Polar writes `/v1/benefits/`). A collection absent from this list has every one of its operations dropped. The rule that produced it: a resource is one Terraform can create (a POST answering 201) and read back (a GET on its member). Without a create it is a report; without a member read it is a verb.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "attributes": {
+      "description": "How the schema is shaped once the resources are known.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nestedMaxDepth",
+        "json"
+      ],
+      "properties": {
+        "nestedMaxDepth": {
+          "description": "How many levels of object are expanded into typed blocks before falling back to a JSON string. Three reaches the deepest block the hand-written provider has: a meter's filter.clauses[].property, and a license key benefit's license_keys_properties.expires.ttl.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "json": {
+          "description": "Property names that stay a JSON string whatever their shape, because there is nothing to expand: a freeform map has no declared properties, so no attribute could be checked against it. Matched by property name, which is deliberate -- `metadata` means the same freeform map wherever it appears.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "unions": {
+      "description": "THE REASON THIS FILE EXISTS. HCL has no union: one attribute is one type. So every oneOf/anyOf has to become one concrete shape, and the choices involved cannot be read off the document reliably -- what each variant's properties should be called, which variant of a recursive union survives, whether a union of scalars is a number or a string. Those are computed once, written here, and applied by the generator.\n\nKeyed by the schema name holding the union (`BenefitCreate`), or by `<Schema>.<property>` for one declared inline (`Filter.clauses`), or `<Schema>.<property>.items` for one inside an array.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "discriminator": {
+            "description": "The property whose value selects the variant, when the document declares one. Emitted as a single string attribute carrying the mapping's keys as its enum, so a typo is refused by the schema rather than by the API. Absent for an undiscriminated union, where the variants merge and nothing selects between them.",
+            "type": "string"
+          },
+          "variants": {
+            "description": "Variant schema name -> the label its conflicting properties are renamed with. All eight benefit variants declare a `properties`, and all eight differ, so they become meter_credit_properties, feature_flag_properties and six more. A property every variant agrees on keeps its own name and is emitted once; a property in only one variant is already unambiguous and keeps its name too.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "minProperties": 1
+          },
+          "drop": {
+            "description": "Variants removed before flattening, because they reach back into the union. A filter's clauses are `anyOf: [FilterClause, Filter]` -- a clause, or another whole filter. Terraform cannot express arbitrary nesting as a typed attribute and the hand-written provider does not try, so the recursive branch is dropped and the leaf survives. Flattening it instead inlines a schema into itself and the document becomes a cyclic graph.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "widen": {
+            "description": "For a union whose branches are all scalars, the single type it becomes. A filter clause's `value` is `anyOf: [string, integer, boolean]` -- as a union it renders `interface{}` and the attribute ends up a JSON string that refuses `value = \"api_call\"`. Branches of one numeric kind widen to `number`; branches of differing kinds have only `string` in common.",
+            "enum": [
+              "string",
+              "number",
+              "integer",
+              "boolean"
+            ]
+          },
+          "conflicts": {
+            "description": "What to do with a property that two variants spell differently. `rename` (the default) emits it once per variant, prefixed with that variant's label -- which is how the hand-written provider models a benefit: custom_properties, meter_credit_properties and six more. `merge` emits ONE attribute whose own properties are the union of every variant's, which is how the same provider models a custom field: a single `properties` block carrying the fields of all five kinds. Both are in that provider, so neither can be inferred -- it is a decision, and this is where it is recorded.",
+            "enum": [
+              "rename",
+              "merge"
+            ],
+            "default": "rename"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "variants"
+            ]
+          },
+          {
+            "required": [
+              "widen"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

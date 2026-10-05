@@ -1,5 +1,6 @@
 package polar;
 
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.openapitools.codegen.CliOption;
@@ -99,13 +100,9 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     public void processOpts() {
         super.processOpts();
 
-        Object nested = additionalProperties().get("nestedAttributes");
-        nestedAttributes = nested == null || "true".equalsIgnoreCase(String.valueOf(nested));
-
-        Object depth = additionalProperties().get("nestedMaxDepth");
-        if (depth != null) {
-            nestedMaxDepth = Integer.parseInt(String.valueOf(depth).trim());
-        }
+        // nestedMaxDepth and the json-only positions arrive with the rest of the
+        // configuration in preprocessOpenAPI: there is one file that says what
+        // this provider is, not a config file and a command line.
 
         // THE AUTH SCHEME IS THE DOCUMENT'S, not a guess. Polar declares every
         // token scheme as `type: http, scheme: bearer`, so the header is
@@ -113,14 +110,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // a Bearer API answers 401 to with nothing useful in the body.
         additionalProperties().put("authHeaderPrefix", bearerPrefix());
 
-        Object json = additionalProperties().get("jsonAttributes");
-        if (json != null) {
-            for (String name : String.valueOf(json).split(",")) {
-                if (!name.trim().isEmpty()) {
-                    jsonAttributes.add(name.trim());
-                }
-            }
-        }
 
         // What makes the output DEPLOYABLE rather than merely compilable: the
         // image that carries the binary and the workflow that publishes it.
@@ -150,6 +139,594 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         supportingFiles.add(new SupportingFile("release_workflow.mustache",
                 ".github" + File.separator + "workflows", "release.yml"));
 
+    }
+
+    // ================= THE DOCUMENT, AS THE CONFIG SAYS IT SHOULD BE =========
+    //
+    // Everything below happens before a single model or operation is built, and
+    // every decision in it comes out of reference/generator-config.json rather
+    // than out of this file. bin/generate-config computes that from the vendored
+    // description; generators/polar/config.schema.json is the contract between
+    // the two. The generator is TOLD; it does not infer.
+
+    /** The config, read once in preprocessOpenAPI. */
+    private Map<String, Object> config = new LinkedHashMap<>();
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> section(String name) {
+        Object value = config.get(name);
+        return value instanceof Map ? (Map<String, Object>) value : new LinkedHashMap<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> strings(Map<String, Object> from, String key) {
+        Object value = from.get(key);
+        return value instanceof List ? (List<String>) value : new ArrayList<>();
+    }
+
+    @Override
+    public void preprocessOpenAPI(OpenAPI openAPI) {
+        super.preprocessOpenAPI(openAPI);
+        loadConfig();
+
+        if (config.isEmpty()) {
+            return;
+        }
+
+        liftVersionPrefix(openAPI);
+        dropPathsNotConfigured(openAPI);
+        dropNullTypedProperties(openAPI);
+        applyUnions(openAPI);
+        pruneUnreachableSchemas(openAPI);
+    }
+
+    /**
+     * reference/generator-config.json, named by `--additional-properties
+     * polarConfig=...`. A missing or unreadable config is fatal: generating from
+     * the raw document would silently produce a different provider, and a
+     * provider that is silently different is worse than a build that stops.
+     */
+    private void loadConfig() {
+        Object path = additionalProperties().get("polarConfig");
+        if (path == null) {
+            throw new RuntimeException(
+                    "polarConfig is not set -- pass --additional-properties polarConfig=<file>");
+        }
+
+        File file = new File(String.valueOf(path));
+        try {
+            config = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(file, LinkedHashMap.class);
+        } catch (Exception e) {
+            throw new RuntimeException("cannot read " + file + ": " + e.getMessage(), e);
+        }
+
+        Object version = config.get("version");
+        if (!Integer.valueOf(1).equals(version)) {
+            throw new RuntimeException("generator-config version " + version
+                    + " is not one this generator understands (expects 1)");
+        }
+
+        // The provider's own identity comes from the config too, so there is one
+        // place that says what this provider is called and where it is served.
+        Map<String, Object> provider = section("provider");
+        provider.forEach((key, value) -> additionalProperties().put(
+                "provider" + key.substring(0, 1).toUpperCase(Locale.ROOT) + key.substring(1),
+                String.valueOf(value)));
+        additionalProperties().put("providerName", String.valueOf(provider.get("name")));
+
+        Map<String, Object> attributes = section("attributes");
+        if (attributes.get("nestedMaxDepth") != null) {
+            nestedMaxDepth = Integer.parseInt(String.valueOf(attributes.get("nestedMaxDepth")));
+        }
+        jsonAttributes.addAll(strings(attributes, "json"));
+    }
+
+    /**
+     * The version segment comes off every path and goes onto the servers, where
+     * it is true of the whole API rather than of each route. Without this a
+     * resource is `polar_v1_product`, and the version is in a type name that a
+     * v2 would have to break.
+     */
+    private void liftVersionPrefix(OpenAPI openAPI) {
+        String prefix = String.valueOf(section("document").getOrDefault("versionPrefix", ""));
+        if (prefix.isEmpty() || openAPI.getPaths() == null) {
+            return;
+        }
+
+        io.swagger.v3.oas.models.Paths lifted = new io.swagger.v3.oas.models.Paths();
+        openAPI.getPaths().forEach((path, item) -> {
+            String stripped = path.startsWith(prefix) ? path.substring(prefix.length()) : path;
+            lifted.addPathItem(stripped.isEmpty() ? "/" : stripped, item);
+        });
+        openAPI.setPaths(lifted);
+
+        if (openAPI.getServers() != null) {
+            openAPI.getServers().forEach(server -> {
+                String url = server.getUrl() == null ? "" : server.getUrl();
+                server.setUrl(url.replaceAll("/$", "") + prefix);
+            });
+        }
+    }
+
+    /**
+     * Only the collections the config names are resources. Everything else the
+     * document describes is a report (nothing creates it) or a verb (nothing
+     * reads it back), and a Terraform resource for either is one tofu offers to
+     * create and then fails to.
+     */
+    private void dropPathsNotConfigured(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null) {
+            return;
+        }
+
+        String prefix = String.valueOf(section("document").getOrDefault("versionPrefix", ""));
+
+        Set<String> keep = new HashSet<>();
+        for (String path : strings(section("resources"), "include")) {
+            String stripped = path.startsWith(prefix) ? path.substring(prefix.length()) : path;
+            keep.add(collectionOf(stripped.isEmpty() ? "/" : stripped));
+        }
+
+        io.swagger.v3.oas.models.Paths kept = new io.swagger.v3.oas.models.Paths();
+        openAPI.getPaths().forEach((path, item) -> {
+            if (keep.contains(collectionOf(path))) {
+                kept.addPathItem(path, item);
+            }
+        });
+        openAPI.setPaths(kept);
+
+        // Incoming webhook descriptions are what the API sends US. A provider
+        // never calls one, and their payload schemas are a third of the document.
+        openAPI.setWebhooks(null);
+    }
+
+    /**
+     * OpenAPI 3.1 lets a property be pinned to {@code null}, and Go has no such
+     * type. Polar says "this variant has no such field" that way: a one-time
+     * product's `recurring_interval` is `{"type": "null"}`, and the generated
+     * field came out `*nil`, which does not compile. A field that can only ever
+     * be null carries no value, so it goes -- and "one-time" is then spelled by
+     * omitting it, which is the right shape anyway.
+     */
+    private void dropNullTypedProperties(OpenAPI openAPI) {
+        eachSchema(openAPI, schema -> {
+            Map<String, io.swagger.v3.oas.models.media.Schema> properties = schema.getProperties();
+            if (properties == null) {
+                return;
+            }
+
+            List<String> pinned = new ArrayList<>();
+            properties.forEach((name, property) -> {
+                if (pinnedToNull(property)) {
+                    pinned.add(name);
+                }
+            });
+
+            for (String name : pinned) {
+                properties.remove(name);
+                if (schema.getRequired() != null) {
+                    schema.getRequired().remove(name);
+                }
+            }
+        });
+    }
+
+    /**
+     * Whether a schema can only ever be null.
+     *
+     * OPENAPI 3.1 CARRIES TYPE AS A SET, not a string: `{"type": "null"}` lands in
+     * getTypes() and leaves getType() empty, so asking only the singular one found
+     * nothing and every pinned-null property survived -- `*nil` in the Go, which
+     * does not compile.
+     */
+    private boolean pinnedToNull(io.swagger.v3.oas.models.media.Schema schema) {
+        if (schema == null) {
+            return false;
+        }
+
+        if ("null".equals(schema.getType())) {
+            return true;
+        }
+
+        Set<String> types = schema.getTypes();
+
+        return types != null && types.size() == 1 && types.contains("null");
+    }
+
+    /** Every schema in the document, components and inline alike. */
+    private void eachSchema(OpenAPI openAPI, java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema> visit) {
+        Set<io.swagger.v3.oas.models.media.Schema> seen =
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema>[] walk =
+                new java.util.function.Consumer[1];
+
+        walk[0] = schema -> {
+            if (schema == null || !seen.add(schema)) {
+                return;
+            }
+
+            visit.accept(schema);
+
+            if (schema.getProperties() != null) {
+                new ArrayList<Object>(schema.getProperties().values())
+                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
+            }
+            walk[0].accept(schema.getItems());
+            if (schema.getOneOf() != null) {
+                new ArrayList<Object>(schema.getOneOf())
+                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
+            }
+            if (schema.getAnyOf() != null) {
+                new ArrayList<Object>(schema.getAnyOf())
+                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
+            }
+            if (schema.getAllOf() != null) {
+                new ArrayList<Object>(schema.getAllOf())
+                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
+            }
+        };
+
+        if (openAPI.getComponents() != null && openAPI.getComponents().getSchemas() != null) {
+            new ArrayList<>(openAPI.getComponents().getSchemas().values()).forEach(walk[0]);
+        }
+    }
+
+    /**
+     * HCL HAS NO UNION: one attribute is one type. So every oneOf the config
+     * names becomes one concrete shape, exactly as the config says.
+     *
+     *   widen    -- the branches are all scalars, so the position becomes the one
+     *               type that can carry any of them.
+     *   drop     -- a branch that reaches back into the union. Terraform cannot
+     *               express arbitrary nesting, and inlining it would put a schema
+     *               inside itself.
+     *   variants -- what each variant's CONFLICTING properties are renamed with.
+     *               A property every variant agrees on is emitted once under its
+     *               own name; one that appears in a single variant is already
+     *               unambiguous and keeps its name too.
+     *
+     * The discriminator, where there is one, is emitted once as a string carrying
+     * the document's own mapping keys as its enum -- so a typo is refused by the
+     * schema rather than by the API. It is held out of the merge: every variant
+     * pins it to a different constant, so by the conflict rule it would be split
+     * into one attribute per variant, none of them the one the API takes.
+     */
+    private void applyUnions(OpenAPI openAPI) {
+        Map<String, Object> unions = section("unions");
+        if (unions.isEmpty() || openAPI.getComponents() == null) {
+            return;
+        }
+
+        Map<String, io.swagger.v3.oas.models.media.Schema> schemas =
+                openAPI.getComponents().getSchemas();
+
+        // WIDENINGS FIRST, FLATTENINGS SECOND. A widening settles a leaf -- a
+        // clause's `value` becomes a string -- and a flattening builds structure
+        // that carries that leaf along by reference. Done the other way round, the
+        // order the config file happens to list them in decides whether
+        // `filter.clauses[].value` came out a string or a JSON blob.
+        for (int pass = 0; pass < 2; pass++) {
+            boolean widening = pass == 0;
+
+            for (Map.Entry<String, Object> union : unions.entrySet()) {
+                if (!(union.getValue() instanceof Map)) {
+                    continue;
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> entry = (Map<String, Object>) union.getValue();
+                boolean isWiden = entry.get("widen") != null;
+
+                if (isWiden != widening) {
+                    continue;
+                }
+
+                io.swagger.v3.oas.models.media.Schema node = resolve(schemas, union.getKey());
+                if (node == null) {
+                    System.err.println("[polar] union not found in document: " + union.getKey());
+                    continue;
+                }
+
+                if (isWiden) {
+                    String widen = String.valueOf(entry.get("widen"));
+                    clearComposition(node);
+                    node.setType(widen);
+                    // OPENAPI 3.1 CARRIES TYPE AS A SET and this generator reads
+                    // the set in preference to the string, so setting only the
+                    // singular left the property still looking like a composition
+                    // -- `Value interface{}` in the client and a JSON attribute in
+                    // the schema, exactly as before the widening.
+                    node.setTypes(new LinkedHashSet<>(java.util.List.of(widen)));
+                    // AND THE TITLE HAS TO GO. openapi-generator mints a MODEL for
+                    // any inline schema carrying a title, so a widened
+                    // `title: "Value"` came back as `dataType=Value`, a named
+                    // model of a scalar -- which the client then rendered
+                    // `Value interface{}`, exactly the JSON blob the widening
+                    // existed to remove.
+                    node.setTitle(null);
+                    continue;
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, String> labels = (Map<String, String>) entry.get("variants");
+                if (labels == null || labels.isEmpty()) {
+                    continue;
+                }
+
+                flatten(node, schemas, labels, union.getKey(),
+                        "merge".equals(String.valueOf(entry.get("conflicts"))));
+            }
+        }
+    }
+
+    /**
+     * The schema at a config key: `Name`, `Name.prop`, `Name.prop.items`, and so
+     * on down. Null when the document no longer has it -- a key whose path was
+     * dropped by the resource filter is not an error.
+     */
+    private io.swagger.v3.oas.models.media.Schema resolve(
+            Map<String, io.swagger.v3.oas.models.media.Schema> schemas, String key) {
+        String[] parts = key.split("\\.");
+        io.swagger.v3.oas.models.media.Schema node = schemas.get(parts[0]);
+
+        for (int i = 1; i < parts.length && node != null; i++) {
+            if ("items".equals(parts[i])) {
+                node = node.getItems();
+            } else if (node.getProperties() != null) {
+                node = (io.swagger.v3.oas.models.media.Schema) node.getProperties().get(parts[i]);
+            } else {
+                return null;
+            }
+        }
+
+        return node;
+    }
+
+    private void clearComposition(io.swagger.v3.oas.models.media.Schema node) {
+        node.setOneOf(null);
+        node.setAnyOf(null);
+        node.setDiscriminator(null);
+    }
+
+    /** One union, merged into one object schema. */
+    @SuppressWarnings("unchecked")
+    private void flatten(io.swagger.v3.oas.models.media.Schema node,
+                         Map<String, io.swagger.v3.oas.models.media.Schema> schemas,
+                         Map<String, String> labels, String key, boolean mergeConflicts) {
+        String discriminator = node.getDiscriminator() == null
+                ? null
+                : node.getDiscriminator().getPropertyName();
+        List<String> values = node.getDiscriminator() == null || node.getDiscriminator().getMapping() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(node.getDiscriminator().getMapping().keySet());
+
+        // property name -> variant -> that variant's schema for it
+        Map<String, Map<String, io.swagger.v3.oas.models.media.Schema>> owners = new LinkedHashMap<>();
+        List<List<String>> requiredPerVariant = new ArrayList<>();
+
+        for (String variant : labels.keySet()) {
+            io.swagger.v3.oas.models.media.Schema schema = schemas.get(variant);
+            if (schema == null || schema.getProperties() == null) {
+                return;
+            }
+
+            requiredPerVariant.add(schema.getRequired() == null
+                    ? new ArrayList<>() : new ArrayList<>(schema.getRequired()));
+
+            schema.getProperties().forEach((name, property) -> {
+                if (name.equals(discriminator)) {
+                    return;
+                }
+                owners.computeIfAbsent(String.valueOf(name), ignored -> new LinkedHashMap<>())
+                        .put(variant, (io.swagger.v3.oas.models.media.Schema) property);
+            });
+        }
+
+        Map<String, io.swagger.v3.oas.models.media.Schema> merged = new LinkedHashMap<>();
+
+        owners.forEach((property, byVariant) -> {
+            boolean agreed = new HashSet<>(byVariant.values()).size() == 1;
+
+            if (agreed) {
+                merged.put(property, byVariant.values().iterator().next());
+            } else if (mergeConflicts) {
+                merged.put(property, mergeObjects(byVariant.values()));
+            } else {
+                byVariant.forEach((variant, schema) ->
+                        merged.put(labels.get(variant) + "_" + property, schema));
+            }
+        });
+
+        // Required of EVERY variant, else a configuration filling one variant is
+        // invalid for the fields of the others -- and a name that was renamed is
+        // not required under its old spelling.
+        List<String> required = requiredPerVariant.isEmpty()
+                ? new ArrayList<>()
+                : new ArrayList<>(requiredPerVariant.get(0));
+        for (List<String> theirs : requiredPerVariant) {
+            required.retainAll(theirs);
+        }
+        required.retainAll(merged.keySet());
+
+        if (discriminator != null && !values.isEmpty()) {
+            io.swagger.v3.oas.models.media.StringSchema choice =
+                    new io.swagger.v3.oas.models.media.StringSchema();
+            java.util.Collections.sort(values);
+            values.forEach(choice::addEnumItem);
+            choice.setDescription("Which variant this is. Selects which of the optional blocks above applies.");
+            merged.put(discriminator, choice);
+            if (!required.contains(discriminator)) {
+                required.add(discriminator);
+            }
+        }
+
+        clearComposition(node);
+        node.setType("object");
+        node.setProperties(merged);
+        node.setRequired(required.isEmpty() ? null : required);
+
+        // AN INLINE UNION NEEDS A NAME. openapi-generator names an inline schema
+        // after the position it first met that shape in and reuses one model for
+        // every position that matches -- so two unrelated flattened unions became
+        // one model, carrying whichever one's required fields it saw first. Named
+        // after the config key, they stay apart.
+        if (key.contains(".")) {
+            String name = Arrays.stream(key.split("\\."))
+                    .filter(part -> !part.equals("items"))
+                    .map(part -> Arrays.stream(part.split("_"))
+                            .map(word -> word.isEmpty() ? word
+                                    : word.substring(0, 1).toUpperCase(Locale.ROOT) + word.substring(1))
+                            .collect(java.util.stream.Collectors.joining()))
+                    .collect(java.util.stream.Collectors.joining());
+
+            if (!schemas.containsKey(name)) {
+                io.swagger.v3.oas.models.media.ObjectSchema hoisted =
+                        new io.swagger.v3.oas.models.media.ObjectSchema();
+                hoisted.setProperties(merged);
+                hoisted.setRequired(node.getRequired());
+                hoisted.setDescription(node.getDescription());
+                schemas.put(name, hoisted);
+
+                node.setProperties(null);
+                node.setRequired(null);
+                node.setType(null);
+                node.set$ref("#/components/schemas/" + name);
+            }
+        }
+    }
+
+    /**
+     * Several variants' versions of one property, as a single object carrying the
+     * union of their fields. Required of EVERY variant stays required; anything
+     * else is optional, because which variant applies is not known until the
+     * discriminator is read and a schema cannot wait for that.
+     *
+     * Where the versions are not all objects there is nothing to merge, and the
+     * first wins -- the alternative is inventing a type the document does not
+     * describe.
+     */
+    @SuppressWarnings("unchecked")
+    private io.swagger.v3.oas.models.media.Schema mergeObjects(
+            java.util.Collection<io.swagger.v3.oas.models.media.Schema> versions) {
+        io.swagger.v3.oas.models.media.ObjectSchema merged =
+                new io.swagger.v3.oas.models.media.ObjectSchema();
+        Map<String, io.swagger.v3.oas.models.media.Schema> properties = new LinkedHashMap<>();
+        List<String> required = null;
+
+        for (io.swagger.v3.oas.models.media.Schema version : versions) {
+            if (version == null || version.getProperties() == null) {
+                return versions.iterator().next();
+            }
+
+            version.getProperties().forEach((name, property) -> properties.putIfAbsent(
+                    String.valueOf(name), (io.swagger.v3.oas.models.media.Schema) property));
+
+            List<String> theirs = version.getRequired() == null
+                    ? new ArrayList<>() : new ArrayList<>(version.getRequired());
+
+            if (required == null) {
+                required = theirs;
+            } else {
+                required.retainAll(theirs);
+            }
+        }
+
+        merged.setProperties(properties);
+        merged.setRequired(required == null || required.isEmpty() ? null : required);
+
+        return merged;
+    }
+
+    /**
+     * What the kept paths actually reach, transitively. Without this the client
+     * carries a Go file per schema in the document -- over a thousand of them,
+     * almost all for paths that are no longer here, which is a build to wait on
+     * and a diff nobody can read.
+     */
+    private void pruneUnreachableSchemas(OpenAPI openAPI) {
+        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        Map<String, io.swagger.v3.oas.models.media.Schema> schemas =
+                openAPI.getComponents().getSchemas();
+
+        Set<String> reached = new HashSet<>();
+        java.util.Deque<String> frontier = new java.util.ArrayDeque<>(refsUnder(openAPI.getPaths()));
+
+        while (!frontier.isEmpty()) {
+            String name = frontier.pop();
+            if (!reached.add(name)) {
+                continue;
+            }
+            frontier.addAll(refsUnder(schemas.get(name)));
+        }
+
+        schemas.keySet().retainAll(reached);
+    }
+
+    /** Every component schema name a node references, at any depth. */
+    private List<String> refsUnder(Object node) {
+        List<String> found = new ArrayList<>();
+        collectRefs(node, found, java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+        return found;
+    }
+
+    private void collectRefs(Object node, List<String> found, Set<Object> seen) {
+        if (node == null || !seen.add(node)) {
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.media.Schema) {
+            io.swagger.v3.oas.models.media.Schema schema = (io.swagger.v3.oas.models.media.Schema) node;
+            if (schema.get$ref() != null && schema.get$ref().startsWith("#/components/schemas/")) {
+                found.add(schema.get$ref().substring("#/components/schemas/".length()));
+            }
+            collectRefs(schema.getProperties(), found, seen);
+            collectRefs(schema.getItems(), found, seen);
+            collectRefs(schema.getOneOf(), found, seen);
+            collectRefs(schema.getAnyOf(), found, seen);
+            collectRefs(schema.getAllOf(), found, seen);
+            collectRefs(schema.getAdditionalProperties(), found, seen);
+            return;
+        }
+
+        if (node instanceof Map) {
+            ((Map<?, ?>) node).values().forEach(value -> collectRefs(value, found, seen));
+            return;
+        }
+
+        if (node instanceof Iterable) {
+            ((Iterable<?>) node).forEach(value -> collectRefs(value, found, seen));
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.PathItem) {
+            ((io.swagger.v3.oas.models.PathItem) node).readOperations()
+                    .forEach(operation -> collectRefs(operation, found, seen));
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.Operation) {
+            io.swagger.v3.oas.models.Operation operation = (io.swagger.v3.oas.models.Operation) node;
+            if (operation.getRequestBody() != null && operation.getRequestBody().getContent() != null) {
+                operation.getRequestBody().getContent().values()
+                        .forEach(media -> collectRefs(media.getSchema(), found, seen));
+            }
+            if (operation.getResponses() != null) {
+                operation.getResponses().values().forEach(response -> {
+                    if (response.getContent() != null) {
+                        response.getContent().values()
+                                .forEach(media -> collectRefs(media.getSchema(), found, seen));
+                    }
+                });
+            }
+            if (operation.getParameters() != null) {
+                operation.getParameters().forEach(parameter -> collectRefs(parameter.getSchema(), found, seen));
+            }
+        }
     }
 
     /**
@@ -735,7 +1312,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         // Nothing is a types.List any more, so the import that served them is
         // not needed and the JSON one is.
-        operations.put("hasListAttributes", false);
+        operations.put("hasListAttributes", attributes.stream()
+                .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isList"))));
         operations.put("hasJsonAttributes", anyJson);
 
         // THE DATA SOURCE RENDERS NO NESTED BLOCKS, so a JSON attribute that only
@@ -1328,11 +1906,60 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             return;
         }
 
+        // A LIST OR MAP OF SCALARS IS A LIST OR MAP, not a string holding JSON.
+        // A webhook endpoint's `events` is an array of enum strings and a
+        // product's `metadata` is a map of them; as JSON the suite refuses both --
+        // "Inappropriate value for attribute events: string required, but have
+        // tuple".
+        //
+        // A PLAIN Go SLICE OR MAP, not types.List: terraform-plugin-framework
+        // reflects over those, so the conversions are a direct assignment and need
+        // no context to call ElementsAs with.
+        String element = elementOf(go);
+        if (element != null) {
+            boolean isMap = go.startsWith("map[");
+            attribute.put("isJson", false);
+            attribute.put("isScalarList", !isMap);
+            attribute.put("isScalarMap", isMap);
+            attribute.put("isList", true);
+            attribute.put("listElementType", frameworkType(element));
+            attribute.put("terraformType", isMap ? "map[string]" + element : "[]" + element);
+            attribute.put("terraformAttrType",
+                    isMap ? "schema.MapAttribute" : "schema.ListAttribute");
+            return;
+        }
+
         attribute.put("isList", false);
         attribute.put("isObject", false);
         attribute.put("isJson", true);
         attribute.put("terraformType", "jsontypes.Normalized");
         attribute.put("terraformAttrType", "schema.StringAttribute");
+    }
+
+    private static final List<String> SCALARS =
+            Arrays.asList("string", "bool", "int32", "int64", "float32", "float64");
+
+    /** The scalar a slice or a string-keyed map is of, or null when it is neither. */
+    private String elementOf(String go) {
+        String element = null;
+
+        if (go.startsWith("[]")) {
+            element = go.substring(2);
+        } else if (go.startsWith("map[string]")) {
+            element = go.substring("map[string]".length());
+        }
+
+        return element != null && SCALARS.contains(element) ? element : null;
+    }
+
+    /** The framework type for an element, which the schema names rather than Go. */
+    private String frameworkType(String element) {
+        switch (element) {
+            case "bool": return "types.BoolType";
+            case "int32": case "int64": return "types.Int64Type";
+            case "float32": case "float64": return "types.Float64Type";
+            default: return "types.StringType";
+        }
     }
 
     private Map<String, Object> writeOnlyAttribute(CodegenProperty property) {
@@ -1596,12 +2223,43 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
                 for (CodegenProperty property : properties) {
                     String named = property.dataType == null ? "" : property.dataType;
-                    boolean pointed = named.startsWith("*");
-                    String bare = pointed ? named.substring(1) : named;
+
+                    // AND THROUGH A SLICE OR A MAP, not only a pointer. A webhook
+                    // endpoint's `events` is `[]WebhookEventType` and a product's
+                    // `metadata` is `map[string]MetadataValue1` -- both are
+                    // collections of a named model that is really an enum, and
+                    // looking only at the bare name left them collections of a
+                    // struct with no fields. The attribute then fell back to JSON
+                    // and the suite refused it: "attribute events: string
+                    // required, but have tuple".
+                    // ponytail: through a POINTER only. Reaching through `[]` and
+                    // `map[string]` as well is what a list of a collapsed enum
+                    // needs -- `events` is `[]WebhookEventType` and wants to be
+                    // `[]string` -- but the enum's own model file is still
+                    // rendered `type WebhookEventType struct{}`, so the collection
+                    // and the element disagree and the client will not compile.
+                    // The fix is to render an empty model as a type ALIAS to its
+                    // scalar, which is an override of upstream's model template.
+                    String wrapper = named.startsWith("*") ? "*" : "";
+                    String bare = wrapper.isEmpty() ? named : named.substring(1);
+
                     String scalar = notStructs.get(bare);
 
                     if (scalar != null) {
-                        property.dataType = scalar;
+                        // THE PROPERTY KNOWS ITS OWN TYPE even when the model
+                        // minted for it does not. A widened union is a plain
+                        // string, but openapi-generator still mints a model for
+                        // the inline schema and that model carries none of the
+                        // scalar flags -- so scalarOf fell back to interface{} and
+                        // the attribute went back to being a JSON blob. Where the
+                        // model cannot say, the property can.
+                        String resolved = "interface{}".equals(scalar)
+                                ? unionType(property)
+                                : scalar;
+
+                        // A pointer to a collapsed scalar is that scalar; a slice
+                        // or map OF one keeps its wrapper.
+                        property.dataType = resolved;
                         property.isModel = false;
                     }
                 }

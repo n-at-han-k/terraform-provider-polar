@@ -4,23 +4,9 @@ package client
 
 // BenefitUpdate - BenefitUpdate struct
 type BenefitUpdate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Description string `json:"description,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
-	BenefitCustomUpdateType string `json:"benefit_custom_update_type,omitempty"`
-	BenefitDiscordUpdateType string `json:"benefit_discord_update_type,omitempty"`
-	BenefitGitHubRepositoryUpdateType string `json:"benefit_git_hub_repository_update_type,omitempty"`
-	BenefitDownloadablesUpdateType string `json:"benefit_downloadables_update_type,omitempty"`
-	BenefitLicenseKeysUpdateType string `json:"benefit_license_keys_update_type,omitempty"`
-	BenefitMeterCreditUpdateType string `json:"benefit_meter_credit_update_type,omitempty"`
-	BenefitFeatureFlagUpdateType string `json:"benefit_feature_flag_update_type,omitempty"`
-	BenefitSlackSharedChannelUpdateType string `json:"benefit_slack_shared_channel_update_type,omitempty"`
-	BenefitCustomUpdateProperties *BenefitCustomProperties `json:"benefit_custom_update_properties,omitempty"`
-	BenefitDiscordUpdateProperties *BenefitDiscordCreateProperties `json:"benefit_discord_update_properties,omitempty"`
-	BenefitGitHubRepositoryUpdateProperties *BenefitGitHubRepositoryCreateProperties `json:"benefit_git_hub_repository_update_properties,omitempty"`
-	BenefitDownloadablesUpdateProperties *BenefitDownloadablesCreateProperties `json:"benefit_downloadables_update_properties,omitempty"`
-	BenefitLicenseKeysUpdateProperties *BenefitLicenseKeysCreateProperties `json:"benefit_license_keys_update_properties,omitempty"`
-	BenefitMeterCreditUpdateProperties *BenefitMeterCreditCreateProperties `json:"benefit_meter_credit_update_properties,omitempty"`
-	BenefitFeatureFlagUpdateProperties map[string]interface{} `json:"benefit_feature_flag_update_properties,omitempty"`
-	BenefitSlackSharedChannelUpdateProperties *BenefitSlackSharedChannelCreateProperties `json:"benefit_slack_shared_channel_update_properties,omitempty"`
+	Type string `json:"type,omitempty"`
+	Properties *BenefitSlackSharedChannelCreateProperties `json:"properties,omitempty"`
 }

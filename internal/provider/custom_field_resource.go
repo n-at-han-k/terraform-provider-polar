@@ -74,9 +74,8 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Description: "The ID of the organization owning the custom field.",
 			},
-			"text_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
+			"properties": schema.SingleNestedAttribute{
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"form_label": schema.StringAttribute{
 						Computed:    true,
@@ -106,130 +105,6 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 					"max_length": schema.Int64Attribute{
 						Computed:    true,
 						Optional:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"number_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"form_label": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_help_text": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_placeholder": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"ge": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"le": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"date_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"form_label": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_help_text": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_placeholder": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"ge": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"le": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"checkbox_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"form_label": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_help_text": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_placeholder": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"select_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"form_label": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_help_text": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"form_placeholder": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"options": schema.ListNestedAttribute{
-						Required:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"value": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
-						"label": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
-					},
-				},
 						Description: "",
 					},
 				},

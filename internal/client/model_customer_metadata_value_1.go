@@ -2,6 +2,6 @@
 
 package client
 
-// StatusFilter2 - Filter by checkout session status.
-type StatusFilter2 struct {
+// CustomerMetadataValue1 - CustomerMetadataValue1 struct
+type CustomerMetadataValue1 struct {
 }

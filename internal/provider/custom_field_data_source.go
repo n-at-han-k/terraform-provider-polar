@@ -63,24 +63,8 @@ func (d *CustomFieldDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 				Computed:    true,
 				Description: "The ID of the organization owning the custom field.",
 			},
-			"text_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"number_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"date_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"checkbox_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"select_properties": schema.StringAttribute{
-				Computed:    true,
+			"properties": schema.StringAttribute{
+				Required:    true,
 				Description: "",
 			},
 			"type": schema.StringAttribute{

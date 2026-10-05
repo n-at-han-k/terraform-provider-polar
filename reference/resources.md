@@ -2,10 +2,11 @@
 
 # Polar 2026-04 -> provider resources
 
-`bin/generate-config` keeps a collection when it has a **create** (`POST` answering 201)
-and a **read** on its member (`GET /thing/{id}`). Everything else is a report or
-a verb. The customer portal is dropped whole: it authenticates with a customer
-session, not this provider's organization token.
+A collection is a resource when it has a **create** (`POST` answering 201) and a
+**read** on its member (`GET /thing/{id}`). Without a create it is a report;
+without a member read it is a verb. The customer portal is excluded by name: its
+paths are creatable and readable, and authenticate with a customer session rather
+than this provider's organization token.
 
 15 resources from 93 collections.
 
@@ -16,16 +17,16 @@ session, not this provider's organization token.
 | `polar_checkout` | `/v1/checkouts` | GET, PATCH, POST | **no DELETE** -- cannot be destroyed or replaced |
 | `polar_custom_field` | `/v1/custom-fields` | DELETE, GET, PATCH, POST |  |
 | `polar_customer` | `/v1/customers` | DELETE, GET, PATCH, POST |  |
-| `polar_customers_external_member` | `/v1/customers/external/{external_id}/members` | DELETE, GET, PATCH, POST |  |
-| `polar_customers_member` | `/v1/customers/{id}/members` | DELETE, GET, PATCH, POST |  |
+| `polar_customer_external_member` | `/v1/customers/external/{external_id}/members` | DELETE, GET, PATCH, POST |  |
+| `polar_customer_member` | `/v1/customers/{id}/members` | DELETE, GET, PATCH, POST |  |
 | `polar_discount` | `/v1/discounts` | DELETE, GET, PATCH, POST |  |
 | `polar_meter` | `/v1/meters` | GET, PATCH, POST | **no DELETE** -- cannot be destroyed or replaced |
-| `polar_metrics_dashboard` | `/v1/metrics/dashboards` | DELETE, GET, PATCH, POST |  |
+| `polar_metric_dashboard` | `/v1/metrics/dashboards` | DELETE, GET, PATCH, POST |  |
 | `polar_order` | `/v1/orders` | GET, PATCH, POST | **no DELETE** -- cannot be destroyed or replaced |
 | `polar_organization` | `/v1/organizations` | GET, PATCH, POST | **no DELETE** -- cannot be destroyed or replaced |
 | `polar_product` | `/v1/products` | GET, PATCH, POST | **no DELETE** -- cannot be destroyed or replaced |
 | `polar_subscription` | `/v1/subscriptions` | DELETE, GET, PATCH, POST |  |
-| `polar_webhooks_endpoint` | `/v1/webhooks/endpoints` | DELETE, GET, PATCH, POST |  |
+| `polar_webhook_endpoint` | `/v1/webhooks/endpoints` | DELETE, GET, PATCH, POST |  |
 
 ## Dropped (78)
 

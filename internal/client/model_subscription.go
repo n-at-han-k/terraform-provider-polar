@@ -34,12 +34,12 @@ type Subscription struct {
 	Seats int32 `json:"seats,omitempty"`
 	CustomerCancellationReason string `json:"customer_cancellation_reason,omitempty"`
 	CustomerCancellationComment string `json:"customer_cancellation_comment,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
+	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
 	Customer *SubscriptionCustomer `json:"customer,omitempty"`
 	Product *Product `json:"product,omitempty"`
 	Discount *SubscriptionDiscount `json:"discount,omitempty"`
-	Prices []SubscriptionPricesItem `json:"prices,omitempty"`
+	Prices []CheckoutPricesValueInner `json:"prices,omitempty"`
 	Meters []SubscriptionMeter `json:"meters,omitempty"`
 	PendingUpdate *PendingSubscriptionUpdate `json:"pending_update,omitempty"`
 }

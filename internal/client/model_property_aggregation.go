@@ -2,9 +2,8 @@
 
 package client
 
-// FilterClause - FilterClause struct
-type FilterClause struct {
+// PropertyAggregation - PropertyAggregation struct
+type PropertyAggregation struct {
+	Func string `json:"func,omitempty"`
 	Property string `json:"property,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	Value string `json:"value,omitempty"`
 }

@@ -120,10 +120,10 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "",
 			},
-			"amounts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"amounts": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.Int64Type,
 				Description: "Map of currency to fixed amount to discount from the total.",
 			},
 			"basis_points": schema.Int64Attribute{

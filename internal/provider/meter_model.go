@@ -68,8 +68,8 @@ type MeterFilterModelClausesModel struct {
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClause, error) {
-	out := &client.FilterClause{}
+func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClauses, error) {
+	out := &client.FilterClauses{}
 	if !m.Property.IsNull() && !m.Property.IsUnknown() {
 		out.Property = m.Property.ValueString()
 	}
@@ -88,7 +88,7 @@ func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClause, er
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClause) {
+func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClauses) {
 	m.Property = types.StringValue(c.Property)
 	m.Operator = types.StringValue(c.Operator)
 	m.Value = types.StringValue(c.Value)
@@ -100,18 +100,26 @@ func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClause) {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type MeterAggregationModel struct {
+	CountFunc types.String `tfsdk:"count_func"`
+	AvgFunc types.String `tfsdk:"avg_func"`
+	UniqueFunc types.String `tfsdk:"unique_func"`
 	Property types.String `tfsdk:"property"`
-	Func types.String `tfsdk:"func"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation, error) {
 	out := &client.MeterCreateAggregation{}
+	if !m.CountFunc.IsNull() && !m.CountFunc.IsUnknown() {
+		out.CountFunc = m.CountFunc.ValueString()
+	}
+	if !m.AvgFunc.IsNull() && !m.AvgFunc.IsUnknown() {
+		out.AvgFunc = m.AvgFunc.ValueString()
+	}
+	if !m.UniqueFunc.IsNull() && !m.UniqueFunc.IsUnknown() {
+		out.UniqueFunc = m.UniqueFunc.ValueString()
+	}
 	if !m.Property.IsNull() && !m.Property.IsUnknown() {
 		out.Property = m.Property.ValueString()
-	}
-	if !m.Func.IsNull() && !m.Func.IsUnknown() {
-		out.Func = m.Func.ValueString()
 	}
 	return out, nil
 }
@@ -123,8 +131,10 @@ func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterAggregationModel) FromClientModel(c *client.MeterCreateAggregation) {
+	m.CountFunc = types.StringValue(c.CountFunc)
+	m.AvgFunc = types.StringValue(c.AvgFunc)
+	m.UniqueFunc = types.StringValue(c.UniqueFunc)
 	m.Property = types.StringValue(c.Property)
-	m.Func = types.StringValue(c.Func)
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -212,18 +222,13 @@ func (m *MeterModel) FromClientModel(c *client.Meter) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Name = types.StringValue(c.Name)
 	m.Unit = types.StringValue(c.Unit)

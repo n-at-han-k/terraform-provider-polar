@@ -125,15 +125,15 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"downloadables_properties": schema.SingleNestedAttribute{
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
-					"archived": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"archived": schema.MapAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.BoolType,
 						Description: "",
 					},
-					"files": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"files": schema.ListAttribute{
 						Required:    true,
+						ElementType: types.StringType,
 						Description: "",
 					},
 				},
@@ -215,10 +215,10 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Optional:    true,
 						Description: "",
 					},
-					"team_invitees": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"team_invitees": schema.ListAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.StringType,
 						Description: "",
 					},
 				},

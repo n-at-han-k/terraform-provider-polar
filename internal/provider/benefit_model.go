@@ -147,25 +147,13 @@ func (m *BenefitGithubRepositoryPropertiesModel) FromClientModel(c *client.Benef
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type BenefitDownloadablesPropertiesModel struct {
-	Archived jsontypes.Normalized `tfsdk:"archived"`
-	Files jsontypes.Normalized `tfsdk:"files"`
+	Archived map[string]bool `tfsdk:"archived"`
+	Files []string `tfsdk:"files"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *BenefitDownloadablesPropertiesModel) ToClientModel() (*client.BenefitDownloadablesCreateProperties, error) {
 	out := &client.BenefitDownloadablesCreateProperties{}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Archived.IsNull() && !m.Archived.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Archived.ValueString()), &out.Archived); err != nil {
-			return out, fmt.Errorf("archived: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Files.IsNull() && !m.Files.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Files.ValueString()), &out.Files); err != nil {
-			return out, fmt.Errorf("files: %w", err)
-		}
-	}
 	return out, nil
 }
 
@@ -176,18 +164,6 @@ func (m *BenefitDownloadablesPropertiesModel) ToClientModel() (*client.BenefitDo
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitDownloadablesPropertiesModel) FromClientModel(c *client.BenefitDownloadablesCreateProperties) {
-	if encoded, err := json.Marshal(c.Archived); err == nil {
-		if m.Archived.IsNull() || m.Archived.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Archived.ValueString()) {
-			m.Archived = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.Files); err == nil {
-		if m.Files.IsNull() || m.Files.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Files.ValueString()) {
-			m.Files = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
 }
 // BenefitLicenseKeysPropertiesModel is one `license_keys_properties` block.
 //
@@ -279,7 +255,7 @@ type BenefitSlackSharedChannelPropertiesModel struct {
 	Private types.Bool `tfsdk:"private"`
 	WelcomeMessage types.String `tfsdk:"welcome_message"`
 	ArchiveOnRevoke types.Bool `tfsdk:"archive_on_revoke"`
-	TeamInvitees jsontypes.Normalized `tfsdk:"team_invitees"`
+	TeamInvitees []string `tfsdk:"team_invitees"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -301,12 +277,6 @@ func (m *BenefitSlackSharedChannelPropertiesModel) ToClientModel() (*client.Bene
 	if !m.ArchiveOnRevoke.IsNull() && !m.ArchiveOnRevoke.IsUnknown() {
 		ArchiveOnRevoke := m.ArchiveOnRevoke.ValueBool()
 		out.ArchiveOnRevoke = &ArchiveOnRevoke
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.TeamInvitees.IsNull() && !m.TeamInvitees.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.TeamInvitees.ValueString()), &out.TeamInvitees); err != nil {
-			return out, fmt.Errorf("team_invitees: %w", err)
-		}
 	}
 	return out, nil
 }
@@ -330,12 +300,6 @@ func (m *BenefitSlackSharedChannelPropertiesModel) FromClientModel(c *client.Ben
 		m.ArchiveOnRevoke = types.BoolValue(*c.ArchiveOnRevoke)
 	} else {
 		m.ArchiveOnRevoke = types.BoolNull()
-	}
-	if encoded, err := json.Marshal(c.TeamInvitees); err == nil {
-		if m.TeamInvitees.IsNull() || m.TeamInvitees.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.TeamInvitees.ValueString()) {
-			m.TeamInvitees = jsontypes.NewNormalizedValue(string(encoded))
-		}
 	}
 }
 
@@ -443,6 +407,9 @@ func (m *BenefitModel) ToUpdateModel() (*client.BenefitUpdate, error) {
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		out.Visibility = m.Visibility.ValueString()
 	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
 	return out, nil
 }
 
@@ -451,18 +418,13 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Description = types.StringValue(c.Description)
 	m.OrganizationId = types.StringValue(c.OrganizationId)

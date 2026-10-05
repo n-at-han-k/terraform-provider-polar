@@ -4,7 +4,7 @@ package client
 
 // OrderProduct - OrderProduct struct
 type OrderProduct struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
 	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`

@@ -1,0 +1,813 @@
+{
+  "version": 1,
+  "provider": {
+    "name": "polar",
+    "address": "ghcr.io/n-at-han-k/polar",
+    "version": "1.0.0"
+  },
+  "document": {
+    "versionPrefix": "/v1",
+    "excludePrefixes": [
+      "/v1/customer-portal"
+    ]
+  },
+  "resources": {
+    "include": [
+      "/v1/benefits/",
+      "/v1/checkout-links/",
+      "/v1/checkouts/",
+      "/v1/custom-fields/",
+      "/v1/customers/",
+      "/v1/customers/external/{external_id}/members",
+      "/v1/customers/{id}/members",
+      "/v1/discounts/",
+      "/v1/meters/",
+      "/v1/metrics/dashboards",
+      "/v1/orders/",
+      "/v1/organizations/",
+      "/v1/products/",
+      "/v1/subscriptions/",
+      "/v1/webhooks/endpoints"
+    ]
+  },
+  "attributes": {
+    "nestedMaxDepth": 3,
+    "json": [
+      "authorization_parameters",
+      "client_context",
+      "ctx",
+      "detail",
+      "processor_metadata"
+    ]
+  },
+  "unions": {
+    "AssistantBlockPart.block": {
+      "variants": {
+        "TextBlock": "text",
+        "MetricChartBlock": "metric_chart",
+        "InsightCardsBlock": "insight_cards",
+        "EntityListBlock": "entity_list",
+        "DataTableBlock": "data_table",
+        "CustomerCardBlock": "customer_card"
+      },
+      "discriminator": "type"
+    },
+    "AuthenticationSession.available_factors.items": {
+      "variants": {
+        "BaseFactor": "apple",
+        "SSOFactor": "sso"
+      },
+      "discriminator": "type"
+    },
+    "Benefit": {
+      "variants": {
+        "BenefitCustom": "custom",
+        "BenefitDiscord": "discord",
+        "BenefitGitHubRepository": "github_repository",
+        "BenefitDownloadables": "downloadables",
+        "BenefitLicenseKeys": "license_keys",
+        "BenefitMeterCredit": "meter_credit",
+        "BenefitFeatureFlag": "feature_flag",
+        "BenefitSlackSharedChannel": "slack_shared_channel"
+      },
+      "discriminator": "type"
+    },
+    "BenefitCreate": {
+      "variants": {
+        "BenefitCustomCreate": "custom",
+        "BenefitDiscordCreate": "discord",
+        "BenefitGitHubRepositoryCreate": "github_repository",
+        "BenefitDownloadablesCreate": "downloadables",
+        "BenefitLicenseKeysCreate": "license_keys",
+        "BenefitMeterCreditCreate": "meter_credit",
+        "BenefitFeatureFlagCreate": "feature_flag",
+        "BenefitSlackSharedChannelCreate": "slack_shared_channel"
+      },
+      "discriminator": "type"
+    },
+    "BenefitGrant.properties": {
+      "variants": {
+        "BenefitGrantDiscordProperties": "benefit_grant_discord_properties",
+        "BenefitGrantGitHubRepositoryProperties": "benefit_grant_git_hub_repository_properties",
+        "BenefitGrantDownloadablesProperties": "benefit_grant_downloadables_properties",
+        "BenefitGrantLicenseKeysProperties": "benefit_grant_license_keys_properties",
+        "BenefitGrantCustomProperties": "benefit_grant_custom_properties",
+        "BenefitGrantFeatureFlagProperties": "benefit_grant_feature_flag_properties",
+        "BenefitGrantSlackSharedChannelProperties": "benefit_grant_slack_shared_channel_properties"
+      }
+    },
+    "BenefitGrantWebhook": {
+      "variants": {
+        "BenefitGrantDiscordWebhook": "benefit_grant_discord_webhook",
+        "BenefitGrantCustomWebhook": "benefit_grant_custom_webhook",
+        "BenefitGrantGitHubRepositoryWebhook": "benefit_grant_git_hub_repository_webhook",
+        "BenefitGrantDownloadablesWebhook": "benefit_grant_downloadables_webhook",
+        "BenefitGrantLicenseKeysWebhook": "benefit_grant_license_keys_webhook",
+        "BenefitGrantMeterCreditWebhook": "benefit_grant_meter_credit_webhook",
+        "BenefitGrantFeatureFlagWebhook": "benefit_grant_feature_flag_webhook",
+        "BenefitGrantSlackSharedChannelWebhook": "benefit_grant_slack_shared_channel_webhook"
+      }
+    },
+    "CheckoutForbiddenError": {
+      "variants": {
+        "AlreadyActiveSubscriptionError": "already_active_subscription_error",
+        "NotOpenCheckout": "not_open_checkout",
+        "PaymentNotReady": "payment_not_ready",
+        "TrialAlreadyRedeemed": "trial_already_redeemed",
+        "DiscountRedemptionLimitReached": "discount_redemption_limit_reached"
+      }
+    },
+    "CheckoutLinkCreate": {
+      "variants": {
+        "CheckoutLinkCreateProductPrice": "checkout_link_create_product_price",
+        "CheckoutLinkCreateProduct": "checkout_link_create_product",
+        "CheckoutLinkCreateProducts": "checkout_link_create_products"
+      }
+    },
+    "CompassThreadMessageSchema.parts.items": {
+      "variants": {
+        "AssistantTextPart": "text",
+        "AssistantBlockPart": "block"
+      },
+      "discriminator": "kind"
+    },
+    "CostMetadata-Input.amount": {
+      "widen": "string"
+    },
+    "CustomField": {
+      "variants": {
+        "CustomFieldText": "text",
+        "CustomFieldNumber": "number",
+        "CustomFieldDate": "date",
+        "CustomFieldCheckbox": "checkbox",
+        "CustomFieldSelect": "select"
+      },
+      "discriminator": "type"
+    },
+    "CustomFieldCreate": {
+      "variants": {
+        "CustomFieldCreateText": "text",
+        "CustomFieldCreateNumber": "number",
+        "CustomFieldCreateDate": "date",
+        "CustomFieldCreateCheckbox": "checkbox",
+        "CustomFieldCreateSelect": "select"
+      },
+      "discriminator": "type",
+      "conflicts": "merge"
+    },
+    "CustomFieldUpdate": {
+      "variants": {
+        "CustomFieldUpdateText": "text",
+        "CustomFieldUpdateNumber": "number",
+        "CustomFieldUpdateDate": "date",
+        "CustomFieldUpdateCheckbox": "checkbox",
+        "CustomFieldUpdateSelect": "select"
+      },
+      "discriminator": "type",
+      "conflicts": "merge"
+    },
+    "Customer": {
+      "variants": {
+        "CustomerIndividual": "individual",
+        "CustomerTeam": "team"
+      },
+      "discriminator": "type"
+    },
+    "CustomerBenefitGrant": {
+      "variants": {
+        "CustomerBenefitGrantDiscord": "customer_benefit_grant_discord",
+        "CustomerBenefitGrantGitHubRepository": "customer_benefit_grant_git_hub_repository",
+        "CustomerBenefitGrantDownloadables": "customer_benefit_grant_downloadables",
+        "CustomerBenefitGrantLicenseKeys": "customer_benefit_grant_license_keys",
+        "CustomerBenefitGrantCustom": "customer_benefit_grant_custom",
+        "CustomerBenefitGrantMeterCredit": "customer_benefit_grant_meter_credit",
+        "CustomerBenefitGrantFeatureFlag": "customer_benefit_grant_feature_flag",
+        "CustomerBenefitGrantSlackSharedChannel": "customer_benefit_grant_slack_shared_channel"
+      }
+    },
+    "CustomerBenefitGrantUpdate": {
+      "variants": {
+        "CustomerBenefitGrantDiscordUpdate": "discord",
+        "CustomerBenefitGrantGitHubRepositoryUpdate": "github_repository",
+        "CustomerBenefitGrantDownloadablesUpdate": "downloadables",
+        "CustomerBenefitGrantLicenseKeysUpdate": "license_keys",
+        "CustomerBenefitGrantCustomUpdate": "custom",
+        "CustomerBenefitGrantMeterCreditUpdate": "meter_credit",
+        "CustomerBenefitGrantFeatureFlagUpdate": "feature_flag",
+        "CustomerBenefitGrantSlackSharedChannelUpdate": "slack_shared_channel"
+      },
+      "discriminator": "benefit_type"
+    },
+    "CustomerCreate": {
+      "variants": {
+        "CustomerIndividualCreate": "customer_individual",
+        "CustomerTeamCreate": "customer_team"
+      }
+    },
+    "CustomerPaymentMethod": {
+      "variants": {
+        "PaymentMethodCard": "payment_method_card",
+        "PaymentMethodGeneric": "payment_method_generic"
+      }
+    },
+    "CustomerPaymentMethodCreateResponse": {
+      "variants": {
+        "CustomerPaymentMethodCreateSucceededResponse": "succeeded",
+        "CustomerPaymentMethodCreateRequiresActionResponse": "requires_action"
+      },
+      "discriminator": "status"
+    },
+    "CustomerState": {
+      "variants": {
+        "CustomerStateIndividual": "individual",
+        "CustomerStateTeam": "team"
+      },
+      "discriminator": "type"
+    },
+    "CustomerStateBenefitGrant.properties": {
+      "variants": {
+        "BenefitGrantDiscordProperties": "benefit_grant_discord_properties",
+        "BenefitGrantGitHubRepositoryProperties": "benefit_grant_git_hub_repository_properties",
+        "BenefitGrantDownloadablesProperties": "benefit_grant_downloadables_properties",
+        "BenefitGrantLicenseKeysProperties": "benefit_grant_license_keys_properties",
+        "BenefitGrantCustomProperties": "benefit_grant_custom_properties",
+        "BenefitGrantFeatureFlagProperties": "benefit_grant_feature_flag_properties",
+        "BenefitGrantSlackSharedChannelProperties": "benefit_grant_slack_shared_channel_properties"
+      }
+    },
+    "CustomerSubscriptionChangePreview": {
+      "variants": {
+        "CustomerSubscriptionChangePreviewProduct": "customer_subscription_change_preview_product",
+        "CustomerSubscriptionChangePreviewSeats": "customer_subscription_change_preview_seats"
+      }
+    },
+    "CustomerSubscriptionUpdate": {
+      "variants": {
+        "CustomerSubscriptionUpdateProduct": "customer_subscription_update_product",
+        "CustomerSubscriptionUpdateSeats": "customer_subscription_update_seats",
+        "CustomerSubscriptionCancel": "customer_subscription_cancel",
+        "CustomerSubscriptionPause": "customer_subscription_pause",
+        "CustomerSubscriptionResume": "customer_subscription_resume",
+        "CustomerSubscriptionUpdateClear": "customer_subscription_update_clear"
+      }
+    },
+    "Discount": {
+      "variants": {
+        "DiscountFixedOnceForeverDuration": "discount_fixed_once_forever_duration",
+        "DiscountFixedRepeatDuration": "discount_fixed_repeat_duration",
+        "DiscountPercentageOnceForeverDuration": "discount_percentage_once_forever_duration",
+        "DiscountPercentageRepeatDuration": "discount_percentage_repeat_duration"
+      }
+    },
+    "DiscountCreate": {
+      "variants": {
+        "DiscountFixedCreate": "fixed",
+        "DiscountPercentageCreate": "percentage"
+      },
+      "discriminator": "type"
+    },
+    "EventsIngest.events.items": {
+      "variants": {
+        "EventCreateCustomer": "event_create_customer",
+        "EventCreateExternalCustomer": "event_create_external_customer"
+      }
+    },
+    "FileCreate": {
+      "variants": {
+        "DownloadableFileCreate": "downloadable",
+        "ProductMediaFileCreate": "product_media",
+        "OrganizationAvatarFileCreate": "organization_avatar",
+        "SupportCaseAttachmentFileCreate": "support_case_attachment"
+      },
+      "discriminator": "service"
+    },
+    "FileRead": {
+      "variants": {
+        "DownloadableFileRead": "downloadable",
+        "ProductMediaFileRead": "product_media",
+        "OrganizationAvatarFileRead": "organization_avatar",
+        "SupportCaseAttachmentFileRead": "support_case_attachment"
+      },
+      "discriminator": "service"
+    },
+    "Filter.clauses.items": {
+      "variants": {
+        "FilterClause": "filter_clause"
+      },
+      "drop": [
+        "Filter"
+      ]
+    },
+    "FilterClause.value": {
+      "widen": "string"
+    },
+    "LegacyRecurringProductPrice": {
+      "variants": {
+        "LegacyRecurringProductPriceFixed": "fixed",
+        "LegacyRecurringProductPriceCustom": "custom"
+      },
+      "discriminator": "amount_type"
+    },
+    "ListResource__.items.items": {
+      "variants": {
+        "OrganizationPaymentMethodCard": "organization_payment_method_card",
+        "OrganizationPaymentMethodGeneric": "organization_payment_method_generic"
+      }
+    },
+    "Meter.aggregation": {
+      "variants": {
+        "CountAggregation": "count",
+        "PropertyAggregation": "avg",
+        "UniqueAggregation": "unique"
+      },
+      "discriminator": "func"
+    },
+    "MeterCreate.aggregation": {
+      "variants": {
+        "CountAggregation": "count",
+        "PropertyAggregation": "avg",
+        "UniqueAggregation": "unique"
+      },
+      "discriminator": "func"
+    },
+    "MetricPeriod.active_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.committed_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.trial_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.committed_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.trial_committed_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.average_revenue_per_user": {
+      "widen": "number"
+    },
+    "MetricPeriod.checkouts": {
+      "widen": "number"
+    },
+    "MetricPeriod.succeeded_checkouts": {
+      "widen": "number"
+    },
+    "MetricPeriod.churned_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.churn_rate": {
+      "widen": "number"
+    },
+    "MetricPeriod.seats_total": {
+      "widen": "number"
+    },
+    "MetricPeriod.seats_claimed": {
+      "widen": "number"
+    },
+    "MetricPeriod.seats_pending": {
+      "widen": "number"
+    },
+    "MetricPeriod.seat_customers": {
+      "widen": "number"
+    },
+    "MetricPeriod.new_seat_customers": {
+      "widen": "number"
+    },
+    "MetricPeriod.churned_seat_customers": {
+      "widen": "number"
+    },
+    "MetricPeriod.orders": {
+      "widen": "number"
+    },
+    "MetricPeriod.revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.net_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.cumulative_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.net_cumulative_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.costs": {
+      "widen": "number"
+    },
+    "MetricPeriod.cumulative_costs": {
+      "widen": "number"
+    },
+    "MetricPeriod.average_order_value": {
+      "widen": "number"
+    },
+    "MetricPeriod.net_average_order_value": {
+      "widen": "number"
+    },
+    "MetricPeriod.cost_per_user": {
+      "widen": "number"
+    },
+    "MetricPeriod.active_user_by_event": {
+      "widen": "number"
+    },
+    "MetricPeriod.one_time_products": {
+      "widen": "number"
+    },
+    "MetricPeriod.one_time_products_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.one_time_products_net_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.new_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.new_subscriptions_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.new_subscriptions_net_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.renewed_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.renewed_subscriptions_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.renewed_subscriptions_net_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_customer_service": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_low_quality": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_missing_features": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_switched_service": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_too_complex": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_too_expensive": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_unused": {
+      "widen": "number"
+    },
+    "MetricPeriod.canceled_subscriptions_other": {
+      "widen": "number"
+    },
+    "MetricPeriod.annual_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.committed_annual_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricPeriod.checkouts_conversion": {
+      "widen": "number"
+    },
+    "MetricPeriod.ltv": {
+      "widen": "number"
+    },
+    "MetricPeriod.gross_margin": {
+      "widen": "number"
+    },
+    "MetricPeriod.gross_margin_percentage": {
+      "widen": "number"
+    },
+    "MetricPeriod.cashflow": {
+      "widen": "number"
+    },
+    "MetricPeriod.average_seats_per_customer": {
+      "widen": "number"
+    },
+    "MetricPeriod.seat_utilization_rate": {
+      "widen": "number"
+    },
+    "MetricsTotals.active_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.committed_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.trial_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.committed_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.trial_committed_monthly_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.average_revenue_per_user": {
+      "widen": "number"
+    },
+    "MetricsTotals.checkouts": {
+      "widen": "number"
+    },
+    "MetricsTotals.succeeded_checkouts": {
+      "widen": "number"
+    },
+    "MetricsTotals.churned_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.churn_rate": {
+      "widen": "number"
+    },
+    "MetricsTotals.seats_total": {
+      "widen": "number"
+    },
+    "MetricsTotals.seats_claimed": {
+      "widen": "number"
+    },
+    "MetricsTotals.seats_pending": {
+      "widen": "number"
+    },
+    "MetricsTotals.seat_customers": {
+      "widen": "number"
+    },
+    "MetricsTotals.new_seat_customers": {
+      "widen": "number"
+    },
+    "MetricsTotals.churned_seat_customers": {
+      "widen": "number"
+    },
+    "MetricsTotals.orders": {
+      "widen": "number"
+    },
+    "MetricsTotals.revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.net_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.cumulative_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.net_cumulative_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.costs": {
+      "widen": "number"
+    },
+    "MetricsTotals.cumulative_costs": {
+      "widen": "number"
+    },
+    "MetricsTotals.average_order_value": {
+      "widen": "number"
+    },
+    "MetricsTotals.net_average_order_value": {
+      "widen": "number"
+    },
+    "MetricsTotals.cost_per_user": {
+      "widen": "number"
+    },
+    "MetricsTotals.active_user_by_event": {
+      "widen": "number"
+    },
+    "MetricsTotals.one_time_products": {
+      "widen": "number"
+    },
+    "MetricsTotals.one_time_products_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.one_time_products_net_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.new_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.new_subscriptions_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.new_subscriptions_net_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.renewed_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.renewed_subscriptions_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.renewed_subscriptions_net_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_customer_service": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_low_quality": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_missing_features": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_switched_service": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_too_complex": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_too_expensive": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_unused": {
+      "widen": "number"
+    },
+    "MetricsTotals.canceled_subscriptions_other": {
+      "widen": "number"
+    },
+    "MetricsTotals.annual_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.committed_annual_recurring_revenue": {
+      "widen": "number"
+    },
+    "MetricsTotals.checkouts_conversion": {
+      "widen": "number"
+    },
+    "MetricsTotals.ltv": {
+      "widen": "number"
+    },
+    "MetricsTotals.gross_margin": {
+      "widen": "number"
+    },
+    "MetricsTotals.gross_margin_percentage": {
+      "widen": "number"
+    },
+    "MetricsTotals.cashflow": {
+      "widen": "number"
+    },
+    "MetricsTotals.average_seats_per_customer": {
+      "widen": "number"
+    },
+    "MetricsTotals.seat_utilization_rate": {
+      "widen": "number"
+    },
+    "NotificationsList.notifications.items": {
+      "variants": {
+        "MaintainerNewPaidSubscriptionNotification": "maintainer_new_paid_subscription_notification",
+        "MaintainerNewProductSaleNotification": "maintainer_new_product_sale_notification",
+        "MaintainerSubscriptionRenewalNotification": "maintainer_subscription_renewal_notification",
+        "MaintainerAccountCreditsGrantedNotification": "maintainer_account_credits_granted_notification",
+        "MaintainerFileFlaggedMaliciousNotification": "maintainer_file_flagged_malicious_notification"
+      },
+      "discriminator": "type"
+    },
+    "OrganizationSSOConnectionCreate.configuration": {
+      "variants": {
+        "OIDCConfigurationClientSecret": "client_secret",
+        "OIDCConfigurationPrivateKeyJWT": "private_key_jwt"
+      },
+      "discriminator": "auth_method"
+    },
+    "Payment": {
+      "variants": {
+        "CardPayment": "card_payment",
+        "GenericPayment": "generic_payment"
+      }
+    },
+    "PaymentMethod": {
+      "variants": {
+        "CustomerPaymentMethodCard": "customer_payment_method_card",
+        "CustomerPaymentMethodGeneric": "customer_payment_method_generic"
+      }
+    },
+    "ProductCreate": {
+      "variants": {
+        "ProductCreateRecurring": "product_create_recurring",
+        "ProductCreateOneTime": "product_create_one_time"
+      }
+    },
+    "ProductCreateOneTime.prices.items": {
+      "variants": {
+        "ProductPriceFixedCreate": "fixed",
+        "ProductPriceCustomCreate": "custom",
+        "ProductPriceSeatBasedCreate": "seat_based",
+        "ProductPriceMeteredUnitCreate": "metered_unit"
+      },
+      "discriminator": "amount_type"
+    },
+    "ProductCreateRecurring.prices.items": {
+      "variants": {
+        "ProductPriceFixedCreate": "fixed",
+        "ProductPriceCustomCreate": "custom",
+        "ProductPriceSeatBasedCreate": "seat_based",
+        "ProductPriceMeteredUnitCreate": "metered_unit"
+      },
+      "discriminator": "amount_type"
+    },
+    "ProductPrice": {
+      "variants": {
+        "ProductPriceFixed": "fixed",
+        "ProductPriceCustom": "custom",
+        "ProductPriceSeatBased": "seat_based",
+        "ProductPriceMeteredUnit": "metered_unit"
+      },
+      "discriminator": "amount_type"
+    },
+    "ProductPriceMeteredUnitCreate.unit_amount": {
+      "widen": "string"
+    },
+    "SearchResults.results.items": {
+      "variants": {
+        "SearchResultProduct": "product",
+        "SearchResultCustomer": "customer",
+        "SearchResultOrder": "order",
+        "SearchResultSubscription": "subscription"
+      },
+      "discriminator": "type"
+    },
+    "SubscriptionChangePreview": {
+      "variants": {
+        "SubscriptionChangePreviewProduct": "subscription_change_preview_product",
+        "SubscriptionChangePreviewSeats": "subscription_change_preview_seats"
+      }
+    },
+    "SubscriptionUpdate": {
+      "variants": {
+        "SubscriptionUpdateBase": "subscription_update_base",
+        "SubscriptionUpdateSeats": "subscription_update_seats",
+        "SubscriptionUpdateBillingPeriod": "subscription_update_billing_period",
+        "SubscriptionCancel": "subscription_cancel",
+        "SubscriptionRevoke": "subscription_revoke",
+        "SubscriptionPause": "subscription_pause",
+        "SubscriptionResume": "subscription_resume",
+        "SubscriptionUpdateClear": "subscription_update_clear"
+      }
+    },
+    "SupportCaseListItem": {
+      "variants": {
+        "DisputeSupportCaseListItem": "dispute",
+        "ReviewAppealSupportCaseListItem": "review_appeal"
+      },
+      "discriminator": "type"
+    },
+    "SupportCaseMessageCreate": {
+      "variants": {
+        "ReviewAppealSupportCaseMessageCreate": "review_appeal",
+        "DisputeSupportCaseMessageCreate": "dispute"
+      },
+      "discriminator": "type"
+    },
+    "SystemEvent": {
+      "variants": {
+        "MeterCreditEvent": "meter_credited",
+        "MeterResetEvent": "meter_reset",
+        "BenefitGrantedEvent": "benefit_granted",
+        "BenefitCycledEvent": "benefit_cycled",
+        "BenefitUpdatedEvent": "benefit_updated",
+        "BenefitRevokedEvent": "benefit_revoked",
+        "SubscriptionCreatedEvent": "subscription_created",
+        "SubscriptionUpdatedEvent": "subscription_updated",
+        "SubscriptionCycledEvent": "subscription_cycled",
+        "SubscriptionCanceledEvent": "subscription_canceled",
+        "SubscriptionRevokedEvent": "subscription_revoked",
+        "SubscriptionPastDueEvent": "subscription_past_due",
+        "SubscriptionReactivatedEvent": "subscription_reactivated",
+        "SubscriptionReinstatedEvent": "subscription_reinstated",
+        "SubscriptionPausedEvent": "subscription_paused",
+        "SubscriptionResumedEvent": "subscription_resumed",
+        "SubscriptionUncanceledEvent": "subscription_uncanceled",
+        "SubscriptionProductUpdatedEvent": "subscription_product_updated",
+        "SubscriptionSeatsUpdatedEvent": "subscription_seats_updated",
+        "SubscriptionBillingPeriodUpdatedEvent": "subscription_billing_period_updated",
+        "SubscriptionUpdateClearedEvent": "subscription_update_cleared",
+        "OrderPaidEvent": "order_paid",
+        "OrderRefundedEvent": "order_refunded",
+        "OrderVoidedEvent": "order_voided",
+        "OrderUnvoidedEvent": "order_unvoided",
+        "CheckoutCreatedEvent": "checkout_created",
+        "CustomerCreatedEvent": "customer_created",
+        "CustomerUpdatedEvent": "customer_updated",
+        "CustomerDeletedEvent": "customer_deleted",
+        "BalanceOrderEvent": "balance_order",
+        "BalanceCreditOrderEvent": "balance_credit_order",
+        "BalanceRefundEvent": "balance_refund",
+        "BalanceRefundReversalEvent": "balance_refund_reversal",
+        "BalanceDisputeEvent": "balance_dispute",
+        "BalanceDisputeReversalEvent": "balance_dispute_reversal"
+      },
+      "discriminator": "name"
+    },
+    "ValidationError.loc.items": {
+      "widen": "string"
+    }
+  }
+}

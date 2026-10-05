@@ -79,6 +79,26 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
+						"fixed_amount_type": schema.StringAttribute{
+							Computed:    true,
+							Optional:    true,
+							Description: "",
+						},
+						"custom_amount_type": schema.StringAttribute{
+							Computed:    true,
+							Optional:    true,
+							Description: "",
+						},
+						"seat_based_amount_type": schema.StringAttribute{
+							Computed:    true,
+							Optional:    true,
+							Description: "",
+						},
+						"metered_unit_amount_type": schema.StringAttribute{
+							Computed:    true,
+							Optional:    true,
+							Description: "",
+						},
 						"price_currency": schema.StringAttribute{
 							Computed:    true,
 							Optional:    true,
@@ -122,16 +142,12 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						"unit_amount": schema.StringAttribute{
 							Computed:    true,
 							Optional:    true,
-							Description: "The price per unit in cents. Supports up to 12 decimal places.",
+							Description: "",
 						},
 						"cap_amount": schema.Int64Attribute{
 							Computed:    true,
 							Optional:    true,
 							Description: "Optional maximum amount in cents that can be charged, regardless of the number of units consumed.",
-						},
-						"amount_type": schema.StringAttribute{
-							Required:    true,
-							Description: "Which variant this is. Selects which of the optional blocks above applies.",
 						},
 					},
 				},

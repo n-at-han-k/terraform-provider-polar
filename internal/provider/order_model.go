@@ -86,18 +86,13 @@ func (m *OrderModel) FromClientModel(c *client.Order) {
 			m.CustomFieldData = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes

@@ -4,11 +4,11 @@ package client
 
 // ProductCreate - ProductCreate struct
 type ProductCreate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Name string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
-	Prices []ProductCreatePricesItem `json:"prices,omitempty"`
+	Prices []ProductCreateRecurringPrices `json:"prices,omitempty"`
 	Medias []string `json:"medias,omitempty"`
 	AttachedCustomFields []AttachedCustomFieldCreate `json:"attached_custom_fields,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`

@@ -101,7 +101,6 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"amounts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Map of currency to fixed amount to discount from the total.",
 			},

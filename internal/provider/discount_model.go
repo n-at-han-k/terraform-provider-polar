@@ -29,7 +29,7 @@ type DiscountModel struct {
 	DurationInMonths types.Int64 `tfsdk:"duration_in_months"`
 	Amount types.Int64 `tfsdk:"amount"`
 	Currency types.String `tfsdk:"currency"`
-	Amounts jsontypes.Normalized `tfsdk:"amounts"`
+	Amounts map[string]int32 `tfsdk:"amounts"`
 	BasisPoints types.Int64 `tfsdk:"basis_points"`
 	Type types.String `tfsdk:"type"`
 }
@@ -87,14 +87,7 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
 		out.Currency = m.Currency.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
-			return out, fmt.Errorf("amounts: %w", err)
-		}
-	}
+	out.Amounts = m.Amounts
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
 		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
 	}
@@ -154,11 +147,7 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
 		out.Currency = m.Currency.ValueString()
 	}
-	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
-			return out, fmt.Errorf("amounts: %w", err)
-		}
-	}
+	out.Amounts = m.Amounts
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
 		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
 	}
@@ -173,18 +162,13 @@ func (m *DiscountModel) FromClientModel(c *client.Discount) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Name = types.StringValue(c.Name)
 	m.Code = types.StringValue(c.Code)
@@ -205,19 +189,7 @@ func (m *DiscountModel) FromClientModel(c *client.Discount) {
 	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
 	m.Amount = types.Int64Value(int64(c.Amount))
 	m.Currency = types.StringValue(c.Currency)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Amounts); err == nil {
-		if m.Amounts.IsNull() || m.Amounts.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Amounts.ValueString()) {
-			m.Amounts = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
+	m.Amounts = c.Amounts
 	m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
 	m.Type = types.StringValue(c.Type)
 }

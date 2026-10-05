@@ -4,7 +4,6 @@ package client
 
 // Response403SubscriptionsUpdate - Response403SubscriptionsUpdate struct
 type Response403SubscriptionsUpdate struct {
-	AlreadyCanceledSubscriptionError string `json:"already_canceled_subscription_error,omitempty"`
-	InactiveSubscriptionError string `json:"inactive_subscription_error,omitempty"`
+	Error string `json:"error,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }

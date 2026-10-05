@@ -77,12 +77,4 @@ func (m *SubscriptionModel) FromClientModel(c *client.Subscription) {
 	}
 	m.ProductId = types.StringValue(c.ProductId)
 	m.CustomerId = types.StringValue(c.CustomerId)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.ExternalCustomerId.IsUnknown() {
-		m.ExternalCustomerId = types.StringNull()
-	}
 }

@@ -4,7 +4,7 @@ package client
 
 // CustomerCreate - CustomerCreate struct
 type CustomerCreate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	ExternalId string `json:"external_id,omitempty"`
 	Name string `json:"name,omitempty"`
 	BillingAddress *AddressInput `json:"billing_address,omitempty"`

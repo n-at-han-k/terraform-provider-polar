@@ -66,13 +66,11 @@ func (r *SubscriptionResource) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "The ID of the subscribed product.",
 			},
 			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "The ID of the subscribed customer.",
 			},
 			"external_customer_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "The ID of the customer in your system to create the subscription for. It must already exist in Polar.",
 			},
 		},

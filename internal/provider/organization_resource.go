@@ -16,7 +16,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -71,14 +70,13 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 			"legal_entity": schema.SingleNestedAttribute{
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
-					"registered_name": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
 					"type": schema.StringAttribute{
 						Required:    true,
-						Description: "Which variant this is. Selects which of the optional blocks above applies.",
+						Description: "",
+					},
+					"registered_name": schema.StringAttribute{
+						Required:    true,
+						Description: "",
 					},
 				},
 				Description: "",
@@ -123,16 +121,16 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 						Optional:    true,
 						Description: "Description of digital products being sold.",
 					},
-					"selling_categories": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"selling_categories": schema.ListAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.StringType,
 						Description: "Categories of products being sold.",
 					},
-					"pricing_models": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"pricing_models": schema.ListAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.StringType,
 						Description: "Pricing models used by the organization.",
 					},
 					"intended_use": schema.StringAttribute{
@@ -140,10 +138,10 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 						Optional:    true,
 						Description: "How the organization will integrate and use Polar.",
 					},
-					"customer_acquisition": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"customer_acquisition": schema.ListAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.StringType,
 						Description: "Main customer acquisition channels.",
 					},
 					"future_annual_revenue": schema.Int64Attribute{
@@ -192,10 +190,10 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 						Optional:    true,
 						Description: "If this organization has checkout localization enabled",
 					},
-					"overview_metrics": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"overview_metrics": schema.ListAttribute{
 						Computed:    true,
 						Optional:    true,
+						ElementType: types.StringType,
 						Description: "Ordered list of metric slugs shown on the dashboard overview.",
 					},
 				},

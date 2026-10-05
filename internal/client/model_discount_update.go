@@ -4,7 +4,7 @@ package client
 
 // DiscountUpdate - Schema to update a discount.
 type DiscountUpdate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Name string `json:"name,omitempty"`
 	Code string `json:"code,omitempty"`
 	StartsAt string `json:"starts_at,omitempty"`

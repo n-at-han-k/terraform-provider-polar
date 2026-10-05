@@ -113,14 +113,25 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			"aggregation": schema.SingleNestedAttribute{
 				Required:    true,
 				Attributes: map[string]schema.Attribute{
-					"property": schema.StringAttribute{
+					"count_func": schema.StringAttribute{
 						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
-					"func": schema.StringAttribute{
-						Required:    true,
-						Description: "Which variant this is. Selects which of the optional blocks above applies.",
+					"avg_func": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"unique_func": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"property": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
 					},
 				},
 				Description: "",

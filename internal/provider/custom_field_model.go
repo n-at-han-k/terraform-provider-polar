@@ -20,21 +20,17 @@ type CustomFieldModel struct {
 	Slug types.String `tfsdk:"slug"`
 	Name types.String `tfsdk:"name"`
 	OrganizationId types.String `tfsdk:"organization_id"`
-	TextProperties *CustomFieldTextPropertiesModel `tfsdk:"text_properties"`
-	NumberProperties *CustomFieldNumberPropertiesModel `tfsdk:"number_properties"`
-	DateProperties *CustomFieldDatePropertiesModel `tfsdk:"date_properties"`
-	CheckboxProperties *CustomFieldCheckboxPropertiesModel `tfsdk:"checkbox_properties"`
-	SelectProperties *CustomFieldSelectPropertiesModel `tfsdk:"select_properties"`
+	Properties *CustomFieldPropertiesModel `tfsdk:"properties"`
 	Type types.String `tfsdk:"type"`
 }
 
-// CustomFieldTextPropertiesModel is one `text_properties` block.
+// CustomFieldPropertiesModel is one `properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
 // reflects over these, so a slice of them is a ListNestedAttribute and a
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
-type CustomFieldTextPropertiesModel struct {
+type CustomFieldPropertiesModel struct {
 	FormLabel types.String `tfsdk:"form_label"`
 	FormHelpText types.String `tfsdk:"form_help_text"`
 	FormPlaceholder types.String `tfsdk:"form_placeholder"`
@@ -44,7 +40,7 @@ type CustomFieldTextPropertiesModel struct {
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldTextPropertiesModel) ToClientModel() (*client.CustomFieldTextProperties, error) {
+func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldTextProperties, error) {
 	out := &client.CustomFieldTextProperties{}
 	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
 		out.FormLabel = m.FormLabel.ValueString()
@@ -74,7 +70,7 @@ func (m *CustomFieldTextPropertiesModel) ToClientModel() (*client.CustomFieldTex
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *CustomFieldTextPropertiesModel) FromClientModel(c *client.CustomFieldTextProperties) {
+func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldTextProperties) {
 	m.FormLabel = types.StringValue(c.FormLabel)
 	m.FormHelpText = types.StringValue(c.FormHelpText)
 	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
@@ -85,212 +81,6 @@ func (m *CustomFieldTextPropertiesModel) FromClientModel(c *client.CustomFieldTe
 	}
 	m.MinLength = types.Int64Value(int64(c.MinLength))
 	m.MaxLength = types.Int64Value(int64(c.MaxLength))
-}
-// CustomFieldNumberPropertiesModel is one `number_properties` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CustomFieldNumberPropertiesModel struct {
-	FormLabel types.String `tfsdk:"form_label"`
-	FormHelpText types.String `tfsdk:"form_help_text"`
-	FormPlaceholder types.String `tfsdk:"form_placeholder"`
-	Ge types.Int64 `tfsdk:"ge"`
-	Le types.Int64 `tfsdk:"le"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldNumberPropertiesModel) ToClientModel() (*client.CustomFieldNumberProperties, error) {
-	out := &client.CustomFieldNumberProperties{}
-	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
-		out.FormLabel = m.FormLabel.ValueString()
-	}
-	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
-		out.FormHelpText = m.FormHelpText.ValueString()
-	}
-	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
-		out.FormPlaceholder = m.FormPlaceholder.ValueString()
-	}
-	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
-		out.Ge = int32(m.Ge.ValueInt64())
-	}
-	if !m.Le.IsNull() && !m.Le.IsUnknown() {
-		out.Le = int32(m.Le.ValueInt64())
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CustomFieldNumberPropertiesModel) FromClientModel(c *client.CustomFieldNumberProperties) {
-	m.FormLabel = types.StringValue(c.FormLabel)
-	m.FormHelpText = types.StringValue(c.FormHelpText)
-	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
-	m.Ge = types.Int64Value(int64(c.Ge))
-	m.Le = types.Int64Value(int64(c.Le))
-}
-// CustomFieldDatePropertiesModel is one `date_properties` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CustomFieldDatePropertiesModel struct {
-	FormLabel types.String `tfsdk:"form_label"`
-	FormHelpText types.String `tfsdk:"form_help_text"`
-	FormPlaceholder types.String `tfsdk:"form_placeholder"`
-	Ge types.Int64 `tfsdk:"ge"`
-	Le types.Int64 `tfsdk:"le"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldDatePropertiesModel) ToClientModel() (*client.CustomFieldDateProperties, error) {
-	out := &client.CustomFieldDateProperties{}
-	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
-		out.FormLabel = m.FormLabel.ValueString()
-	}
-	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
-		out.FormHelpText = m.FormHelpText.ValueString()
-	}
-	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
-		out.FormPlaceholder = m.FormPlaceholder.ValueString()
-	}
-	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
-		out.Ge = int32(m.Ge.ValueInt64())
-	}
-	if !m.Le.IsNull() && !m.Le.IsUnknown() {
-		out.Le = int32(m.Le.ValueInt64())
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CustomFieldDatePropertiesModel) FromClientModel(c *client.CustomFieldDateProperties) {
-	m.FormLabel = types.StringValue(c.FormLabel)
-	m.FormHelpText = types.StringValue(c.FormHelpText)
-	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
-	m.Ge = types.Int64Value(int64(c.Ge))
-	m.Le = types.Int64Value(int64(c.Le))
-}
-// CustomFieldCheckboxPropertiesModel is one `checkbox_properties` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CustomFieldCheckboxPropertiesModel struct {
-	FormLabel types.String `tfsdk:"form_label"`
-	FormHelpText types.String `tfsdk:"form_help_text"`
-	FormPlaceholder types.String `tfsdk:"form_placeholder"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldCheckboxPropertiesModel) ToClientModel() (*client.CustomFieldCheckboxProperties, error) {
-	out := &client.CustomFieldCheckboxProperties{}
-	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
-		out.FormLabel = m.FormLabel.ValueString()
-	}
-	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
-		out.FormHelpText = m.FormHelpText.ValueString()
-	}
-	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
-		out.FormPlaceholder = m.FormPlaceholder.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CustomFieldCheckboxPropertiesModel) FromClientModel(c *client.CustomFieldCheckboxProperties) {
-	m.FormLabel = types.StringValue(c.FormLabel)
-	m.FormHelpText = types.StringValue(c.FormHelpText)
-	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
-}
-// CustomFieldSelectPropertiesModel is one `select_properties` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CustomFieldSelectPropertiesModel struct {
-	FormLabel types.String `tfsdk:"form_label"`
-	FormHelpText types.String `tfsdk:"form_help_text"`
-	FormPlaceholder types.String `tfsdk:"form_placeholder"`
-	Options []CustomFieldSelectPropertiesModelOptionsModel `tfsdk:"options"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldSelectPropertiesModel) ToClientModel() (*client.CustomFieldSelectProperties, error) {
-	out := &client.CustomFieldSelectProperties{}
-	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
-		out.FormLabel = m.FormLabel.ValueString()
-	}
-	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
-		out.FormHelpText = m.FormHelpText.ValueString()
-	}
-	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
-		out.FormPlaceholder = m.FormPlaceholder.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CustomFieldSelectPropertiesModel) FromClientModel(c *client.CustomFieldSelectProperties) {
-	m.FormLabel = types.StringValue(c.FormLabel)
-	m.FormHelpText = types.StringValue(c.FormHelpText)
-	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
-}
-// CustomFieldSelectPropertiesModelOptionsModel is one `options` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CustomFieldSelectPropertiesModelOptionsModel struct {
-	Value types.String `tfsdk:"value"`
-	Label types.String `tfsdk:"label"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldSelectPropertiesModelOptionsModel) ToClientModel() (*client.CustomFieldSelectOption, error) {
-	out := &client.CustomFieldSelectOption{}
-	if !m.Value.IsNull() && !m.Value.IsUnknown() {
-		out.Value = m.Value.ValueString()
-	}
-	if !m.Label.IsNull() && !m.Label.IsUnknown() {
-		out.Label = m.Label.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CustomFieldSelectPropertiesModelOptionsModel) FromClientModel(c *client.CustomFieldSelectOption) {
-	m.Value = types.StringValue(c.Value)
-	m.Label = types.StringValue(c.Label)
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -313,40 +103,12 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
 		out.OrganizationId = m.OrganizationId.ValueString()
 	}
-	if m.TextProperties != nil {
-		converted, err := m.TextProperties.ToClientModel()
+	if m.Properties != nil {
+		converted, err := m.Properties.ToClientModel()
 		if err != nil {
-			return out, fmt.Errorf("text_properties: %w", err)
+			return out, fmt.Errorf("properties: %w", err)
 		}
-		out.TextProperties = converted
-	}
-	if m.NumberProperties != nil {
-		converted, err := m.NumberProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("number_properties: %w", err)
-		}
-		out.NumberProperties = converted
-	}
-	if m.DateProperties != nil {
-		converted, err := m.DateProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("date_properties: %w", err)
-		}
-		out.DateProperties = converted
-	}
-	if m.CheckboxProperties != nil {
-		converted, err := m.CheckboxProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("checkbox_properties: %w", err)
-		}
-		out.CheckboxProperties = converted
-	}
-	if m.SelectProperties != nil {
-		converted, err := m.SelectProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("select_properties: %w", err)
-		}
-		out.SelectProperties = converted
+		out.Properties = converted
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -375,40 +137,12 @@ func (m *CustomFieldModel) ToUpdateModel() (*client.CustomFieldUpdate, error) {
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	if m.TextProperties != nil {
-		converted, err := m.TextProperties.ToClientModel()
+	if m.Properties != nil {
+		converted, err := m.Properties.ToClientModel()
 		if err != nil {
-			return out, fmt.Errorf("text_properties: %w", err)
+			return out, fmt.Errorf("properties: %w", err)
 		}
-		out.TextProperties = converted
-	}
-	if m.NumberProperties != nil {
-		converted, err := m.NumberProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("number_properties: %w", err)
-		}
-		out.NumberProperties = converted
-	}
-	if m.DateProperties != nil {
-		converted, err := m.DateProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("date_properties: %w", err)
-		}
-		out.DateProperties = converted
-	}
-	if m.CheckboxProperties != nil {
-		converted, err := m.CheckboxProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("checkbox_properties: %w", err)
-		}
-		out.CheckboxProperties = converted
-	}
-	if m.SelectProperties != nil {
-		converted, err := m.SelectProperties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("select_properties: %w", err)
-		}
-		out.SelectProperties = converted
+		out.Properties = converted
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -421,86 +155,16 @@ func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Metadata.IsUnknown() {
+		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Slug = types.StringValue(c.Slug)
 	m.Name = types.StringValue(c.Name)
 	m.OrganizationId = types.StringValue(c.OrganizationId)
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.TextProperties != nil {
-		block := CustomFieldTextPropertiesModel{}
-		if m.TextProperties != nil {
-			block = *m.TextProperties
-		}
-		block.FromClientModel(c.TextProperties)
-		m.TextProperties = &block
-	} else {
-		m.TextProperties = nil
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.NumberProperties != nil {
-		block := CustomFieldNumberPropertiesModel{}
-		if m.NumberProperties != nil {
-			block = *m.NumberProperties
-		}
-		block.FromClientModel(c.NumberProperties)
-		m.NumberProperties = &block
-	} else {
-		m.NumberProperties = nil
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.DateProperties != nil {
-		block := CustomFieldDatePropertiesModel{}
-		if m.DateProperties != nil {
-			block = *m.DateProperties
-		}
-		block.FromClientModel(c.DateProperties)
-		m.DateProperties = &block
-	} else {
-		m.DateProperties = nil
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.CheckboxProperties != nil {
-		block := CustomFieldCheckboxPropertiesModel{}
-		if m.CheckboxProperties != nil {
-			block = *m.CheckboxProperties
-		}
-		block.FromClientModel(c.CheckboxProperties)
-		m.CheckboxProperties = &block
-	} else {
-		m.CheckboxProperties = nil
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.SelectProperties != nil {
-		block := CustomFieldSelectPropertiesModel{}
-		if m.SelectProperties != nil {
-			block = *m.SelectProperties
-		}
-		block.FromClientModel(c.SelectProperties)
-		m.SelectProperties = &block
-	} else {
-		m.SelectProperties = nil
-	}
 	m.Type = types.StringValue(c.Type)
 }

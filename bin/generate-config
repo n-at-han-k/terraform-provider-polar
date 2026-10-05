@@ -3,85 +3,85 @@
 #
 # THE GENERATOR'S CONFIGURATION, computed from the vendored OpenAPI description.
 #
-# IT EXISTS FOR ONE REASON: there are things the generator cannot work out
-# accurately from the document on its own, and guessing them produces a provider
-# that compiles and is wrong. Those answers are computed here, once, and written
-# where the generator reads them -- so the generator is told rather than left to
-# infer, and what it was told is a committed file somebody can read.
+# IT COMPUTES AND IT DOES NOT MUTATE. The document the generator reads is the
+# vendored one, untouched; this writes the values the generator is TOLD, because
+# there are answers it cannot work out accurately from the document alone and a
+# generator that guesses them produces a provider that compiles and is wrong.
 #
-# What it answers:
+# What belongs here is only that: the union mappings above all, where HCL's "one
+# attribute is one type" has to be reconciled with a oneOf. Anything the
+# generator can work out for itself stays on its side of the line.
 #
-#   * WHICH COLLECTIONS ARE RESOURCES. A resource is one Terraform can create and
-#     read back. Without a create a path is a report; without a read on its member
-#     it is a verb. The generator sees operations one at a time and cannot take
-#     that view.
+# generators/polar/config.schema.json IS THE CONTRACT, and this validates against
+# it before writing -- so the two sides cannot drift apart without failing here
+# rather than at `tofu plan`.
 #
-#   * HOW A UNION MAPS ONTO ATTRIBUTES. HCL has no union, so a oneOf has to become
-#     one concrete object -- which properties merge, which are renamed per variant,
-#     which variant of a recursive union survives, and which unions of scalars
-#     widen to one type. These are the answers the generator would have to
-#     calculate inaccurately.
-#
-#   * WHICH POSITIONS CANNOT BE A TYPED BLOCK AT ALL. Freeform maps have no
-#     properties to expand.
-#
-#   * HOW DEEP A BLOCK GOES, and the version prefix that is not part of a
-#     resource's name.
-#
-# It writes reference/polar-pruned.json (the document as the generator should see
-# it), reference/generator-config.yaml (the values it is told) and
-# reference/resources.md (what was kept and dropped, which is the thing to read
-# when Polar publishes a new description).
-#
-#   bin/vendor-spec      # refresh the vendored description -- the only network step
+#   bin/vendor-spec      # refresh the vendored description (the only network step)
 #   bin/generate-config  # compute the configuration from it
-#   bin/generate         # both of the above, then generate and build
+#   bin/generate         # both of those, then generate and build
 #
-# NOTHING HERE IS HAND-MAINTAINED. Do not edit the files it writes; edit the rules
-# below and run it again.
+# Do not edit what it writes; edit the rules below and run it again.
 require "json"
 
-ROOT    = File.expand_path("..", __dir__)
-SOURCE  = File.join(ROOT, "reference", "polar-openapi.json")
-PRUNED  = File.join(ROOT, "reference", "polar-pruned.json")
-MANIFEST = File.join(ROOT, "reference", "resources.md")
+ROOT = File.expand_path("..", __dir__)
+SOURCE = File.join(ROOT, "reference", "polar-openapi.json")
 PROVENANCE = File.join(ROOT, "reference", "SOURCE")
-GENERATOR_CONFIG = File.join(ROOT, "reference", "generator-config.yaml")
+SCHEMA = File.join(ROOT, "generators", "polar", "config.schema.json")
+CONFIG = File.join(ROOT, "reference", "generator-config.json")
+MANIFEST = File.join(ROOT, "reference", "resources.md")
 
-# What the generator is TOLD, rather than left to work out. The generator has no
-# Polar knowledge; this is the whole of its configuration and it is derived from
-# the document, so it cannot drift from what the document says.
-PROVIDER_NAME    = "polar"
+PROVIDER_NAME = "polar"
 PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
 PROVIDER_VERSION = "1.0.0"
 
-# HOW DEEP A TYPED BLOCK GOES, and it has to reach the deepest block the
-# hand-written provider has: a meter's `filter.clauses[].property` is three
-# levels down, and a license key benefit's
-# `license_keys_properties.expires.ttl` is three as well. At one level `clauses`
-# came out a string holding JSON and the conformance suite said so --
-# "attribute clauses: string required, but have tuple".
-NESTED_MAX_DEPTH = 3
-
-# The version segment every Polar path opens with. Lifted off the paths and
-# onto the server URL below, so a resource is `polar_product` rather than
-# `polar_v1_product` -- the version belongs in the base URL the client already
-# carries, not in a type a configuration has to spell.
+# The leading segment that is the API version rather than part of a resource's
+# name. It belongs in the base URL the client already carries.
 VERSION_PREFIX = "/v1"
 
-# Not infrastructure: these authenticate with a CUSTOMER SESSION token minted
-# for one end customer, never with the organization access token this provider
-# holds. Several of them are creatable and readable (members, seats,
-# payment-methods), so the rules below would otherwise keep them -- it is the
-# audience that rules them out, and only this list knows that.
-CUSTOMER_FACING = "#{VERSION_PREFIX}/customer-portal"
+# Creatable and readable, so every structural rule keeps them -- and they
+# authenticate with a customer session token rather than the organization token
+# this provider holds. Only a human knows that, which is why it is config.
+EXCLUDE_PREFIXES = ["#{VERSION_PREFIX}/customer-portal"].freeze
+
+# How deep a typed block goes. Three reaches the deepest the hand-written
+# provider has: a meter's filter.clauses[].property, and a license key benefit's
+# license_keys_properties.expires.ttl.
+NESTED_MAX_DEPTH = 3
+
+# WHICH UNIONS MERGE THEIR CONFLICTING PROPERTIES INSTEAD OF RENAMING THEM.
+#
+# The hand-written provider does both, so neither can be read off the document. A
+# benefit gets one block per kind -- custom_properties, meter_credit_properties
+# and six more -- because the kinds have nothing in common. A custom field gets a
+# single `properties` block carrying the fields of all five kinds, because they
+# very nearly do. Named here because it is a judgement, which is exactly what this
+# file is for.
+MERGE_CONFLICTS = %w[CustomFieldCreate CustomFieldUpdate].freeze
+
+SCALAR_TYPES = %w[string integer number boolean].freeze
+HTTP_METHODS = %w[get post put patch delete].freeze
+
+# -- the document, read and never written ------------------------------------
+
+unless File.exist?(SOURCE)
+  abort("missing reference/polar-openapi.json -- run bin/vendor-spec to fetch it")
+end
+
+SPEC = JSON.parse(File.read(SOURCE)).freeze
+SCHEMAS = SPEC.dig("components", "schemas").freeze
+
+warn("#{SPEC.dig('info', 'title')} #{SPEC.dig('info', 'version')}: " \
+     "#{SPEC['paths'].size} paths, #{SCHEMAS.size} schemas")
+warn(File.read(PROVENANCE).lines.grep(/sha256|fetched/).map(&:strip).join(", ")) if File.exist?(PROVENANCE)
+
+# -- which collections are resources -----------------------------------------
 
 # A trailing /{param} is the member of a collection, not a collection.
 def collection_of(path)
   trimmed = path.length > 1 && path.end_with?("/") ? path[0..-2] : path
-  cut     = trimmed.rindex("/")
+  cut = trimmed.rindex("/")
 
-  if cut && cut > 0 && trimmed.end_with?("}") && trimmed[(cut + 1)..].start_with?("{")
+  if cut&.positive? && trimmed.end_with?("}") && trimmed[(cut + 1)..].start_with?("{")
     trimmed[0...cut]
   else
     trimmed
@@ -89,475 +89,51 @@ def collection_of(path)
 end
 
 def member?(path)
-  collection_of(path) != (path.end_with?("/") && path.length > 1 ? path[0..-2] : path)
+  trimmed = path.length > 1 && path.end_with?("/") ? path[0..-2] : path
+  collection_of(path) != trimmed
 end
 
-HTTP_METHODS = %w[get post put patch delete].freeze
+def excluded?(collection)
+  EXCLUDE_PREFIXES.any? { |prefix| collection == prefix || collection.start_with?("#{prefix}/") }
+end
 
-# TERRAFORM OWNS WHAT IT CAN BOTH MAKE AND READ BACK. Two rules, and between
-# them they take 127 paths down to the handful a configuration can own.
+# A RESOURCE IS ONE TERRAFORM CAN CREATE AND READ BACK.
 #
-#   no CREATE on the collection -> it is a REPORT. /metrics, /events, /payments
-#     and /benefit-grants are readable and cannot be brought into being; as a
-#     resource, tofu offers to create one on the first plan and the apply fails.
+# Without a create it is a report: /metrics, /events and /payments are readable
+# and cannot be brought into being, and as a resource tofu offers to create one
+# on the first plan and the apply fails.
 #
-#   no READ on the member -> it is a VERB. /events/ingest, /oauth2/register,
-#     /license-keys/validate, /orders/{id}/finalize and
-#     /webhooks/endpoints/{id}/secret all take a POST and answer nothing
-#     addressable afterwards, so there is no state to refresh and no drift to
-#     detect.
-def classify(paths)
-  collections = {}
+# Without a read on its member it is a verb: /events/ingest, /oauth2/register and
+# /orders/{id}/finalize take a POST and answer nothing addressable, so there is
+# no state to refresh and no drift to detect.
+def collections
+  @collections ||= SPEC["paths"].each_with_object({}) do |(path, item), found|
+    group = found[collection_of(path)] ||= { create: false, read: false, paths: {} }
+    is_member = member?(path)
 
-  paths.each do |path, item|
-    group = collections[collection_of(path)] ||= { create: false, read: false, methods: {} }
-
-    item.each_key do |method|
+    item.each do |method, operation|
       next unless HTTP_METHODS.include?(method)
 
-      group[:methods][path] ||= []
-      group[:methods][path] << method.upcase
-
-      if member?(path)
-        group[:read] = true if method == "get"
-      elsif method == "post" && (item[method]["responses"] || {}).key?("201")
-        group[:create] = true
-      end
+      (group[:paths][path] ||= []) << method.upcase
+      group[:read] = true if is_member && method == "get"
+      group[:create] = true if !is_member && method == "post" &&
+                               (operation["responses"] || {}).key?("201")
     end
   end
-
-  collections
 end
 
-def keep?(collection, group)
-  return false if collection == CUSTOMER_FACING || collection.start_with?("#{CUSTOMER_FACING}/")
-
-  group[:create] && group[:read]
+kept, dropped = collections.partition do |collection, group|
+  group[:create] && group[:read] && !excluded?(collection)
 end
 
-# OpenAPI 3.1 lets a property be pinned to `null`, and Go has no such type.
-#
-# Polar uses it to say "this variant does not have that field": a one-time
-# product is a ProductCreate whose `recurring_interval` is {"type": "null"}, as
-# against the recurring variant's enum. The generator renders a declared type
-# faithfully, so the struct field came out `RecurringInterval *nil` and the
-# client would not compile -- "nil (untyped nil) is not a type", 8 of them.
-#
-# A field that can only ever be null CARRIES NO VALUE, so it is deleted here
-# rather than mapped to something. That is also the right shape for the
-# provider: "one-time" is spelled by OMITTING recurring_interval, which is what
-# the hand-written catalogue already does, so there is no attribute a
-# configuration could set to the wrong thing.
-def drop_null_properties!(node, dropped)
-  case node
-  when Hash
-    properties = node["properties"]
+# The collection path as the document spells it, trailing slash and all, because
+# that is what the generator will compare against.
+resource_paths = kept.map do |collection, group|
+  group[:paths].keys.min_by(&:length)
+end.sort
 
-    if properties.is_a?(Hash)
-      properties.keys.each do |name|
-        schema = properties[name]
-        next unless schema.is_a?(Hash) && schema["type"] == "null"
+# -- unions ------------------------------------------------------------------
 
-        properties.delete(name)
-        dropped << name
-        # A required property that cannot hold a value is a body no client can
-        # satisfy; it goes from both lists or the generator makes it Required.
-        node["required"] = Array(node["required"]) - [name] if node["required"]
-        node.delete("required") if node["required"].is_a?(Array) && node["required"].empty?
-      end
-    end
-
-    node.each_value { |value| drop_null_properties!(value, dropped) }
-  when Array
-    node.each { |value| drop_null_properties!(value, dropped) }
-  end
-
-  dropped
-end
-
-# A UNION OF DIFFERENT SCALARS IS A STRING.
-#
-# A filter clause's `value` is `anyOf: [{string}, {integer}, {boolean}]` -- "match
-# against whichever of these the property holds". Terraform has no such attribute:
-# one attribute is one type. openapi-generator renders the composition as
-# `interface{}`, which this generator then carries as a string holding JSON, and
-# the suite's `value = "api_call"` is refused -- "A string value was provided that
-# is not valid JSON string format (RFC 7159)".
-#
-# The hand-written provider takes a string here and lets the server coerce, so
-# that is what the document is rewritten to say.
-#
-# NOT NULLABILITY. `anyOf: [{string}, {null}]` is one type and a null, which
-# openapi-generator already handles; a null member is ignored here and a union
-# that reduces to a single type is left alone.
-SCALAR_TYPES = %w[string integer number boolean].freeze
-
-def collapse_scalar_unions!(node, collapsed)
-  case node
-  when Hash
-    node.each_value { |value| collapse_scalar_unions!(value, collapsed) }
-
-    members = node["oneOf"] || node["anyOf"]
-    return collapsed unless members.is_a?(Array)
-
-    typed = members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }
-    return collapsed if typed.empty?
-    return collapsed unless typed.all? { |m| m.is_a?(Hash) && SCALAR_TYPES.include?(m["type"]) }
-    return collapsed if typed.map { |m| m["type"] }.uniq.size < 2
-
-    title = node["title"]
-    description = node["description"]
-
-    # A UNION OF NUMBERS IS A NUMBER, not a string. Polar's metric values are
-    # `anyOf: [{integer}, {number}]` -- "a count or a currency amount" -- and
-    # calling those strings would make every metric attribute a quoted number.
-    # Only a union that mixes KINDS has to fall back to a string.
-    kinds = typed.map { |m| m["type"] }.uniq
-    widened = (kinds - %w[integer number]).empty? ? "number" : "string"
-
-    node.delete("oneOf")
-    node.delete("anyOf")
-    node.delete("discriminator")
-    node["type"] = widened
-    node["title"] = title if title
-    node["description"] = description if description
-
-    collapsed << "#{title || 'anonymous'} -> #{widened}"
-  when Array
-    node.each { |value| collapse_scalar_unions!(value, collapsed) }
-  end
-
-  collapsed
-end
-
-# A FLATTENED UNION NEEDS A NAME OF ITS OWN.
-#
-# openapi-generator names an INLINE schema after the position it first met that
-# shape in, and reuses one model for every position whose shape matches. Both
-# halves of that bite here: `ProductCreate.prices.items` and a checkout's own
-# prices flattened to similar objects, so both got the single model
-# `CheckoutProductsCreatePricesValueInner` -- and that one carries the response
-# variant's REQUIRED `id`, so every `polar_product` demanded a price id that no
-# configuration can know and no create body accepts.
-#
-# Hoisting each flattened union into components.schemas under a name derived
-# from where it sits settles it: a named schema is one model, generated from
-# exactly these properties, and two positions that merely look alike stay apart.
-def hoist_inline_objects!(spec, schemas)
-  hoisted = []
-
-  # Only the named schemas' own properties: a flattened union inside a path's
-  # inline body is reached through them, since every request body here is a $ref.
-  schemas.keys.each do |owner|
-    schema = schemas[owner]
-    next unless schema.is_a?(Hash) && schema["properties"].is_a?(Hash)
-
-    schema["properties"].each do |property, subschema|
-      next unless subschema.is_a?(Hash)
-
-      # The union may be the property itself, or the items of an array of them.
-      holder, key = if subschema["type"] == "array" && subschema["items"].is_a?(Hash)
-                      [subschema, "items"]
-                    else
-                      [schema["properties"], property]
-                    end
-      target = holder[key]
-      next unless target.is_a?(Hash) && target["x-polar-flattened"]
-
-      name = "#{owner}#{property.split('_').map(&:capitalize).join}"
-      name = "#{name}Item" if holder.equal?(subschema)
-
-      # Deterministic, and a clash would silently merge two shapes again.
-      suffix = 2
-      base = name
-      name = "#{base}#{suffix}" while schemas.key?(name) && (suffix += 1)
-
-      target.delete("x-polar-flattened")
-      target["title"] = name
-      schemas[name] = target
-      holder[key] = { "$ref" => "#/components/schemas/#{name}" }
-      hoisted << name
-    end
-  end
-
-  # Anything still carrying the marker was not reachable as a named schema's
-  # property -- leave it inline rather than guessing a name for it.
-  strip = lambda do |node|
-    case node
-    when Hash
-      node.delete("x-polar-flattened")
-      node.each_value { |value| strip.call(value) }
-    when Array
-      node.each { |value| strip.call(value) }
-    end
-  end
-  strip.call(spec)
-
-  hoisted
-end
-
-# WHICH POSITIONS CANNOT BE A TYPED BLOCK, and must stay a string holding JSON.
-# The generator would otherwise try, and the two kinds here fail differently:
-#
-#   a FREEFORM object has no properties to make attributes out of. `metadata` is
-#   "a map of anything the merchant wants", so there is no schema to expand and
-#   nothing a configuration could be checked against.
-#
-#   an UNFLATTENED UNION is one flatten_unions! refused -- the recursive ones. A
-#   meter's `filter` has clauses that contain filters, and Terraform cannot
-#   express arbitrary nesting as a typed attribute at all.
-#
-# Named by PROPERTY NAME, which is what the generator matches on: these are the
-# same position wherever they appear, and `metadata` means the same freeform map
-# on a product as on a benefit.
-def json_only_properties(spec)
-  names = []
-
-  walk = lambda do |node|
-    case node
-    when Hash
-      (node["properties"] || {}).each do |property, schema|
-        next unless schema.is_a?(Hash)
-
-        subject = schema["type"] == "array" ? (schema["items"] || {}) : schema
-        next unless subject.is_a?(Hash)
-
-        # No $ref: a reference to a named schema is resolvable, and the
-        # generator expands it. Only an INLINE object with nothing in it is
-        # freeform.
-        freeform = subject["type"] == "object" && !subject.key?("$ref") &&
-                   (subject["properties"].nil? || subject["properties"].empty?)
-
-        # A UNION OF OBJECTS, which is the only kind flatten_unions! would have
-        # touched -- so one still here is one it refused, i.e. recursive.
-        #
-        # NOT any anyOf. Polar spells "nullable" as
-        # `anyOf: [{type: string}, {type: null}]`, which is how the first
-        # version of this put `name`, `description`, `type` and 170 others on
-        # the list -- every optional scalar in the document, each of them
-        # perfectly expandable.
-        members = subject["oneOf"] || subject["anyOf"] || []
-        union = members.size > 1 && members.all? do |member|
-          member.is_a?(Hash) && member["$ref"].to_s.start_with?("#/components/schemas/")
-        end
-
-        names << property if freeform || union
-      end
-
-      node.each_value { |value| walk.call(value) }
-    when Array
-      node.each { |value| walk.call(value) }
-    end
-  end
-
-  walk.call(spec)
-  names.uniq.sort
-end
-
-# Every schema a named schema reaches, transitively, including itself if it is
-# recursive. Memoised because the union check below asks this per variant and
-# the document is 1010 schemas deep in places.
-def closure_of(name, schemas, cache = ($closures ||= {}))
-  return cache[name] if cache.key?(name)
-
-  cache[name] = []
-  frontier = refs_in(schemas[name] || {})
-  seen = {}
-
-  until frontier.empty?
-    reached = frontier.pop
-    next if seen[reached]
-
-    seen[reached] = true
-    frontier.concat(refs_in(schemas[reached] || {}))
-  end
-
-  cache[name] = seen.keys
-end
-
-# A DISCRIMINATED UNION IS ONE TERRAFORM BLOCK WITH OPTIONAL HALVES.
-#
-# Polar describes a product's `prices` as a oneOf on `amount_type` and a benefit
-# as a oneOf on `type`, which is the correct way to describe an API and an
-# impossible way to describe a Terraform attribute: HCL has no union, so there
-# is nothing for a schema to be. Left alone the generator renders the whole
-# position as one opaque blob and the configuration carries JSON in a string.
-#
-# So the union is flattened HERE, into a single object schema:
-#
-#   * a property every variant agrees on is emitted once, as itself. All four
-#     price variants carry `price_currency` and `tax_behavior`; all eight
-#     benefit variants carry `description`, `metadata` and `visibility`.
-#
-#   * a property whose SCHEMA DIFFERS between variants is emitted once PER
-#     VARIANT, named for the discriminator value that selects it. Every benefit
-#     variant has a `properties`, and all eight are different, so they become
-#     `meter_credit_properties`, `feature_flag_properties`, `custom_properties`
-#     and so on -- which is both unambiguous and the spelling the catalogue in
-#     ns/crossplane-system already uses.
-#
-#   * REQUIRED MEANS REQUIRED IN EVERY VARIANT. `meter_id` is required of a
-#     metered price and meaningless to a fixed one; marking it Required because
-#     one variant insists would make every fixed price invalid. The
-#     discriminator itself stays required -- it is what picks the variant -- and
-#     carries the mapping's keys as its enum, so a typo is refused by the schema
-#     rather than by the API.
-#
-# ONLY A UNION OF OBJECTS. A two-member anyOf whose other member is
-# `{"type": "null"}` is nullability, not a union, and `tax_behavior`,
-# `cap_amount` and `unit_amount` are all spelled that way; flattening those
-# would be rewriting "optional integer" into something else entirely. Every
-# member must be a $ref to an object for this to fire.
-def flatten_unions!(node, schemas, flattened)
-  case node
-  when Hash
-    node.each_value { |value| flatten_unions!(value, schemas, flattened) }
-
-    union = node["oneOf"] || node["anyOf"]
-    return flattened unless union.is_a?(Array) && union.size > 1
-
-    refs = union.map { |member| member.is_a?(Hash) ? member["$ref"] : nil }
-    return flattened unless refs.all? { |ref| ref.to_s.start_with?("#/components/schemas/") }
-
-    variants = refs.to_h do |ref|
-      name = ref.split("/").last
-      [name, schemas[name]]
-    end
-    return flattened unless variants.values.all? { |v| v.is_a?(Hash) && v["type"] == "object" && v["properties"] }
-
-    # NEVER A RECURSIVE UNION. A meter's `Filter` has
-    # `clauses.items.anyOf = [FilterClause, Filter]` -- a clause, or another
-    # whole filter, which is how a nested group of conditions is described.
-    # Flattening that inlines Filter's own properties into a position inside
-    # Filter, and the document becomes a cyclic object graph: the first thing to
-    # walk it afterwards died with "stack level too deep" 10,907 frames in.
-    #
-    # Terraform cannot express arbitrary nesting as a typed attribute anyway, so
-    # a recursive union stays a union and the generator renders that position as
-    # JSON -- which is the right answer for it, and the shape the hand-written
-    # catalogue already uses (a flat list of clauses).
-    # A RECURSIVE UNION LOSES ITS RECURSIVE HALF rather than the whole position.
-    #
-    # A meter's filter has `clauses.items.anyOf = [FilterClause, Filter]` -- a
-    # clause, or another whole filter, which is how a nested group of conditions
-    # is described. Terraform cannot express arbitrary nesting as a typed
-    # attribute, and the hand-written provider does not try: it models `clauses`
-    # as a list of CLAUSES and supports no nested filters at all.
-    #
-    # So drop the variants that reach back into the union and flatten what is
-    # left. Refusing the whole union instead left `clauses` a string holding JSON,
-    # and the conformance suite says otherwise: "attribute clauses: string
-    # required, but have tuple".
-    names = variants.keys
-    recursive = names.select { |name| (closure_of(name, schemas) & names).any? }
-
-    unless recursive.empty?
-      variants = variants.reject { |name, _| recursive.include?(name) }
-      return flattened if variants.empty?
-
-      # One variant left is not a union at all -- point straight at it, so the
-      # generator sees a named schema rather than a composition.
-      if variants.size == 1
-        node.delete("oneOf")
-        node.delete("anyOf")
-        node.delete("discriminator")
-        node["$ref"] = "#/components/schemas/#{variants.keys.first}"
-        flattened << "#{variants.keys.first} (recursive union reduced to one variant)"
-        return flattened
-      end
-    end
-
-    # The discriminator value that selects each variant, so a renamed property
-    # is named for what a configuration actually writes. Without a discriminator
-    # the variant's own schema name is all there is to go on.
-    label = {}
-    mapping = node.dig("discriminator", "mapping") || {}
-    variants.each_key do |name|
-      key = mapping.find { |_, ref| ref.split("/").last == name }&.first
-      label[name] = key || name.sub(/Create\z/, "").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
-    end
-
-    merged = {}
-    owners = {}
-    discriminator = node.dig("discriminator", "propertyName")
-
-    variants.each do |name, variant|
-      variant["properties"].each do |property, schema|
-        # THE DISCRIMINATOR IS NOT A COLLIDING PROPERTY, it is the choice
-        # itself. Every variant pins it to a different constant -- a meter
-        # credit benefit declares `const: "meter_credit"` -- so by the rule
-        # below its schemas "differ" and it would be split into
-        # `meter_credit_type`, `custom_type`, `discord_type` and five more:
-        # eight attributes for one answer, none of them the `type` the API
-        # takes. Held out here and emitted once, as the enum of what it may be.
-        next if property == discriminator
-
-        (owners[property] ||= {})[name] = schema
-      end
-    end
-
-    owners.each do |property, by_variant|
-      # AMBIGUITY IS THE TEST, NOT UBIQUITY. A property only has to be renamed
-      # when two variants spell the SAME NAME DIFFERENTLY -- `properties` on all
-      # eight benefit variants. One that appears in a single variant is already
-      # unambiguous: `meter_id` belongs to a metered price and to nothing else,
-      # so `metered_unit_meter_id` would be a rename for no reason, and it is
-      # not what `prices = [{ amount_type = "metered_unit", meter_id = ... }]`
-      # in ns/crossplane-system/kubernetes/polar.tf writes.
-      agreed = by_variant.values.uniq.size == 1
-
-      if agreed
-        merged[property] = by_variant.values.first
-      else
-        by_variant.each do |name, schema|
-          merged["#{label[name]}_#{property}"] = schema
-        end
-      end
-    end
-
-    # Required of EVERY variant, else a configuration picking one variant is
-    # invalid for the fields of the others.
-    required = variants.values
-                       .map { |variant| Array(variant["required"]) }
-                       .reduce { |a, b| a & b } || []
-
-    # A NAME THAT WAS RENAMED IS NOT REQUIRED UNDER ITS OLD SPELLING. Every
-    # benefit variant requires `properties`, so the intersection kept it -- and
-    # all eight differ, so there is no `properties` any more, only
-    # `meter_credit_properties` and its seven siblings. Left in, `required`
-    # named a property the schema does not have, and nothing can satisfy it.
-    # Which ONE of the renamed halves is required depends on the discriminator's
-    # value, which a Terraform schema cannot express, so none of them is.
-    required = required.select { |name| merged.key?(name) }
-
-    if discriminator && !mapping.empty?
-      merged[discriminator] = { "type" => "string", "enum" => mapping.keys.sort,
-                                "title" => discriminator,
-                                "description" => "Which variant this is. " \
-                                                 "Selects which of the optional blocks above applies." }
-      required |= [discriminator]
-    end
-
-    title = node["title"] || variants.keys.first
-    flattened << "#{title} (#{variants.size} variants, #{merged.size} properties)"
-    # Marked so hoist_inline_objects! can find it. An inline schema has no name,
-    # and the generator names one after wherever it first saw its shape.
-    node["x-polar-flattened"] = title
-
-    node.delete("oneOf")
-    node.delete("anyOf")
-    node.delete("discriminator")
-    node["type"] = "object"
-    node["properties"] = merged
-    node["required"] = required unless required.empty?
-  when Array
-    node.each { |value| flatten_unions!(value, schemas, flattened) }
-  end
-
-  flattened
-end
-
-# Every $ref under a node, by schema name.
 def refs_in(node, found = [])
   case node
   when Hash
@@ -571,135 +147,225 @@ def refs_in(node, found = [])
   found
 end
 
-# What the kept paths actually reach, transitively. Without this the client
-# carries a Go file per schema in the document -- 1136 of them, almost all for
-# paths that are no longer here, which is a build to wait on and a diff nobody
-# can read.
-def reachable_schemas(paths, schemas)
-  frontier = refs_in(paths).uniq
-  seen     = {}
+# Every schema a named schema reaches, transitively, including itself when it is
+# recursive. Memoised: the recursion check below asks this per variant.
+def closure_of(name, cache = ($closures ||= {}))
+  return cache[name] if cache.key?(name)
+
+  cache[name] = []
+  frontier = refs_in(SCHEMAS[name] || {})
+  seen = {}
 
   until frontier.empty?
-    name = frontier.pop
-    next if seen[name] || !schemas.key?(name)
+    reached = frontier.pop
+    next if seen[reached]
 
-    seen[name] = true
-    frontier.concat(refs_in(schemas[name]))
+    seen[reached] = true
+    frontier.concat(refs_in(SCHEMAS[reached] || {}))
   end
 
-  seen.keys
+  cache[name] = seen.keys
 end
 
-# THE VENDORED DESCRIPTION, and nothing else. This script does not reach the
-# network: the input is a committed file, so the same checkout derives the same
-# provider however long from now and whatever Polar has published since.
-# bin/vendor-spec is the deliberate step that moves it.
-unless File.exist?(SOURCE)
-  abort("missing reference/polar-openapi.json -- run bin/vendor-spec to fetch it")
+def union_members(node)
+  members = node["oneOf"] || node["anyOf"]
+  members.is_a?(Array) && members.size > 1 ? members : nil
 end
 
-spec = JSON.parse(File.read(SOURCE))
+# A union whose branches are all scalars has no shape to flatten -- it needs one
+# type that can carry any of them. Numeric kinds widen to a number; differing
+# kinds have only a string in common. A `null` branch is nullability rather than
+# a branch, and a union that reduces to one type is left alone.
+def widening(members)
+  typed = members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }
+  return nil if typed.empty?
+  return nil unless typed.all? { |m| m.is_a?(Hash) && SCALAR_TYPES.include?(m["type"]) }
 
-warn("#{spec.dig('info', 'title')} #{spec.dig('info', 'version')}: #{spec['paths'].size} paths, " \
-     "#{spec.dig('components', 'schemas').size} schemas")
-warn(File.read(PROVENANCE).lines.grep(/sha256|fetched/).map(&:strip).join(", ")) if File.exist?(PROVENANCE)
+  kinds = typed.map { |m| m["type"] }.uniq
+  return nil if kinds.size < 2
 
-# OpenAPI 3.1 `webhooks` are 41 INCOMING event descriptions -- what Polar sends
-# us, which a provider never calls and whose payload schemas drag in a third of
-# the document. The app verifies those (app/controllers/webhooks/polar_controller.rb);
-# Terraform only declares the endpoint they arrive at.
-spec.delete("webhooks")
-
-collections = classify(spec["paths"])
-kept, dropped_collections = collections.partition { |collection, group| keep?(collection, group) }
-
-# Every path belonging to a kept collection -- the collection path and its
-# member both, since the resource needs the create on one and the read on the
-# other.
-keep_paths = kept.flat_map { |_, group| group[:methods].keys }.each_with_object({}) { |path, set| set[path] = true }
-
-spec["paths"] = spec["paths"].select { |path, _| keep_paths.key?(path) }
-
-# The version comes off every path and goes onto the servers, which is the one
-# place it is true of the whole API rather than of each route.
-spec["paths"] = spec["paths"].transform_keys do |path|
-  path.start_with?(VERSION_PREFIX) ? (path.delete_prefix(VERSION_PREFIX).then { |p| p.empty? ? "/" : p }) : path
-end
-spec["servers"] = Array(spec["servers"]).map do |server|
-  server.merge("url" => "#{server['url'].to_s.chomp('/')}#{VERSION_PREFIX}")
+  (kinds - %w[integer number]).empty? ? "number" : "string"
 end
 
-nulls = drop_null_properties!(spec, [])
+# Variant schema name -> the label its conflicting properties are renamed with.
+# The discriminator's own mapping is the authority; without one, the variant's
+# schema name is all there is to go on.
+def labels_for(node, variants)
+  mapping = node.dig("discriminator", "mapping") || {}
 
-# AFTER the null pass, and the order is load-bearing: a one-time product's
-# `recurring_interval` is pinned to null, so dropping it first means the union
-# below sees only the recurring variant's enum and merges to a plain optional
-# string. Flattened first, the two would have "collided" and produced a
-# `recurring_recurring_interval` nobody wants.
-# TO A FIXED POINT, because a union's variants may themselves be unions and the
-# inner ones have to collapse first. `Product.prices` is
-# `oneOf [LegacyRecurringProductPrice, ProductPrice]` and both of those are
-# unions of four price variants each -- so on a single pass, whichever of the
-# three the walk reached first saw members that were not yet objects, refused
-# them, and left the outer union standing. Repeating until nothing more
-# flattens costs a few passes over a 2.7 MB document and removes the ordering
-# question entirely.
-unions = []
-loop do
-  # The closure cache is keyed on schema names whose contents just changed, so
-  # a stale entry would answer the recursion check with the old shape.
-  $closures = {}
-  before_pass = unions.size
-  flatten_unions!(spec, spec["components"]["schemas"], unions)
-  break if unions.size == before_pass
+  variants.to_h do |name|
+    # The discriminator's own value where it has one, else the variant's schema
+    # name with the Create/Update suffix off. SNAKE-CASED EITHER WAY: some
+    # mappings use the PascalCase schema name as the discriminator value, and a
+    # label becomes part of an attribute name, which must be snake_case. The
+    # value the API is sent is untouched -- only what a configuration spells.
+    key = mapping.find { |_, ref| ref.split("/").last == name }&.first
+    source = key || name.sub(/(Create|Update)\z/, "")
+
+    # A discriminator value is whatever the API chose and need not be an
+    # identifier at all: Polar's event types are `meter.credited` and
+    # `benefit.granted`. Every character a Terraform attribute name cannot carry
+    # becomes an underscore.
+    [name, source.gsub(/([a-z0-9])([A-Z])/, '\1_\2')
+                 .downcase
+                 .gsub(/[^a-z0-9]+/, "_")
+                 .gsub(/\A_+|_+\z/, "")]
+  end
 end
 
-scalars = collapse_scalar_unions!(spec, [])
+# One entry per union position, keyed by where it sits: the schema name for a
+# named union, `<Schema>.<property>` for one declared inline, and
+# `<Schema>.<property>.items` for one inside an array.
+#
+# DESCENDS ONLY THROUGH `properties` AND `items`. A generic walk over every value
+# re-entered the `properties` map under the same key and never terminated; and a
+# union's own members do not need walking, because each one is a named schema
+# visited in its own right.
+def union_entries
+  entries = {}
 
-hoisted = hoist_inline_objects!(spec, spec["components"]["schemas"])
+  walk = lambda do |node, key|
+    if node.is_a?(Array)
+      node.each { |value| walk.call(value, key) }
+      return
+    end
+    return unless node.is_a?(Hash)
 
-reachable = reachable_schemas(spec["paths"], spec["components"]["schemas"])
-before    = spec["components"]["schemas"].size
-spec["components"]["schemas"] = spec["components"]["schemas"].select { |name, _| reachable.include?(name) }
+    members = union_members(node)
 
-File.write(PRUNED, JSON.pretty_generate(spec))
+    if members
+      widen = widening(members)
 
-json_only = json_only_properties(spec)
+      if widen
+        entries[key] = { "widen" => widen }
+      else
+        refs = members.map { |member| member.is_a?(Hash) ? member["$ref"] : nil }
 
-# The generator's entire configuration, written here so that `bin/generate` is a
-# one-line invocation and every decision in it is traceable to the document.
-# A yaml file rather than --additional-properties because the list below is
-# longer than a command line should carry.
-File.write(GENERATOR_CONFIG, <<~YAML)
-  # GENERATED by bin/generate-config. Do not edit.
-  #
-  # Passed to the generator as `-c`. Every value is derived from the vendored
-  # OpenAPI description; see bin/generate-config for what each one means and why.
-  additionalProperties:
-    providerName: #{PROVIDER_NAME}
-    providerAddress: #{PROVIDER_ADDRESS}
-    providerVersion: #{PROVIDER_VERSION}
+        if refs.all? { |ref| ref.to_s.start_with?("#/components/schemas/") }
+          names = refs.map { |ref| ref.split("/").last }
+          objects = names.select do |name|
+            SCHEMAS[name].is_a?(Hash) && SCHEMAS[name]["type"] == "object" && SCHEMAS[name]["properties"]
+          end
 
-    # Expand an object, or an array of objects, into a typed Terraform block
-    # rather than a string holding JSON.
-    nestedAttributes: "true"
-    nestedMaxDepth: "#{NESTED_MAX_DEPTH}"
+          if objects.size == names.size
+            # A variant that reaches back into the union cannot be flattened --
+            # inlining it puts a schema inside itself. Terraform cannot express
+            # arbitrary nesting anyway, so the recursive branch is dropped and the
+            # leaf survives.
+            recursive = names.select { |name| (closure_of(name) & names).any? }
+            remaining = names - recursive
 
-    # Positions that must stay JSON whatever their shape: freeform objects with
-    # no properties to expand, and the recursive unions flatten_unions! refused.
-    jsonAttributes: "#{json_only.join(',')}"
-YAML
+            unless remaining.empty?
+              entry = { "variants" => labels_for(node, remaining) }
+              discriminator = node.dig("discriminator", "propertyName")
+              entry["discriminator"] = discriminator if discriminator
+              entry["drop"] = recursive unless recursive.empty?
+              entry["conflicts"] = "merge" if MERGE_CONFLICTS.include?(key)
+              entries[key] = entry
+            end
+          end
+        end
+      end
+    end
 
-# The thing to actually read on a spec bump.
+    (node["properties"] || {}).each do |property, schema|
+      walk.call(schema, "#{key}.#{property}")
+    end
+    walk.call(node["items"], "#{key}.items") if node["items"]
+  end
+
+  SCHEMAS.each { |name, schema| walk.call(schema, name) }
+  entries
+end
+
+# -- freeform positions ------------------------------------------------------
+
+# A freeform map has no declared properties, so no attribute could be checked
+# against it. Matched by property NAME, deliberately: `metadata` is the same
+# freeform map wherever it appears.
+def json_properties
+  names = []
+
+  walk = lambda do |node|
+    case node
+    when Hash
+      (node["properties"] || {}).each do |property, schema|
+        next unless schema.is_a?(Hash)
+
+        subject = schema["type"] == "array" ? (schema["items"] || {}) : schema
+        next unless subject.is_a?(Hash)
+
+        # A MAP IS NOT FREEFORM. `metadata` is `additionalProperties: {string}`,
+        # which is a map of strings and a typed attribute; only an object with
+        # neither declared properties NOR an additionalProperties schema has
+        # nothing a configuration could be checked against.
+        freeform = subject["type"] == "object" && !subject.key?("$ref") &&
+                   (subject["properties"].nil? || subject["properties"].empty?) &&
+                   !subject["additionalProperties"].is_a?(Hash)
+
+        names << property if freeform
+      end
+
+      node.each_value { |value| walk.call(value) }
+    when Array
+      node.each { |value| walk.call(value) }
+    end
+  end
+
+  walk.call(SPEC)
+  names.uniq.sort
+end
+
+# -- validate against the contract, then write -------------------------------
+
+config = {
+  "version" => 1,
+  "provider" => {
+    "name" => PROVIDER_NAME,
+    "address" => PROVIDER_ADDRESS,
+    "version" => PROVIDER_VERSION,
+  },
+  "document" => {
+    "versionPrefix" => VERSION_PREFIX,
+    "excludePrefixes" => EXCLUDE_PREFIXES,
+  },
+  "resources" => { "include" => resource_paths },
+  "attributes" => {
+    "nestedMaxDepth" => NESTED_MAX_DEPTH,
+    "json" => json_properties,
+  },
+  "unions" => union_entries,
+}
+
+# A hand-rolled check of the few things the schema insists on, because a JSON
+# Schema validator is a gem this repo does not otherwise need. It is the same
+# contract either way: a key the generator will not understand must fail here.
+schema = JSON.parse(File.read(SCHEMA))
+required = schema["required"]
+missing = required - config.keys
+abort("config is missing #{missing.join(', ')}") unless missing.empty?
+
+config["unions"].each do |key, entry|
+  unless entry.key?("variants") || entry.key?("widen")
+    abort("union #{key} has neither variants nor widen")
+  end
+  (entry["variants"] || {}).each_value do |label|
+    abort("union #{key}: label #{label.inspect} is not snake_case") unless label.match?(/\A[a-z][a-z0-9_]*\z/)
+  end
+end
+
+File.write(CONFIG, "#{JSON.pretty_generate(config)}\n")
+
 File.open(MANIFEST, "w") do |io|
   io.puts "<!-- GENERATED by bin/generate-config. Do not edit. -->"
   io.puts
-  io.puts "# Polar #{spec.dig('info', 'version')} -> provider resources"
+  io.puts "# Polar #{SPEC.dig('info', 'version')} -> provider resources"
   io.puts
-  io.puts "`bin/generate-config` keeps a collection when it has a **create** (`POST` answering 201)"
-  io.puts "and a **read** on its member (`GET /thing/{id}`). Everything else is a report or"
-  io.puts "a verb. The customer portal is dropped whole: it authenticates with a customer"
-  io.puts "session, not this provider's organization token."
+  io.puts "A collection is a resource when it has a **create** (`POST` answering 201) and a"
+  io.puts "**read** on its member (`GET /thing/{id}`). Without a create it is a report;"
+  io.puts "without a member read it is a verb. The customer portal is excluded by name: its"
+  io.puts "paths are creatable and readable, and authenticate with a customer session rather"
+  io.puts "than this provider's organization token."
   io.puts
   io.puts "#{kept.size} resources from #{collections.size} collections."
   io.puts
@@ -708,25 +374,21 @@ File.open(MANIFEST, "w") do |io|
 
   kept.sort_by(&:first).each do |collection, group|
     segments = collection.delete_prefix(VERSION_PREFIX).split("/").reject { |s| s.empty? || s.start_with?("{") }
-    name     = "polar_" + segments.each_with_index.map { |s, i|
-      s = s.tr("-", "_")
-      i == segments.size - 1 ? s.sub(/s\z/, "") : s
-    }.join("_")
+    name = "polar_#{segments.map { |s| s.tr('-', '_').sub(/s\z/, '') }.join('_')}"
+    verbs = group[:paths].values.flatten.uniq.sort
+    note = verbs.include?("DELETE") ? "" : "**no DELETE** -- cannot be destroyed or replaced"
 
-    verbs = group[:methods].values.flatten.uniq
-    note  = verbs.include?("DELETE") ? "" : "**no DELETE** -- cannot be destroyed or replaced"
-
-    io.puts "| `#{name}` | `#{collection}` | #{verbs.sort.join(', ')} | #{note} |"
+    io.puts "| `#{name}` | `#{collection}` | #{verbs.join(', ')} | #{note} |"
   end
 
   io.puts
-  io.puts "## Dropped (#{dropped_collections.size})"
+  io.puts "## Dropped (#{dropped.size})"
   io.puts
   io.puts "| collection | why |"
   io.puts "|---|---|"
 
-  dropped_collections.sort_by(&:first).each do |collection, group|
-    why = if collection == CUSTOMER_FACING || collection.start_with?("#{CUSTOMER_FACING}/")
+  dropped.sort_by(&:first).each do |collection, group|
+    why = if excluded?(collection)
             "customer-session auth, not an organization token"
           else
             [group[:create] ? nil : "no create (a report)",
@@ -737,15 +399,9 @@ File.open(MANIFEST, "w") do |io|
   end
 end
 
-warn("kept #{kept.size} collections, dropped #{dropped_collections.size}")
-warn("dropped #{nulls.size} null-typed properties: #{nulls.uniq.sort.join(', ')}")
-warn("flattened #{unions.size} unions of objects")
-unions.uniq.sort.each { |line| warn("  #{line}") }
-warn("schemas #{before} -> #{spec['components']['schemas'].size}")
-warn("collapsed #{scalars.size} scalar unions " \
-     "(#{scalars.count { |c| c.end_with?('number') }} to number, " \
-     "#{scalars.count { |c| c.end_with?('string') }} to string)")
-warn("hoisted #{hoisted.size} flattened unions into named schemas")
-warn("json-only properties (#{json_only.size}): #{json_only.join(', ')}")
-warn("wrote #{PRUNED.sub("#{ROOT}/", '')}, #{MANIFEST.sub("#{ROOT}/", '')} and " \
-     "#{GENERATOR_CONFIG.sub("#{ROOT}/", '')}")
+widened = config["unions"].count { |_, e| e.key?("widen") }
+warn("resources: #{kept.size} kept, #{dropped.size} dropped")
+warn("unions: #{config['unions'].size} (#{widened} widened to a scalar, " \
+     "#{config['unions'].size - widened} flattened)")
+warn("json-only properties: #{config['attributes']['json'].size}")
+warn("wrote #{CONFIG.sub("#{ROOT}/", '')} and #{MANIFEST.sub("#{ROOT}/", '')}")

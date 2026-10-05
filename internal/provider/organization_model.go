@@ -2,11 +2,8 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -40,18 +37,18 @@ type OrganizationModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationLegalEntityModel struct {
-	RegisteredName types.String `tfsdk:"registered_name"`
 	Type types.String `tfsdk:"type"`
+	RegisteredName types.String `tfsdk:"registered_name"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCreateLegalEntity, error) {
 	out := &client.OrganizationCreateLegalEntity{}
-	if !m.RegisteredName.IsNull() && !m.RegisteredName.IsUnknown() {
-		out.RegisteredName = m.RegisteredName.ValueString()
-	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
+	}
+	if !m.RegisteredName.IsNull() && !m.RegisteredName.IsUnknown() {
+		out.RegisteredName = m.RegisteredName.ValueString()
 	}
 	return out, nil
 }
@@ -63,8 +60,8 @@ func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCrea
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCreateLegalEntity) {
-	m.RegisteredName = types.StringValue(c.RegisteredName)
 	m.Type = types.StringValue(c.Type)
+	m.RegisteredName = types.StringValue(c.RegisteredName)
 }
 // OrganizationSocialsModel is one `socials` block.
 //
@@ -108,10 +105,10 @@ func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialL
 type OrganizationDetailsModel struct {
 	About types.String `tfsdk:"about"`
 	ProductDescription types.String `tfsdk:"product_description"`
-	SellingCategories jsontypes.Normalized `tfsdk:"selling_categories"`
-	PricingModels jsontypes.Normalized `tfsdk:"pricing_models"`
+	SellingCategories []string `tfsdk:"selling_categories"`
+	PricingModels []string `tfsdk:"pricing_models"`
 	IntendedUse types.String `tfsdk:"intended_use"`
-	CustomerAcquisition jsontypes.Normalized `tfsdk:"customer_acquisition"`
+	CustomerAcquisition []string `tfsdk:"customer_acquisition"`
 	FutureAnnualRevenue types.Int64 `tfsdk:"future_annual_revenue"`
 	Switching types.Bool `tfsdk:"switching"`
 	SwitchingFrom types.String `tfsdk:"switching_from"`
@@ -127,26 +124,8 @@ func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails,
 	if !m.ProductDescription.IsNull() && !m.ProductDescription.IsUnknown() {
 		out.ProductDescription = m.ProductDescription.ValueString()
 	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.SellingCategories.IsNull() && !m.SellingCategories.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.SellingCategories.ValueString()), &out.SellingCategories); err != nil {
-			return out, fmt.Errorf("selling_categories: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.PricingModels.IsNull() && !m.PricingModels.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.PricingModels.ValueString()), &out.PricingModels); err != nil {
-			return out, fmt.Errorf("pricing_models: %w", err)
-		}
-	}
 	if !m.IntendedUse.IsNull() && !m.IntendedUse.IsUnknown() {
 		out.IntendedUse = m.IntendedUse.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.CustomerAcquisition.IsNull() && !m.CustomerAcquisition.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.CustomerAcquisition.ValueString()), &out.CustomerAcquisition); err != nil {
-			return out, fmt.Errorf("customer_acquisition: %w", err)
-		}
 	}
 	if !m.FutureAnnualRevenue.IsNull() && !m.FutureAnnualRevenue.IsUnknown() {
 		out.FutureAnnualRevenue = int32(m.FutureAnnualRevenue.ValueInt64())
@@ -173,25 +152,7 @@ func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails,
 func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails) {
 	m.About = types.StringValue(c.About)
 	m.ProductDescription = types.StringValue(c.ProductDescription)
-	if encoded, err := json.Marshal(c.SellingCategories); err == nil {
-		if m.SellingCategories.IsNull() || m.SellingCategories.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.SellingCategories.ValueString()) {
-			m.SellingCategories = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.PricingModels); err == nil {
-		if m.PricingModels.IsNull() || m.PricingModels.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.PricingModels.ValueString()) {
-			m.PricingModels = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
 	m.IntendedUse = types.StringValue(c.IntendedUse)
-	if encoded, err := json.Marshal(c.CustomerAcquisition); err == nil {
-		if m.CustomerAcquisition.IsNull() || m.CustomerAcquisition.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.CustomerAcquisition.ValueString()) {
-			m.CustomerAcquisition = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
 	m.FutureAnnualRevenue = types.Int64Value(int64(c.FutureAnnualRevenue))
 	if c.Switching != nil {
 		m.Switching = types.BoolValue(*c.Switching)
@@ -211,7 +172,7 @@ type OrganizationFeatureSettingsModel struct {
 	SeatBasedPricingEnabled types.Bool `tfsdk:"seat_based_pricing_enabled"`
 	MemberModelEnabled types.Bool `tfsdk:"member_model_enabled"`
 	CheckoutLocalizationEnabled types.Bool `tfsdk:"checkout_localization_enabled"`
-	OverviewMetrics jsontypes.Normalized `tfsdk:"overview_metrics"`
+	OverviewMetrics []string `tfsdk:"overview_metrics"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -228,12 +189,6 @@ func (m *OrganizationFeatureSettingsModel) ToClientModel() (*client.Organization
 	if !m.CheckoutLocalizationEnabled.IsNull() && !m.CheckoutLocalizationEnabled.IsUnknown() {
 		CheckoutLocalizationEnabled := m.CheckoutLocalizationEnabled.ValueBool()
 		out.CheckoutLocalizationEnabled = &CheckoutLocalizationEnabled
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.OverviewMetrics.IsNull() && !m.OverviewMetrics.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.OverviewMetrics.ValueString()), &out.OverviewMetrics); err != nil {
-			return out, fmt.Errorf("overview_metrics: %w", err)
-		}
 	}
 	return out, nil
 }
@@ -259,12 +214,6 @@ func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.Organizatio
 		m.CheckoutLocalizationEnabled = types.BoolValue(*c.CheckoutLocalizationEnabled)
 	} else {
 		m.CheckoutLocalizationEnabled = types.BoolNull()
-	}
-	if encoded, err := json.Marshal(c.OverviewMetrics); err == nil {
-		if m.OverviewMetrics.IsNull() || m.OverviewMetrics.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.OverviewMetrics.ValueString()) {
-			m.OverviewMetrics = jsontypes.NewNormalizedValue(string(encoded))
-		}
 	}
 }
 // OrganizationSubscriptionSettingsModel is one `subscription_settings` block.

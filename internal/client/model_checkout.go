@@ -7,7 +7,7 @@ type Checkout struct {
 	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
+	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
 	PaymentProcessor string `json:"payment_processor,omitempty"`
 	Status string `json:"status,omitempty"`
 	ClientSecret string `json:"client_secret,omitempty"`
@@ -55,7 +55,7 @@ type Checkout struct {
 	BillingAddressFields *CheckoutBillingAddressFields `json:"billing_address_fields,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
 	ExternalCustomerId string `json:"external_customer_id,omitempty"`
 	Products []CheckoutProduct `json:"products,omitempty"`
 	Product *CheckoutProduct `json:"product,omitempty"`
@@ -64,5 +64,5 @@ type Checkout struct {
 	Discount *CheckoutDiscount `json:"discount,omitempty"`
 	SubscriptionId string `json:"subscription_id,omitempty"`
 	AttachedCustomFields []AttachedCustomField `json:"attached_custom_fields,omitempty"`
-	CustomerMetadata map[string]string `json:"customer_metadata,omitempty"`
+	CustomerMetadata map[string]CustomerMetadataValue1 `json:"customer_metadata,omitempty"`
 }

@@ -4,7 +4,7 @@ package client
 
 // CustomerUpdate - CustomerUpdate struct
 type CustomerUpdate struct {
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Email string `json:"email,omitempty"`
 	Name string `json:"name,omitempty"`
 	BillingAddress *AddressInput `json:"billing_address,omitempty"`

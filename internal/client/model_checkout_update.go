@@ -4,7 +4,7 @@ package client
 
 // CheckoutUpdate - Update an existing checkout session using an access token.
 type CheckoutUpdate struct {
-	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
+	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
 	ProductId string `json:"product_id,omitempty"`
 	ProductPriceId string `json:"product_price_id,omitempty"`
 	Amount int32 `json:"amount,omitempty"`
@@ -18,14 +18,14 @@ type CheckoutUpdate struct {
 	Locale string `json:"locale,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
 	Currency string `json:"currency,omitempty"`
 	DiscountId string `json:"discount_id,omitempty"`
 	AllowDiscountCodes *bool `json:"allow_discount_codes,omitempty"`
 	RequireBillingAddress *bool `json:"require_billing_address,omitempty"`
 	AllowTrial *bool `json:"allow_trial,omitempty"`
 	CustomerIpAddress string `json:"customer_ip_address,omitempty"`
-	CustomerMetadata map[string]string `json:"customer_metadata,omitempty"`
+	CustomerMetadata map[string]MetadataValue `json:"customer_metadata,omitempty"`
 	SuccessUrl string `json:"success_url,omitempty"`
 	ReturnUrl string `json:"return_url,omitempty"`
 	EmbedOrigin string `json:"embed_origin,omitempty"`
