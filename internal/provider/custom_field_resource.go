@@ -74,34 +74,154 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "The ID of the organization owning the custom field.",
 			},
-			"text_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"text_properties": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"form_label": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_help_text": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_placeholder": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"textarea": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"min_length": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"max_length": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"number_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"number_properties": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"form_label": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_help_text": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_placeholder": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"ge": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"le": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"date_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"date_properties": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"form_label": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_help_text": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_placeholder": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"ge": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"le": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"checkbox_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"checkbox_properties": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"form_label": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_help_text": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_placeholder": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"select_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"select_properties": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"form_label": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_help_text": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"form_placeholder": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"options": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
 			"type": schema.StringAttribute{

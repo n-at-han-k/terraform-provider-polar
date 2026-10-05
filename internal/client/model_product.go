@@ -20,7 +20,7 @@ type Product struct {
 	IsArchived *bool `json:"is_archived,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
-	Prices []CheckoutPricesValueInner `json:"prices,omitempty"`
+	Prices []ProductPricesItem `json:"prices,omitempty"`
 	Benefits []Benefit `json:"benefits,omitempty"`
 	Medias []ProductMediaFileRead `json:"medias,omitempty"`
 	AttachedCustomFields []AttachedCustomField `json:"attached_custom_fields,omitempty"`

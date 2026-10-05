@@ -23,14 +23,18 @@ test -f "$SPEC" || { echo "missing $SPEC -- bin/derive did not write it"; exit 1
 # behind -- a stale resource compiles just as well as the new one.
 rm -rf internal/provider internal/client
 
+# -c, not --additional-properties: the configuration is DERIVED too, and the
+# list of positions that cannot be a typed block is longer than a command line
+# should carry. reference/generator-config.yaml is written by bin/derive from the
+# document, so the generator's settings cannot drift from what the document says.
 openapi-generator-polar generate \
   -i "$SPEC" \
   -g polar-terraform \
   -o . \
+  -c reference/generator-config.yaml \
   --git-host github.com \
   --git-user-id n-at-han-k \
-  --git-repo-id terraform-provider-polar \
-  --additional-properties="providerName=polar,providerAddress=ghcr.io/n-at-han-k/polar,providerVersion=1.0.0"
+  --git-repo-id terraform-provider-polar
 
 # The generator cannot write a go.sum -- only the toolchain knows the hashes,
 # and the Dockerfile builds with no network for the module cache.

@@ -68,12 +68,10 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
 			"filter": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
 			"aggregation": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

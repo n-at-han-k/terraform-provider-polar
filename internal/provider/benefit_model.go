@@ -23,14 +23,14 @@ type BenefitModel struct {
 	OrganizationId types.String `tfsdk:"organization_id"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	Visibility types.String `tfsdk:"visibility"`
-	CustomProperties jsontypes.Normalized `tfsdk:"custom_properties"`
-	DiscordProperties jsontypes.Normalized `tfsdk:"discord_properties"`
-	GithubRepositoryProperties jsontypes.Normalized `tfsdk:"github_repository_properties"`
-	DownloadablesProperties jsontypes.Normalized `tfsdk:"downloadables_properties"`
-	LicenseKeysProperties jsontypes.Normalized `tfsdk:"license_keys_properties"`
-	MeterCreditProperties jsontypes.Normalized `tfsdk:"meter_credit_properties"`
+	CustomProperties *BenefitCustomPropertiesModel `tfsdk:"custom_properties"`
+	DiscordProperties *BenefitDiscordPropertiesModel `tfsdk:"discord_properties"`
+	GithubRepositoryProperties *BenefitGithubRepositoryPropertiesModel `tfsdk:"github_repository_properties"`
+	DownloadablesProperties *BenefitDownloadablesPropertiesModel `tfsdk:"downloadables_properties"`
+	LicenseKeysProperties *BenefitLicenseKeysPropertiesModel `tfsdk:"license_keys_properties"`
+	MeterCreditProperties *BenefitMeterCreditPropertiesModel `tfsdk:"meter_credit_properties"`
 	FeatureFlagProperties jsontypes.Normalized `tfsdk:"feature_flag_properties"`
-	SlackSharedChannelProperties jsontypes.Normalized `tfsdk:"slack_shared_channel_properties"`
+	SlackSharedChannelProperties *BenefitSlackSharedChannelPropertiesModel `tfsdk:"slack_shared_channel_properties"`
 	VisibilityConfigurable types.Bool `tfsdk:"visibility_configurable"`
 	Type types.String `tfsdk:"type"`
 	BenefitCustomUpdateType types.String `tfsdk:"benefit_custom_update_type"`
@@ -41,14 +41,634 @@ type BenefitModel struct {
 	BenefitMeterCreditUpdateType types.String `tfsdk:"benefit_meter_credit_update_type"`
 	BenefitFeatureFlagUpdateType types.String `tfsdk:"benefit_feature_flag_update_type"`
 	BenefitSlackSharedChannelUpdateType types.String `tfsdk:"benefit_slack_shared_channel_update_type"`
-	BenefitCustomUpdateProperties jsontypes.Normalized `tfsdk:"benefit_custom_update_properties"`
-	BenefitDiscordUpdateProperties jsontypes.Normalized `tfsdk:"benefit_discord_update_properties"`
-	BenefitGitHubRepositoryUpdateProperties jsontypes.Normalized `tfsdk:"benefit_git_hub_repository_update_properties"`
-	BenefitDownloadablesUpdateProperties jsontypes.Normalized `tfsdk:"benefit_downloadables_update_properties"`
-	BenefitLicenseKeysUpdateProperties jsontypes.Normalized `tfsdk:"benefit_license_keys_update_properties"`
-	BenefitMeterCreditUpdateProperties jsontypes.Normalized `tfsdk:"benefit_meter_credit_update_properties"`
+	BenefitCustomUpdateProperties *BenefitBenefitCustomUpdatePropertiesModel `tfsdk:"benefit_custom_update_properties"`
+	BenefitDiscordUpdateProperties *BenefitBenefitDiscordUpdatePropertiesModel `tfsdk:"benefit_discord_update_properties"`
+	BenefitGitHubRepositoryUpdateProperties *BenefitBenefitGitHubRepositoryUpdatePropertiesModel `tfsdk:"benefit_git_hub_repository_update_properties"`
+	BenefitDownloadablesUpdateProperties *BenefitBenefitDownloadablesUpdatePropertiesModel `tfsdk:"benefit_downloadables_update_properties"`
+	BenefitLicenseKeysUpdateProperties *BenefitBenefitLicenseKeysUpdatePropertiesModel `tfsdk:"benefit_license_keys_update_properties"`
+	BenefitMeterCreditUpdateProperties *BenefitBenefitMeterCreditUpdatePropertiesModel `tfsdk:"benefit_meter_credit_update_properties"`
 	BenefitFeatureFlagUpdateProperties jsontypes.Normalized `tfsdk:"benefit_feature_flag_update_properties"`
-	BenefitSlackSharedChannelUpdateProperties jsontypes.Normalized `tfsdk:"benefit_slack_shared_channel_update_properties"`
+	BenefitSlackSharedChannelUpdateProperties *BenefitBenefitSlackSharedChannelUpdatePropertiesModel `tfsdk:"benefit_slack_shared_channel_update_properties"`
+}
+
+// BenefitCustomPropertiesModel is one `custom_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitCustomPropertiesModel struct {
+	Note types.String `tfsdk:"note"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitCustomPropertiesModel) ToClientModel() (*client.BenefitCustomProperties, error) {
+	out := &client.BenefitCustomProperties{}
+	if !m.Note.IsNull() && !m.Note.IsUnknown() {
+		out.Note = m.Note.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitCustomPropertiesModel) FromClientModel(c *client.BenefitCustomProperties) {
+	m.Note = types.StringValue(c.Note)
+}
+// BenefitDiscordPropertiesModel is one `discord_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitDiscordPropertiesModel struct {
+	GuildId types.String `tfsdk:"guild_id"`
+	RoleId types.String `tfsdk:"role_id"`
+	KickMember types.Bool `tfsdk:"kick_member"`
+	GuildToken types.String `tfsdk:"guild_token"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitDiscordPropertiesModel) ToClientModel() (*client.BenefitDiscordProperties, error) {
+	out := &client.BenefitDiscordProperties{}
+	if !m.GuildId.IsNull() && !m.GuildId.IsUnknown() {
+		out.GuildId = m.GuildId.ValueString()
+	}
+	if !m.RoleId.IsNull() && !m.RoleId.IsUnknown() {
+		out.RoleId = m.RoleId.ValueString()
+	}
+	if !m.KickMember.IsNull() && !m.KickMember.IsUnknown() {
+		KickMember := m.KickMember.ValueBool()
+		out.KickMember = &KickMember
+	}
+	if !m.GuildToken.IsNull() && !m.GuildToken.IsUnknown() {
+		out.GuildToken = m.GuildToken.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitDiscordPropertiesModel) FromClientModel(c *client.BenefitDiscordProperties) {
+	m.GuildId = types.StringValue(c.GuildId)
+	m.RoleId = types.StringValue(c.RoleId)
+	if c.KickMember != nil {
+		m.KickMember = types.BoolValue(*c.KickMember)
+	} else {
+		m.KickMember = types.BoolNull()
+	}
+	m.GuildToken = types.StringValue(c.GuildToken)
+}
+// BenefitGithubRepositoryPropertiesModel is one `github_repository_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitGithubRepositoryPropertiesModel struct {
+	RepositoryOwner types.String `tfsdk:"repository_owner"`
+	RepositoryName types.String `tfsdk:"repository_name"`
+	Permission types.String `tfsdk:"permission"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitGithubRepositoryPropertiesModel) ToClientModel() (*client.BenefitGitHubRepositoryProperties, error) {
+	out := &client.BenefitGitHubRepositoryProperties{}
+	if !m.RepositoryOwner.IsNull() && !m.RepositoryOwner.IsUnknown() {
+		out.RepositoryOwner = m.RepositoryOwner.ValueString()
+	}
+	if !m.RepositoryName.IsNull() && !m.RepositoryName.IsUnknown() {
+		out.RepositoryName = m.RepositoryName.ValueString()
+	}
+	if !m.Permission.IsNull() && !m.Permission.IsUnknown() {
+		out.Permission = m.Permission.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitGithubRepositoryPropertiesModel) FromClientModel(c *client.BenefitGitHubRepositoryProperties) {
+	m.RepositoryOwner = types.StringValue(c.RepositoryOwner)
+	m.RepositoryName = types.StringValue(c.RepositoryName)
+	m.Permission = types.StringValue(c.Permission)
+}
+// BenefitDownloadablesPropertiesModel is one `downloadables_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitDownloadablesPropertiesModel struct {
+	Archived jsontypes.Normalized `tfsdk:"archived"`
+	Files jsontypes.Normalized `tfsdk:"files"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitDownloadablesPropertiesModel) ToClientModel() (*client.BenefitDownloadablesProperties, error) {
+	out := &client.BenefitDownloadablesProperties{}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Archived.IsNull() && !m.Archived.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Archived.ValueString()), &out.Archived); err != nil {
+			return out, fmt.Errorf("archived: %w", err)
+		}
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Files.IsNull() && !m.Files.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Files.ValueString()), &out.Files); err != nil {
+			return out, fmt.Errorf("files: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitDownloadablesPropertiesModel) FromClientModel(c *client.BenefitDownloadablesProperties) {
+	if encoded, err := json.Marshal(c.Archived); err == nil {
+		if m.Archived.IsNull() || m.Archived.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Archived.ValueString()) {
+			m.Archived = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	if encoded, err := json.Marshal(c.Files); err == nil {
+		if m.Files.IsNull() || m.Files.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Files.ValueString()) {
+			m.Files = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+}
+// BenefitLicenseKeysPropertiesModel is one `license_keys_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitLicenseKeysPropertiesModel struct {
+	Prefix types.String `tfsdk:"prefix"`
+	Expires types.String `tfsdk:"expires"`
+	Activations types.String `tfsdk:"activations"`
+	LimitUsage types.Int64 `tfsdk:"limit_usage"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitLicenseKeysPropertiesModel) ToClientModel() (*client.BenefitLicenseKeysProperties, error) {
+	out := &client.BenefitLicenseKeysProperties{}
+	if !m.Prefix.IsNull() && !m.Prefix.IsUnknown() {
+		out.Prefix = m.Prefix.ValueString()
+	}
+	if !m.LimitUsage.IsNull() && !m.LimitUsage.IsUnknown() {
+		out.LimitUsage = int32(m.LimitUsage.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitLicenseKeysPropertiesModel) FromClientModel(c *client.BenefitLicenseKeysProperties) {
+	m.Prefix = types.StringValue(c.Prefix)
+	m.LimitUsage = types.Int64Value(int64(c.LimitUsage))
+}
+// BenefitMeterCreditPropertiesModel is one `meter_credit_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitMeterCreditPropertiesModel struct {
+	Units types.Int64 `tfsdk:"units"`
+	Rollover types.Bool `tfsdk:"rollover"`
+	MeterId types.String `tfsdk:"meter_id"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitMeterCreditPropertiesModel) ToClientModel() (*client.BenefitMeterCreditProperties, error) {
+	out := &client.BenefitMeterCreditProperties{}
+	if !m.Units.IsNull() && !m.Units.IsUnknown() {
+		out.Units = int32(m.Units.ValueInt64())
+	}
+	if !m.Rollover.IsNull() && !m.Rollover.IsUnknown() {
+		Rollover := m.Rollover.ValueBool()
+		out.Rollover = &Rollover
+	}
+	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
+		out.MeterId = m.MeterId.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitMeterCreditPropertiesModel) FromClientModel(c *client.BenefitMeterCreditProperties) {
+	m.Units = types.Int64Value(int64(c.Units))
+	if c.Rollover != nil {
+		m.Rollover = types.BoolValue(*c.Rollover)
+	} else {
+		m.Rollover = types.BoolNull()
+	}
+	m.MeterId = types.StringValue(c.MeterId)
+}
+// BenefitSlackSharedChannelPropertiesModel is one `slack_shared_channel_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitSlackSharedChannelPropertiesModel struct {
+	SlackIntegrationId types.String `tfsdk:"slack_integration_id"`
+	ChannelNameTemplate types.String `tfsdk:"channel_name_template"`
+	Private types.Bool `tfsdk:"private"`
+	WelcomeMessage types.String `tfsdk:"welcome_message"`
+	ArchiveOnRevoke types.Bool `tfsdk:"archive_on_revoke"`
+	TeamInvitees jsontypes.Normalized `tfsdk:"team_invitees"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitSlackSharedChannelPropertiesModel) ToClientModel() (*client.BenefitSlackSharedChannelProperties, error) {
+	out := &client.BenefitSlackSharedChannelProperties{}
+	if !m.SlackIntegrationId.IsNull() && !m.SlackIntegrationId.IsUnknown() {
+		out.SlackIntegrationId = m.SlackIntegrationId.ValueString()
+	}
+	if !m.ChannelNameTemplate.IsNull() && !m.ChannelNameTemplate.IsUnknown() {
+		out.ChannelNameTemplate = m.ChannelNameTemplate.ValueString()
+	}
+	if !m.Private.IsNull() && !m.Private.IsUnknown() {
+		Private := m.Private.ValueBool()
+		out.Private = &Private
+	}
+	if !m.WelcomeMessage.IsNull() && !m.WelcomeMessage.IsUnknown() {
+		out.WelcomeMessage = m.WelcomeMessage.ValueString()
+	}
+	if !m.ArchiveOnRevoke.IsNull() && !m.ArchiveOnRevoke.IsUnknown() {
+		ArchiveOnRevoke := m.ArchiveOnRevoke.ValueBool()
+		out.ArchiveOnRevoke = &ArchiveOnRevoke
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.TeamInvitees.IsNull() && !m.TeamInvitees.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.TeamInvitees.ValueString()), &out.TeamInvitees); err != nil {
+			return out, fmt.Errorf("team_invitees: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitSlackSharedChannelPropertiesModel) FromClientModel(c *client.BenefitSlackSharedChannelProperties) {
+	m.SlackIntegrationId = types.StringValue(c.SlackIntegrationId)
+	m.ChannelNameTemplate = types.StringValue(c.ChannelNameTemplate)
+	if c.Private != nil {
+		m.Private = types.BoolValue(*c.Private)
+	} else {
+		m.Private = types.BoolNull()
+	}
+	m.WelcomeMessage = types.StringValue(c.WelcomeMessage)
+	if c.ArchiveOnRevoke != nil {
+		m.ArchiveOnRevoke = types.BoolValue(*c.ArchiveOnRevoke)
+	} else {
+		m.ArchiveOnRevoke = types.BoolNull()
+	}
+	if encoded, err := json.Marshal(c.TeamInvitees); err == nil {
+		if m.TeamInvitees.IsNull() || m.TeamInvitees.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.TeamInvitees.ValueString()) {
+			m.TeamInvitees = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+}
+// BenefitBenefitCustomUpdatePropertiesModel is one `benefit_custom_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitCustomUpdatePropertiesModel struct {
+	Note types.String `tfsdk:"note"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitCustomUpdatePropertiesModel) ToClientModel() (*client.BenefitCustomProperties, error) {
+	out := &client.BenefitCustomProperties{}
+	if !m.Note.IsNull() && !m.Note.IsUnknown() {
+		out.Note = m.Note.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitCustomUpdatePropertiesModel) FromClientModel(c *client.BenefitCustomProperties) {
+	m.Note = types.StringValue(c.Note)
+}
+// BenefitBenefitDiscordUpdatePropertiesModel is one `benefit_discord_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitDiscordUpdatePropertiesModel struct {
+	GuildToken types.String `tfsdk:"guild_token"`
+	RoleId types.String `tfsdk:"role_id"`
+	KickMember types.Bool `tfsdk:"kick_member"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitDiscordUpdatePropertiesModel) ToClientModel() (*client.BenefitDiscordCreateProperties, error) {
+	out := &client.BenefitDiscordCreateProperties{}
+	if !m.GuildToken.IsNull() && !m.GuildToken.IsUnknown() {
+		out.GuildToken = m.GuildToken.ValueString()
+	}
+	if !m.RoleId.IsNull() && !m.RoleId.IsUnknown() {
+		out.RoleId = m.RoleId.ValueString()
+	}
+	if !m.KickMember.IsNull() && !m.KickMember.IsUnknown() {
+		KickMember := m.KickMember.ValueBool()
+		out.KickMember = &KickMember
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitDiscordUpdatePropertiesModel) FromClientModel(c *client.BenefitDiscordCreateProperties) {
+	m.GuildToken = types.StringValue(c.GuildToken)
+	m.RoleId = types.StringValue(c.RoleId)
+	if c.KickMember != nil {
+		m.KickMember = types.BoolValue(*c.KickMember)
+	} else {
+		m.KickMember = types.BoolNull()
+	}
+}
+// BenefitBenefitGitHubRepositoryUpdatePropertiesModel is one `benefit_git_hub_repository_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitGitHubRepositoryUpdatePropertiesModel struct {
+	RepositoryOwner types.String `tfsdk:"repository_owner"`
+	RepositoryName types.String `tfsdk:"repository_name"`
+	Permission types.String `tfsdk:"permission"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitGitHubRepositoryUpdatePropertiesModel) ToClientModel() (*client.BenefitGitHubRepositoryCreateProperties, error) {
+	out := &client.BenefitGitHubRepositoryCreateProperties{}
+	if !m.RepositoryOwner.IsNull() && !m.RepositoryOwner.IsUnknown() {
+		out.RepositoryOwner = m.RepositoryOwner.ValueString()
+	}
+	if !m.RepositoryName.IsNull() && !m.RepositoryName.IsUnknown() {
+		out.RepositoryName = m.RepositoryName.ValueString()
+	}
+	if !m.Permission.IsNull() && !m.Permission.IsUnknown() {
+		out.Permission = m.Permission.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitGitHubRepositoryUpdatePropertiesModel) FromClientModel(c *client.BenefitGitHubRepositoryCreateProperties) {
+	m.RepositoryOwner = types.StringValue(c.RepositoryOwner)
+	m.RepositoryName = types.StringValue(c.RepositoryName)
+	m.Permission = types.StringValue(c.Permission)
+}
+// BenefitBenefitDownloadablesUpdatePropertiesModel is one `benefit_downloadables_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitDownloadablesUpdatePropertiesModel struct {
+	Archived jsontypes.Normalized `tfsdk:"archived"`
+	Files jsontypes.Normalized `tfsdk:"files"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitDownloadablesUpdatePropertiesModel) ToClientModel() (*client.BenefitDownloadablesCreateProperties, error) {
+	out := &client.BenefitDownloadablesCreateProperties{}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Archived.IsNull() && !m.Archived.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Archived.ValueString()), &out.Archived); err != nil {
+			return out, fmt.Errorf("archived: %w", err)
+		}
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Files.IsNull() && !m.Files.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Files.ValueString()), &out.Files); err != nil {
+			return out, fmt.Errorf("files: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitDownloadablesUpdatePropertiesModel) FromClientModel(c *client.BenefitDownloadablesCreateProperties) {
+	if encoded, err := json.Marshal(c.Archived); err == nil {
+		if m.Archived.IsNull() || m.Archived.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Archived.ValueString()) {
+			m.Archived = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	if encoded, err := json.Marshal(c.Files); err == nil {
+		if m.Files.IsNull() || m.Files.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Files.ValueString()) {
+			m.Files = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+}
+// BenefitBenefitLicenseKeysUpdatePropertiesModel is one `benefit_license_keys_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitLicenseKeysUpdatePropertiesModel struct {
+	Prefix types.String `tfsdk:"prefix"`
+	Expires types.String `tfsdk:"expires"`
+	Activations types.String `tfsdk:"activations"`
+	LimitUsage types.Int64 `tfsdk:"limit_usage"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitLicenseKeysUpdatePropertiesModel) ToClientModel() (*client.BenefitLicenseKeysCreateProperties, error) {
+	out := &client.BenefitLicenseKeysCreateProperties{}
+	if !m.Prefix.IsNull() && !m.Prefix.IsUnknown() {
+		out.Prefix = m.Prefix.ValueString()
+	}
+	if !m.LimitUsage.IsNull() && !m.LimitUsage.IsUnknown() {
+		out.LimitUsage = int32(m.LimitUsage.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitLicenseKeysUpdatePropertiesModel) FromClientModel(c *client.BenefitLicenseKeysCreateProperties) {
+	m.Prefix = types.StringValue(c.Prefix)
+	m.LimitUsage = types.Int64Value(int64(c.LimitUsage))
+}
+// BenefitBenefitMeterCreditUpdatePropertiesModel is one `benefit_meter_credit_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitMeterCreditUpdatePropertiesModel struct {
+	Units types.Int64 `tfsdk:"units"`
+	Rollover types.Bool `tfsdk:"rollover"`
+	MeterId types.String `tfsdk:"meter_id"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitMeterCreditUpdatePropertiesModel) ToClientModel() (*client.BenefitMeterCreditCreateProperties, error) {
+	out := &client.BenefitMeterCreditCreateProperties{}
+	if !m.Units.IsNull() && !m.Units.IsUnknown() {
+		out.Units = int32(m.Units.ValueInt64())
+	}
+	if !m.Rollover.IsNull() && !m.Rollover.IsUnknown() {
+		Rollover := m.Rollover.ValueBool()
+		out.Rollover = &Rollover
+	}
+	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
+		out.MeterId = m.MeterId.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitMeterCreditUpdatePropertiesModel) FromClientModel(c *client.BenefitMeterCreditCreateProperties) {
+	m.Units = types.Int64Value(int64(c.Units))
+	if c.Rollover != nil {
+		m.Rollover = types.BoolValue(*c.Rollover)
+	} else {
+		m.Rollover = types.BoolNull()
+	}
+	m.MeterId = types.StringValue(c.MeterId)
+}
+// BenefitBenefitSlackSharedChannelUpdatePropertiesModel is one `benefit_slack_shared_channel_update_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitBenefitSlackSharedChannelUpdatePropertiesModel struct {
+	SlackIntegrationId types.String `tfsdk:"slack_integration_id"`
+	ChannelNameTemplate types.String `tfsdk:"channel_name_template"`
+	Private types.Bool `tfsdk:"private"`
+	WelcomeMessage types.String `tfsdk:"welcome_message"`
+	ArchiveOnRevoke types.Bool `tfsdk:"archive_on_revoke"`
+	TeamInvitees jsontypes.Normalized `tfsdk:"team_invitees"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitBenefitSlackSharedChannelUpdatePropertiesModel) ToClientModel() (*client.BenefitSlackSharedChannelCreateProperties, error) {
+	out := &client.BenefitSlackSharedChannelCreateProperties{}
+	if !m.SlackIntegrationId.IsNull() && !m.SlackIntegrationId.IsUnknown() {
+		out.SlackIntegrationId = m.SlackIntegrationId.ValueString()
+	}
+	if !m.ChannelNameTemplate.IsNull() && !m.ChannelNameTemplate.IsUnknown() {
+		out.ChannelNameTemplate = m.ChannelNameTemplate.ValueString()
+	}
+	if !m.Private.IsNull() && !m.Private.IsUnknown() {
+		Private := m.Private.ValueBool()
+		out.Private = &Private
+	}
+	if !m.WelcomeMessage.IsNull() && !m.WelcomeMessage.IsUnknown() {
+		out.WelcomeMessage = m.WelcomeMessage.ValueString()
+	}
+	if !m.ArchiveOnRevoke.IsNull() && !m.ArchiveOnRevoke.IsUnknown() {
+		ArchiveOnRevoke := m.ArchiveOnRevoke.ValueBool()
+		out.ArchiveOnRevoke = &ArchiveOnRevoke
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.TeamInvitees.IsNull() && !m.TeamInvitees.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.TeamInvitees.ValueString()), &out.TeamInvitees); err != nil {
+			return out, fmt.Errorf("team_invitees: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitBenefitSlackSharedChannelUpdatePropertiesModel) FromClientModel(c *client.BenefitSlackSharedChannelCreateProperties) {
+	m.SlackIntegrationId = types.StringValue(c.SlackIntegrationId)
+	m.ChannelNameTemplate = types.StringValue(c.ChannelNameTemplate)
+	if c.Private != nil {
+		m.Private = types.BoolValue(*c.Private)
+	} else {
+		m.Private = types.BoolNull()
+	}
+	m.WelcomeMessage = types.StringValue(c.WelcomeMessage)
+	if c.ArchiveOnRevoke != nil {
+		m.ArchiveOnRevoke = types.BoolValue(*c.ArchiveOnRevoke)
+	} else {
+		m.ArchiveOnRevoke = types.BoolNull()
+	}
+	if encoded, err := json.Marshal(c.TeamInvitees); err == nil {
+		if m.TeamInvitees.IsNull() || m.TeamInvitees.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.TeamInvitees.ValueString()) {
+			m.TeamInvitees = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -92,53 +712,47 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitUpdate, error) {
 	if !m.BenefitSlackSharedChannelUpdateType.IsNull() && !m.BenefitSlackSharedChannelUpdateType.IsUnknown() {
 		out.BenefitSlackSharedChannelUpdateType = m.BenefitSlackSharedChannelUpdateType.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitCustomUpdateProperties.IsNull() && !m.BenefitCustomUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitCustomUpdateProperties.ValueString()), &out.BenefitCustomUpdateProperties); err != nil {
+	if m.BenefitCustomUpdateProperties != nil {
+		converted, err := m.BenefitCustomUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_custom_update_properties: %w", err)
 		}
+		out.BenefitCustomUpdateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitDiscordUpdateProperties.IsNull() && !m.BenefitDiscordUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitDiscordUpdateProperties.ValueString()), &out.BenefitDiscordUpdateProperties); err != nil {
+	if m.BenefitDiscordUpdateProperties != nil {
+		converted, err := m.BenefitDiscordUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_discord_update_properties: %w", err)
 		}
+		out.BenefitDiscordUpdateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitGitHubRepositoryUpdateProperties.IsNull() && !m.BenefitGitHubRepositoryUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitGitHubRepositoryUpdateProperties.ValueString()), &out.BenefitGitHubRepositoryUpdateProperties); err != nil {
+	if m.BenefitGitHubRepositoryUpdateProperties != nil {
+		converted, err := m.BenefitGitHubRepositoryUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_git_hub_repository_update_properties: %w", err)
 		}
+		out.BenefitGitHubRepositoryUpdateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitDownloadablesUpdateProperties.IsNull() && !m.BenefitDownloadablesUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitDownloadablesUpdateProperties.ValueString()), &out.BenefitDownloadablesUpdateProperties); err != nil {
+	if m.BenefitDownloadablesUpdateProperties != nil {
+		converted, err := m.BenefitDownloadablesUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_downloadables_update_properties: %w", err)
 		}
+		out.BenefitDownloadablesUpdateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitLicenseKeysUpdateProperties.IsNull() && !m.BenefitLicenseKeysUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitLicenseKeysUpdateProperties.ValueString()), &out.BenefitLicenseKeysUpdateProperties); err != nil {
+	if m.BenefitLicenseKeysUpdateProperties != nil {
+		converted, err := m.BenefitLicenseKeysUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_license_keys_update_properties: %w", err)
 		}
+		out.BenefitLicenseKeysUpdateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitMeterCreditUpdateProperties.IsNull() && !m.BenefitMeterCreditUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitMeterCreditUpdateProperties.ValueString()), &out.BenefitMeterCreditUpdateProperties); err != nil {
+	if m.BenefitMeterCreditUpdateProperties != nil {
+		converted, err := m.BenefitMeterCreditUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_meter_credit_update_properties: %w", err)
 		}
+		out.BenefitMeterCreditUpdateProperties = converted
 	}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
@@ -148,13 +762,12 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitUpdate, error) {
 			return out, fmt.Errorf("benefit_feature_flag_update_properties: %w", err)
 		}
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BenefitSlackSharedChannelUpdateProperties.IsNull() && !m.BenefitSlackSharedChannelUpdateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BenefitSlackSharedChannelUpdateProperties.ValueString()), &out.BenefitSlackSharedChannelUpdateProperties); err != nil {
+	if m.BenefitSlackSharedChannelUpdateProperties != nil {
+		converted, err := m.BenefitSlackSharedChannelUpdateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("benefit_slack_shared_channel_update_properties: %w", err)
 		}
+		out.BenefitSlackSharedChannelUpdateProperties = converted
 	}
 	return out, nil
 }
@@ -203,83 +816,83 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Visibility = types.StringValue(c.Visibility)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.CustomProperties); err == nil {
-		if m.CustomProperties.IsNull() || m.CustomProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.CustomProperties.ValueString()) {
-			m.CustomProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.CustomProperties != nil {
+		block := BenefitCustomPropertiesModel{}
+		if m.CustomProperties != nil {
+			block = *m.CustomProperties
 		}
+		block.FromClientModel(c.CustomProperties)
+		m.CustomProperties = &block
+	} else {
+		m.CustomProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.DiscordProperties); err == nil {
-		if m.DiscordProperties.IsNull() || m.DiscordProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.DiscordProperties.ValueString()) {
-			m.DiscordProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.DiscordProperties != nil {
+		block := BenefitDiscordPropertiesModel{}
+		if m.DiscordProperties != nil {
+			block = *m.DiscordProperties
 		}
+		block.FromClientModel(c.DiscordProperties)
+		m.DiscordProperties = &block
+	} else {
+		m.DiscordProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.GithubRepositoryProperties); err == nil {
-		if m.GithubRepositoryProperties.IsNull() || m.GithubRepositoryProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.GithubRepositoryProperties.ValueString()) {
-			m.GithubRepositoryProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.GithubRepositoryProperties != nil {
+		block := BenefitGithubRepositoryPropertiesModel{}
+		if m.GithubRepositoryProperties != nil {
+			block = *m.GithubRepositoryProperties
 		}
+		block.FromClientModel(c.GithubRepositoryProperties)
+		m.GithubRepositoryProperties = &block
+	} else {
+		m.GithubRepositoryProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.DownloadablesProperties); err == nil {
-		if m.DownloadablesProperties.IsNull() || m.DownloadablesProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.DownloadablesProperties.ValueString()) {
-			m.DownloadablesProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.DownloadablesProperties != nil {
+		block := BenefitDownloadablesPropertiesModel{}
+		if m.DownloadablesProperties != nil {
+			block = *m.DownloadablesProperties
 		}
+		block.FromClientModel(c.DownloadablesProperties)
+		m.DownloadablesProperties = &block
+	} else {
+		m.DownloadablesProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.LicenseKeysProperties); err == nil {
-		if m.LicenseKeysProperties.IsNull() || m.LicenseKeysProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.LicenseKeysProperties.ValueString()) {
-			m.LicenseKeysProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.LicenseKeysProperties != nil {
+		block := BenefitLicenseKeysPropertiesModel{}
+		if m.LicenseKeysProperties != nil {
+			block = *m.LicenseKeysProperties
 		}
+		block.FromClientModel(c.LicenseKeysProperties)
+		m.LicenseKeysProperties = &block
+	} else {
+		m.LicenseKeysProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.MeterCreditProperties); err == nil {
-		if m.MeterCreditProperties.IsNull() || m.MeterCreditProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.MeterCreditProperties.ValueString()) {
-			m.MeterCreditProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.MeterCreditProperties != nil {
+		block := BenefitMeterCreditPropertiesModel{}
+		if m.MeterCreditProperties != nil {
+			block = *m.MeterCreditProperties
 		}
+		block.FromClientModel(c.MeterCreditProperties)
+		m.MeterCreditProperties = &block
+	} else {
+		m.MeterCreditProperties = nil
 	}
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
 	// unrepresentable one would have failed on the way in.
@@ -294,18 +907,18 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 			m.FeatureFlagProperties = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.SlackSharedChannelProperties); err == nil {
-		if m.SlackSharedChannelProperties.IsNull() || m.SlackSharedChannelProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.SlackSharedChannelProperties.ValueString()) {
-			m.SlackSharedChannelProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.SlackSharedChannelProperties != nil {
+		block := BenefitSlackSharedChannelPropertiesModel{}
+		if m.SlackSharedChannelProperties != nil {
+			block = *m.SlackSharedChannelProperties
 		}
+		block.FromClientModel(c.SlackSharedChannelProperties)
+		m.SlackSharedChannelProperties = &block
+	} else {
+		m.SlackSharedChannelProperties = nil
 	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown

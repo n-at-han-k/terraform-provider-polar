@@ -35,6 +35,7 @@ type DiscountModel struct {
 	BasisPoints types.Int64 `tfsdk:"basis_points"`
 }
 
+
 // ToClientModel converts a Terraform model to a client model.
 func (m *DiscountModel) ToClientModel() (*client.DiscountUpdate, error) {
 	out := &client.DiscountUpdate{}

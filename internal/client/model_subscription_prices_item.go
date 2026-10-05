@@ -2,8 +2,8 @@
 
 package client
 
-// LegacyRecurringProductPrice - LegacyRecurringProductPrice struct
-type LegacyRecurringProductPrice struct {
+// SubscriptionPricesItem - SubscriptionPricesItem struct
+type SubscriptionPricesItem struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`
@@ -19,5 +19,11 @@ type LegacyRecurringProductPrice struct {
 	MinimumAmount int32 `json:"minimum_amount,omitempty"`
 	MaximumAmount int32 `json:"maximum_amount,omitempty"`
 	PresetAmount int32 `json:"preset_amount,omitempty"`
-	AmountType string `json:"amount_type,omitempty"`
+	LegacyRecurringProductPriceAmountType string `json:"legacy_recurring_product_price_amount_type,omitempty"`
+	ProductPriceAmountType string `json:"product_price_amount_type,omitempty"`
+	SeatTiers *ProductPriceSeatTiersOutput `json:"seat_tiers,omitempty"`
+	UnitAmount string `json:"unit_amount,omitempty"`
+	CapAmount int32 `json:"cap_amount,omitempty"`
+	MeterId string `json:"meter_id,omitempty"`
+	Meter *ProductPriceMeter `json:"meter,omitempty"`
 }

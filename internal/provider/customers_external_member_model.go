@@ -19,6 +19,7 @@ type CustomersExternalMemberModel struct {
 	Role types.String `tfsdk:"role"`
 }
 
+
 // ToClientModel converts a Terraform model to a client model.
 func (m *CustomersExternalMemberModel) ToClientModel() (*client.MemberCreateFromCustomer, error) {
 	out := &client.MemberCreateFromCustomer{}

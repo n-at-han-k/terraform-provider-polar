@@ -11402,13 +11402,176 @@
           "product_price": {
             "anyOf": [
               {
-                "oneOf": [
-                  {
-                    "$ref": "#/components/schemas/LegacyRecurringProductPrice"
+                "type": "object",
+                "properties": {
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "title": "Created At",
+                    "description": "Creation timestamp of the object."
                   },
-                  {
-                    "$ref": "#/components/schemas/ProductPrice"
+                  "modified_at": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Modified At",
+                    "description": "Last modification timestamp of the object."
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid4",
+                    "title": "Id",
+                    "description": "The ID of the price."
+                  },
+                  "source": {
+                    "$ref": "#/components/schemas/ProductPriceSource",
+                    "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+                  },
+                  "price_currency": {
+                    "type": "string",
+                    "title": "Price Currency",
+                    "description": "The currency in which the customer will be charged."
+                  },
+                  "tax_behavior": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/components/schemas/TaxBehaviorOption"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+                  },
+                  "is_archived": {
+                    "type": "boolean",
+                    "title": "Is Archived",
+                    "description": "Whether the price is archived and no longer available."
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid4",
+                    "title": "Product Id",
+                    "description": "The ID of the product owning the price."
+                  },
+                  "type": {
+                    "type": "string",
+                    "const": "recurring",
+                    "title": "Type",
+                    "description": "The type of the price."
+                  },
+                  "recurring_interval": {
+                    "$ref": "#/components/schemas/RecurringInterval",
+                    "description": "The recurring interval of the price."
+                  },
+                  "price_amount": {
+                    "type": "integer",
+                    "title": "Price Amount",
+                    "description": "The price in cents."
+                  },
+                  "legacy": {
+                    "type": "boolean",
+                    "const": true,
+                    "title": "Legacy",
+                    "readOnly": true
+                  },
+                  "minimum_amount": {
+                    "type": "integer",
+                    "title": "Minimum Amount",
+                    "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+                  },
+                  "maximum_amount": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Maximum Amount",
+                    "description": "The maximum amount the customer can pay."
+                  },
+                  "preset_amount": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Preset Amount",
+                    "description": "The initial amount shown to the customer."
+                  },
+                  "legacy_recurring_product_price_amount_type": {
+                    "type": "string",
+                    "enum": [
+                      "custom",
+                      "fixed"
+                    ],
+                    "title": "amount_type",
+                    "description": "Which variant this is. Selects which of the optional blocks above applies."
+                  },
+                  "product_price_amount_type": {
+                    "type": "string",
+                    "enum": [
+                      "custom",
+                      "fixed",
+                      "metered_unit",
+                      "seat_based"
+                    ],
+                    "title": "amount_type",
+                    "description": "Which variant this is. Selects which of the optional blocks above applies."
+                  },
+                  "seat_tiers": {
+                    "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+                    "description": "Tiered pricing based on seat quantity"
+                  },
+                  "unit_amount": {
+                    "type": "string",
+                    "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                    "title": "Unit Amount",
+                    "description": "The price per unit in cents."
+                  },
+                  "cap_amount": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Cap Amount",
+                    "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+                  },
+                  "meter_id": {
+                    "type": "string",
+                    "format": "uuid4",
+                    "title": "Meter Id",
+                    "description": "The ID of the meter associated to the price."
+                  },
+                  "meter": {
+                    "$ref": "#/components/schemas/ProductPriceMeter",
+                    "description": "The meter associated to the price."
                   }
+                },
+                "required": [
+                  "created_at",
+                  "modified_at",
+                  "id",
+                  "source",
+                  "price_currency",
+                  "tax_behavior",
+                  "is_archived",
+                  "product_id"
                 ]
               },
               {
@@ -11424,13 +11587,176 @@
               {
                 "additionalProperties": {
                   "items": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/components/schemas/LegacyRecurringProductPrice"
+                    "type": "object",
+                    "properties": {
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At",
+                        "description": "Creation timestamp of the object."
                       },
-                      {
-                        "$ref": "#/components/schemas/ProductPrice"
+                      "modified_at": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Modified At",
+                        "description": "Last modification timestamp of the object."
+                      },
+                      "id": {
+                        "type": "string",
+                        "format": "uuid4",
+                        "title": "Id",
+                        "description": "The ID of the price."
+                      },
+                      "source": {
+                        "$ref": "#/components/schemas/ProductPriceSource",
+                        "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+                      },
+                      "price_currency": {
+                        "type": "string",
+                        "title": "Price Currency",
+                        "description": "The currency in which the customer will be charged."
+                      },
+                      "tax_behavior": {
+                        "anyOf": [
+                          {
+                            "$ref": "#/components/schemas/TaxBehaviorOption"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+                      },
+                      "is_archived": {
+                        "type": "boolean",
+                        "title": "Is Archived",
+                        "description": "Whether the price is archived and no longer available."
+                      },
+                      "product_id": {
+                        "type": "string",
+                        "format": "uuid4",
+                        "title": "Product Id",
+                        "description": "The ID of the product owning the price."
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "recurring",
+                        "title": "Type",
+                        "description": "The type of the price."
+                      },
+                      "recurring_interval": {
+                        "$ref": "#/components/schemas/RecurringInterval",
+                        "description": "The recurring interval of the price."
+                      },
+                      "price_amount": {
+                        "type": "integer",
+                        "title": "Price Amount",
+                        "description": "The price in cents."
+                      },
+                      "legacy": {
+                        "type": "boolean",
+                        "const": true,
+                        "title": "Legacy",
+                        "readOnly": true
+                      },
+                      "minimum_amount": {
+                        "type": "integer",
+                        "title": "Minimum Amount",
+                        "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+                      },
+                      "maximum_amount": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Maximum Amount",
+                        "description": "The maximum amount the customer can pay."
+                      },
+                      "preset_amount": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Preset Amount",
+                        "description": "The initial amount shown to the customer."
+                      },
+                      "legacy_recurring_product_price_amount_type": {
+                        "type": "string",
+                        "enum": [
+                          "custom",
+                          "fixed"
+                        ],
+                        "title": "amount_type",
+                        "description": "Which variant this is. Selects which of the optional blocks above applies."
+                      },
+                      "product_price_amount_type": {
+                        "type": "string",
+                        "enum": [
+                          "custom",
+                          "fixed",
+                          "metered_unit",
+                          "seat_based"
+                        ],
+                        "title": "amount_type",
+                        "description": "Which variant this is. Selects which of the optional blocks above applies."
+                      },
+                      "seat_tiers": {
+                        "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+                        "description": "Tiered pricing based on seat quantity"
+                      },
+                      "unit_amount": {
+                        "type": "string",
+                        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                        "title": "Unit Amount",
+                        "description": "The price per unit in cents."
+                      },
+                      "cap_amount": {
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "title": "Cap Amount",
+                        "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+                      },
+                      "meter_id": {
+                        "type": "string",
+                        "format": "uuid4",
+                        "title": "Meter Id",
+                        "description": "The ID of the meter associated to the price."
+                      },
+                      "meter": {
+                        "$ref": "#/components/schemas/ProductPriceMeter",
+                        "description": "The meter associated to the price."
                       }
+                    },
+                    "required": [
+                      "created_at",
+                      "modified_at",
+                      "id",
+                      "source",
+                      "price_currency",
+                      "tax_behavior",
+                      "is_archived",
+                      "product_id"
                     ]
                   },
                   "type": "array",
@@ -12403,14 +12729,7 @@
           },
           "prices": {
             "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/LegacyRecurringProductPrice"
-                },
-                {
-                  "$ref": "#/components/schemas/ProductPrice"
-                }
-              ]
+              "$ref": "#/components/schemas/CheckoutLinkProductPricesItem"
             },
             "type": "array",
             "title": "Prices",
@@ -12776,14 +13095,7 @@
           },
           "prices": {
             "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/LegacyRecurringProductPrice"
-                },
-                {
-                  "$ref": "#/components/schemas/ProductPrice"
-                }
-              ]
+              "$ref": "#/components/schemas/CheckoutProductPricesItem"
             },
             "type": "array",
             "title": "Prices",
@@ -15855,140 +16167,6 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "LegacyRecurringProductPrice": {
-        "type": "object",
-        "properties": {
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Creation timestamp of the object."
-          },
-          "modified_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modified At",
-            "description": "Last modification timestamp of the object."
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid4",
-            "title": "Id",
-            "description": "The ID of the price."
-          },
-          "source": {
-            "$ref": "#/components/schemas/ProductPriceSource",
-            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
-          },
-          "price_currency": {
-            "type": "string",
-            "title": "Price Currency",
-            "description": "The currency in which the customer will be charged."
-          },
-          "tax_behavior": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaxBehaviorOption"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
-          },
-          "is_archived": {
-            "type": "boolean",
-            "title": "Is Archived",
-            "description": "Whether the price is archived and no longer available."
-          },
-          "product_id": {
-            "type": "string",
-            "format": "uuid4",
-            "title": "Product Id",
-            "description": "The ID of the product owning the price."
-          },
-          "type": {
-            "type": "string",
-            "const": "recurring",
-            "title": "Type",
-            "description": "The type of the price."
-          },
-          "recurring_interval": {
-            "$ref": "#/components/schemas/RecurringInterval",
-            "description": "The recurring interval of the price."
-          },
-          "price_amount": {
-            "type": "integer",
-            "title": "Price Amount",
-            "description": "The price in cents."
-          },
-          "legacy": {
-            "type": "boolean",
-            "const": true,
-            "title": "Legacy",
-            "readOnly": true
-          },
-          "minimum_amount": {
-            "type": "integer",
-            "title": "Minimum Amount",
-            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
-          },
-          "maximum_amount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maximum Amount",
-            "description": "The maximum amount the customer can pay."
-          },
-          "preset_amount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preset Amount",
-            "description": "The initial amount shown to the customer."
-          },
-          "amount_type": {
-            "type": "string",
-            "enum": [
-              "custom",
-              "fixed"
-            ],
-            "title": "amount_type",
-            "description": "Which variant this is. Selects which of the optional blocks above applies."
-          }
-        },
-        "required": [
-          "created_at",
-          "modified_at",
-          "id",
-          "source",
-          "price_currency",
-          "tax_behavior",
-          "is_archived",
-          "product_id",
-          "type",
-          "recurring_interval",
-          "legacy",
-          "amount_type"
-        ]
-      },
       "ListResource_Benefit_": {
         "properties": {
           "items": {
@@ -16583,31 +16761,7 @@
             "description": "The filter to apply on events that'll be used to calculate the meter."
           },
           "aggregation": {
-            "title": "Aggregation",
-            "description": "The aggregation to apply on the filtered events to calculate the meter.",
-            "type": "object",
-            "properties": {
-              "property": {
-                "type": "string",
-                "title": "Property"
-              },
-              "func": {
-                "type": "string",
-                "enum": [
-                  "avg",
-                  "count",
-                  "max",
-                  "min",
-                  "sum",
-                  "unique"
-                ],
-                "title": "func",
-                "description": "Which variant this is. Selects which of the optional blocks above applies."
-              }
-            },
-            "required": [
-              "func"
-            ]
+            "$ref": "#/components/schemas/MeterAggregation"
           },
           "organization_id": {
             "type": "string",
@@ -16714,31 +16868,7 @@
             "description": "The filter to apply on events that'll be used to calculate the meter."
           },
           "aggregation": {
-            "title": "Aggregation",
-            "description": "The aggregation to apply on the filtered events to calculate the meter.",
-            "type": "object",
-            "properties": {
-              "property": {
-                "type": "string",
-                "title": "Property"
-              },
-              "func": {
-                "type": "string",
-                "enum": [
-                  "avg",
-                  "count",
-                  "max",
-                  "min",
-                  "sum",
-                  "unique"
-                ],
-                "title": "func",
-                "description": "Which variant this is. Selects which of the optional blocks above applies."
-              }
-            },
-            "required": [
-              "func"
-            ]
+            "$ref": "#/components/schemas/MeterCreateAggregation"
           },
           "organization_id": {
             "anyOf": [
@@ -21767,14 +21897,7 @@
           },
           "prices": {
             "items": {
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/LegacyRecurringProductPrice"
-                },
-                {
-                  "$ref": "#/components/schemas/ProductPrice"
-                }
-              ]
+              "$ref": "#/components/schemas/ProductPricesItem"
             },
             "type": "array",
             "title": "Prices",
@@ -21897,118 +22020,7 @@
           },
           "prices": {
             "items": {
-              "type": "object",
-              "properties": {
-                "price_currency": {
-                  "$ref": "#/components/schemas/PresentmentCurrency",
-                  "description": "The currency in which the customer will be charged.",
-                  "default": "usd"
-                },
-                "tax_behavior": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/TaxBehaviorOption"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "The tax behavior of the price. If not set, it will default to the organization's default tax behavior."
-                },
-                "price_amount": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "title": "Price Amount",
-                  "description": "The price in cents. Set to `0` for a free price.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
-                },
-                "minimum_amount": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "title": "Minimum Amount",
-                  "description": "The minimum amount the customer can pay. If set to 0, the price is 'free or pay what you want' and $0 is accepted. If set to a value below the minimum price amount for the currency, it will be rejected. Defaults to the minimum price amount for the currency. Minimum per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units",
-                  "default": 50
-                },
-                "maximum_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "minimum": 1,
-                      "description": "The price in cents.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Maximum Amount",
-                  "description": "The maximum amount the customer can pay. Maximum per currency:\n- USD: 999,999.99\n- EUR: 999,999.99\n- GBP: 999,999.99\n- ARS: 1,400,000\n- CDF: 2,800,000\n- COP: 4,000,000\n- IDR: 16,000,000\n- KHR: 4,000,000\n- LAK: 21,000,000\n- MNT: 3,500,000\n- MWK: 1,750,000\n- NGN: 1,550,000\n- TZS: 2,500,000\n- UGX: 3,700,000\n- UZS: 12,500,000\n- Other currencies: 99,999,999 minor units"
-                },
-                "preset_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "minimum": 0,
-                      "description": "The price in cents.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Preset Amount",
-                  "description": "The initial amount shown to the customer. If 0, the customer will see $0 as the default. If set to a value below the minimum price amount for the currency, it will be rejected.Minimum per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
-                },
-                "seat_tiers": {
-                  "$ref": "#/components/schemas/ProductPriceSeatTiers-Input",
-                  "description": "Tiered pricing based on seat quantity"
-                },
-                "meter_id": {
-                  "type": "string",
-                  "format": "uuid4",
-                  "title": "Meter Id",
-                  "description": "The ID of the meter associated to the price."
-                },
-                "unit_amount": {
-                  "anyOf": [
-                    {
-                      "type": "number",
-                      "exclusiveMinimum": 0
-                    },
-                    {
-                      "type": "string",
-                      "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,5}|(?=[\\d.]{1,18}0*$)\\d{0,5}\\.\\d{0,12}0*$)"
-                    }
-                  ],
-                  "title": "Unit Amount",
-                  "description": "The price per unit in cents. Supports up to 12 decimal places."
-                },
-                "cap_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer",
-                      "maximum": 2147483647,
-                      "minimum": 0
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Cap Amount",
-                  "description": "Optional maximum amount in cents that can be charged, regardless of the number of units consumed."
-                },
-                "amount_type": {
-                  "type": "string",
-                  "enum": [
-                    "custom",
-                    "fixed",
-                    "metered_unit",
-                    "seat_based"
-                  ],
-                  "title": "amount_type",
-                  "description": "Which variant this is. Selects which of the optional blocks above applies."
-                }
-              },
-              "required": [
-                "amount_type"
-              ]
+              "$ref": "#/components/schemas/ProductCreatePricesItem"
             },
             "type": "array",
             "minItems": 1,
@@ -22267,155 +22279,6 @@
         ],
         "title": "ProductMediaFileRead",
         "description": "File to be used as a product media file."
-      },
-      "ProductPrice": {
-        "type": "object",
-        "properties": {
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At",
-            "description": "Creation timestamp of the object."
-          },
-          "modified_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Modified At",
-            "description": "Last modification timestamp of the object."
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid4",
-            "title": "Id",
-            "description": "The ID of the price."
-          },
-          "source": {
-            "$ref": "#/components/schemas/ProductPriceSource",
-            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
-          },
-          "price_currency": {
-            "type": "string",
-            "title": "Price Currency",
-            "description": "The currency in which the customer will be charged."
-          },
-          "tax_behavior": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TaxBehaviorOption"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
-          },
-          "is_archived": {
-            "type": "boolean",
-            "title": "Is Archived",
-            "description": "Whether the price is archived and no longer available."
-          },
-          "product_id": {
-            "type": "string",
-            "format": "uuid4",
-            "title": "Product Id",
-            "description": "The ID of the product owning the price."
-          },
-          "price_amount": {
-            "type": "integer",
-            "title": "Price Amount",
-            "description": "The price in cents."
-          },
-          "minimum_amount": {
-            "type": "integer",
-            "title": "Minimum Amount",
-            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
-          },
-          "maximum_amount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Maximum Amount",
-            "description": "The maximum amount the customer can pay."
-          },
-          "preset_amount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preset Amount",
-            "description": "The initial amount shown to the customer."
-          },
-          "seat_tiers": {
-            "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
-            "description": "Tiered pricing based on seat quantity"
-          },
-          "unit_amount": {
-            "type": "string",
-            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-            "title": "Unit Amount",
-            "description": "The price per unit in cents."
-          },
-          "cap_amount": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cap Amount",
-            "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
-          },
-          "meter_id": {
-            "type": "string",
-            "format": "uuid4",
-            "title": "Meter Id",
-            "description": "The ID of the meter associated to the price."
-          },
-          "meter": {
-            "$ref": "#/components/schemas/ProductPriceMeter",
-            "description": "The meter associated to the price."
-          },
-          "amount_type": {
-            "type": "string",
-            "enum": [
-              "custom",
-              "fixed",
-              "metered_unit",
-              "seat_based"
-            ],
-            "title": "amount_type",
-            "description": "Which variant this is. Selects which of the optional blocks above applies."
-          }
-        },
-        "required": [
-          "created_at",
-          "modified_at",
-          "id",
-          "source",
-          "price_currency",
-          "tax_behavior",
-          "is_archived",
-          "product_id",
-          "amount_type"
-        ]
       },
       "ProductPriceMeter": {
         "properties": {
@@ -23486,177 +23349,7 @@
           },
           "prices": {
             "items": {
-              "type": "object",
-              "properties": {
-                "created_at": {
-                  "type": "string",
-                  "format": "date-time",
-                  "title": "Created At",
-                  "description": "Creation timestamp of the object."
-                },
-                "modified_at": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Modified At",
-                  "description": "Last modification timestamp of the object."
-                },
-                "id": {
-                  "type": "string",
-                  "format": "uuid4",
-                  "title": "Id",
-                  "description": "The ID of the price."
-                },
-                "source": {
-                  "$ref": "#/components/schemas/ProductPriceSource",
-                  "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
-                },
-                "price_currency": {
-                  "type": "string",
-                  "title": "Price Currency",
-                  "description": "The currency in which the customer will be charged."
-                },
-                "tax_behavior": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/TaxBehaviorOption"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
-                },
-                "is_archived": {
-                  "type": "boolean",
-                  "title": "Is Archived",
-                  "description": "Whether the price is archived and no longer available."
-                },
-                "product_id": {
-                  "type": "string",
-                  "format": "uuid4",
-                  "title": "Product Id",
-                  "description": "The ID of the product owning the price."
-                },
-                "type": {
-                  "type": "string",
-                  "const": "recurring",
-                  "title": "Type",
-                  "description": "The type of the price."
-                },
-                "recurring_interval": {
-                  "$ref": "#/components/schemas/RecurringInterval",
-                  "description": "The recurring interval of the price."
-                },
-                "price_amount": {
-                  "type": "integer",
-                  "title": "Price Amount",
-                  "description": "The price in cents."
-                },
-                "legacy": {
-                  "type": "boolean",
-                  "const": true,
-                  "title": "Legacy",
-                  "readOnly": true
-                },
-                "minimum_amount": {
-                  "type": "integer",
-                  "title": "Minimum Amount",
-                  "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
-                },
-                "maximum_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Maximum Amount",
-                  "description": "The maximum amount the customer can pay."
-                },
-                "preset_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Preset Amount",
-                  "description": "The initial amount shown to the customer."
-                },
-                "legacy_recurring_product_price_amount_type": {
-                  "type": "string",
-                  "enum": [
-                    "custom",
-                    "fixed"
-                  ],
-                  "title": "amount_type",
-                  "description": "Which variant this is. Selects which of the optional blocks above applies."
-                },
-                "product_price_amount_type": {
-                  "type": "string",
-                  "enum": [
-                    "custom",
-                    "fixed",
-                    "metered_unit",
-                    "seat_based"
-                  ],
-                  "title": "amount_type",
-                  "description": "Which variant this is. Selects which of the optional blocks above applies."
-                },
-                "seat_tiers": {
-                  "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
-                  "description": "Tiered pricing based on seat quantity"
-                },
-                "unit_amount": {
-                  "type": "string",
-                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
-                  "title": "Unit Amount",
-                  "description": "The price per unit in cents."
-                },
-                "cap_amount": {
-                  "anyOf": [
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Cap Amount",
-                  "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
-                },
-                "meter_id": {
-                  "type": "string",
-                  "format": "uuid4",
-                  "title": "Meter Id",
-                  "description": "The ID of the meter associated to the price."
-                },
-                "meter": {
-                  "$ref": "#/components/schemas/ProductPriceMeter",
-                  "description": "The meter associated to the price."
-                }
-              },
-              "required": [
-                "created_at",
-                "modified_at",
-                "id",
-                "source",
-                "price_currency",
-                "tax_behavior",
-                "is_archived",
-                "product_id"
-              ]
+              "$ref": "#/components/schemas/SubscriptionPricesItem"
             },
             "type": "array",
             "title": "Prices",
@@ -24726,6 +24419,871 @@
           }
         ],
         "title": "MetadataQuery"
+      },
+      "CheckoutLinkProductPricesItem": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp of the object."
+          },
+          "modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modified At",
+            "description": "Last modification timestamp of the object."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Id",
+            "description": "The ID of the price."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProductPriceSource",
+            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+          },
+          "price_currency": {
+            "type": "string",
+            "title": "Price Currency",
+            "description": "The currency in which the customer will be charged."
+          },
+          "tax_behavior": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaxBehaviorOption"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Whether the price is archived and no longer available."
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Product Id",
+            "description": "The ID of the product owning the price."
+          },
+          "type": {
+            "type": "string",
+            "const": "recurring",
+            "title": "Type",
+            "description": "The type of the price."
+          },
+          "recurring_interval": {
+            "$ref": "#/components/schemas/RecurringInterval",
+            "description": "The recurring interval of the price."
+          },
+          "price_amount": {
+            "type": "integer",
+            "title": "Price Amount",
+            "description": "The price in cents."
+          },
+          "legacy": {
+            "type": "boolean",
+            "const": true,
+            "title": "Legacy",
+            "readOnly": true
+          },
+          "minimum_amount": {
+            "type": "integer",
+            "title": "Minimum Amount",
+            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+          },
+          "maximum_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Amount",
+            "description": "The maximum amount the customer can pay."
+          },
+          "preset_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Amount",
+            "description": "The initial amount shown to the customer."
+          },
+          "legacy_recurring_product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed",
+              "metered_unit",
+              "seat_based"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "seat_tiers": {
+            "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+            "description": "Tiered pricing based on seat quantity"
+          },
+          "unit_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unit Amount",
+            "description": "The price per unit in cents."
+          },
+          "cap_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Amount",
+            "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+          },
+          "meter_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Meter Id",
+            "description": "The ID of the meter associated to the price."
+          },
+          "meter": {
+            "$ref": "#/components/schemas/ProductPriceMeter",
+            "description": "The meter associated to the price."
+          }
+        },
+        "required": [
+          "created_at",
+          "modified_at",
+          "id",
+          "source",
+          "price_currency",
+          "tax_behavior",
+          "is_archived",
+          "product_id"
+        ],
+        "title": "CheckoutLinkProductPricesItem"
+      },
+      "CheckoutProductPricesItem": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp of the object."
+          },
+          "modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modified At",
+            "description": "Last modification timestamp of the object."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Id",
+            "description": "The ID of the price."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProductPriceSource",
+            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+          },
+          "price_currency": {
+            "type": "string",
+            "title": "Price Currency",
+            "description": "The currency in which the customer will be charged."
+          },
+          "tax_behavior": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaxBehaviorOption"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Whether the price is archived and no longer available."
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Product Id",
+            "description": "The ID of the product owning the price."
+          },
+          "type": {
+            "type": "string",
+            "const": "recurring",
+            "title": "Type",
+            "description": "The type of the price."
+          },
+          "recurring_interval": {
+            "$ref": "#/components/schemas/RecurringInterval",
+            "description": "The recurring interval of the price."
+          },
+          "price_amount": {
+            "type": "integer",
+            "title": "Price Amount",
+            "description": "The price in cents."
+          },
+          "legacy": {
+            "type": "boolean",
+            "const": true,
+            "title": "Legacy",
+            "readOnly": true
+          },
+          "minimum_amount": {
+            "type": "integer",
+            "title": "Minimum Amount",
+            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+          },
+          "maximum_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Amount",
+            "description": "The maximum amount the customer can pay."
+          },
+          "preset_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Amount",
+            "description": "The initial amount shown to the customer."
+          },
+          "legacy_recurring_product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed",
+              "metered_unit",
+              "seat_based"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "seat_tiers": {
+            "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+            "description": "Tiered pricing based on seat quantity"
+          },
+          "unit_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unit Amount",
+            "description": "The price per unit in cents."
+          },
+          "cap_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Amount",
+            "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+          },
+          "meter_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Meter Id",
+            "description": "The ID of the meter associated to the price."
+          },
+          "meter": {
+            "$ref": "#/components/schemas/ProductPriceMeter",
+            "description": "The meter associated to the price."
+          }
+        },
+        "required": [
+          "created_at",
+          "modified_at",
+          "id",
+          "source",
+          "price_currency",
+          "tax_behavior",
+          "is_archived",
+          "product_id"
+        ],
+        "title": "CheckoutProductPricesItem"
+      },
+      "MeterAggregation": {
+        "title": "MeterAggregation",
+        "description": "The aggregation to apply on the filtered events to calculate the meter.",
+        "type": "object",
+        "properties": {
+          "property": {
+            "type": "string",
+            "title": "Property"
+          },
+          "func": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "count",
+              "max",
+              "min",
+              "sum",
+              "unique"
+            ],
+            "title": "func",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          }
+        },
+        "required": [
+          "func"
+        ]
+      },
+      "MeterCreateAggregation": {
+        "title": "MeterCreateAggregation",
+        "description": "The aggregation to apply on the filtered events to calculate the meter.",
+        "type": "object",
+        "properties": {
+          "property": {
+            "type": "string",
+            "title": "Property"
+          },
+          "func": {
+            "type": "string",
+            "enum": [
+              "avg",
+              "count",
+              "max",
+              "min",
+              "sum",
+              "unique"
+            ],
+            "title": "func",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          }
+        },
+        "required": [
+          "func"
+        ]
+      },
+      "ProductPricesItem": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp of the object."
+          },
+          "modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modified At",
+            "description": "Last modification timestamp of the object."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Id",
+            "description": "The ID of the price."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProductPriceSource",
+            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+          },
+          "price_currency": {
+            "type": "string",
+            "title": "Price Currency",
+            "description": "The currency in which the customer will be charged."
+          },
+          "tax_behavior": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaxBehaviorOption"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Whether the price is archived and no longer available."
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Product Id",
+            "description": "The ID of the product owning the price."
+          },
+          "type": {
+            "type": "string",
+            "const": "recurring",
+            "title": "Type",
+            "description": "The type of the price."
+          },
+          "recurring_interval": {
+            "$ref": "#/components/schemas/RecurringInterval",
+            "description": "The recurring interval of the price."
+          },
+          "price_amount": {
+            "type": "integer",
+            "title": "Price Amount",
+            "description": "The price in cents."
+          },
+          "legacy": {
+            "type": "boolean",
+            "const": true,
+            "title": "Legacy",
+            "readOnly": true
+          },
+          "minimum_amount": {
+            "type": "integer",
+            "title": "Minimum Amount",
+            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+          },
+          "maximum_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Amount",
+            "description": "The maximum amount the customer can pay."
+          },
+          "preset_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Amount",
+            "description": "The initial amount shown to the customer."
+          },
+          "legacy_recurring_product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed",
+              "metered_unit",
+              "seat_based"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "seat_tiers": {
+            "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+            "description": "Tiered pricing based on seat quantity"
+          },
+          "unit_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unit Amount",
+            "description": "The price per unit in cents."
+          },
+          "cap_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Amount",
+            "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+          },
+          "meter_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Meter Id",
+            "description": "The ID of the meter associated to the price."
+          },
+          "meter": {
+            "$ref": "#/components/schemas/ProductPriceMeter",
+            "description": "The meter associated to the price."
+          }
+        },
+        "required": [
+          "created_at",
+          "modified_at",
+          "id",
+          "source",
+          "price_currency",
+          "tax_behavior",
+          "is_archived",
+          "product_id"
+        ],
+        "title": "ProductPricesItem"
+      },
+      "ProductCreatePricesItem": {
+        "type": "object",
+        "properties": {
+          "price_currency": {
+            "$ref": "#/components/schemas/PresentmentCurrency",
+            "description": "The currency in which the customer will be charged.",
+            "default": "usd"
+          },
+          "tax_behavior": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaxBehaviorOption"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tax behavior of the price. If not set, it will default to the organization's default tax behavior."
+          },
+          "price_amount": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Price Amount",
+            "description": "The price in cents. Set to `0` for a free price.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
+          },
+          "minimum_amount": {
+            "type": "integer",
+            "minimum": 0,
+            "title": "Minimum Amount",
+            "description": "The minimum amount the customer can pay. If set to 0, the price is 'free or pay what you want' and $0 is accepted. If set to a value below the minimum price amount for the currency, it will be rejected. Defaults to the minimum price amount for the currency. Minimum per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units",
+            "default": 50
+          },
+          "maximum_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "description": "The price in cents.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Amount",
+            "description": "The maximum amount the customer can pay. Maximum per currency:\n- USD: 999,999.99\n- EUR: 999,999.99\n- GBP: 999,999.99\n- ARS: 1,400,000\n- CDF: 2,800,000\n- COP: 4,000,000\n- IDR: 16,000,000\n- KHR: 4,000,000\n- LAK: 21,000,000\n- MNT: 3,500,000\n- MWK: 1,750,000\n- NGN: 1,550,000\n- TZS: 2,500,000\n- UGX: 3,700,000\n- UZS: 12,500,000\n- Other currencies: 99,999,999 minor units"
+          },
+          "preset_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "description": "The price in cents.\nMinimum amounts per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Amount",
+            "description": "The initial amount shown to the customer. If 0, the customer will see $0 as the default. If set to a value below the minimum price amount for the currency, it will be rejected.Minimum per currency:\n- USD: 0.5\n- AED: 2\n- ALL: 50\n- AMD: 200\n- AOA: 500\n- ARS: 750\n- AUD: 0.7\n- AWG: 1\n- AZN: 1\n- BAM: 1\n- BBD: 2\n- BDT: 70\n- BIF: 2,000\n- BMD: 1\n- BND: 1\n- BOB: 5\n- BRL: 2.5\n- BSD: 1\n- BWP: 10\n- BZD: 2\n- CAD: 0.7\n- CDF: 2,000\n- CHF: 0.5\n- CLP: 500\n- CNY: 5\n- COP: 2,000\n- CRC: 300\n- CVE: 50\n- CZK: 15\n- DJF: 100\n- DKK: 3.2\n- DOP: 40\n- DZD: 70\n- EGP: 30\n- ETB: 80\n- EUR: 0.5\n- FJD: 2\n- FKP: 1\n- GBP: 0.4\n- GEL: 2\n- GNF: 5,000\n- GIP: 1\n- GMD: 40\n- GTQ: 5\n- GYD: 200\n- HKD: 4\n- HNL: 20\n- HTG: 70\n- HUF: 175\n- IDR: 9,000\n- ILS: 1.5\n- INR: 60\n- ISK: 70\n- JMD: 80\n- JPY: 80\n- KES: 70\n- KGS: 50\n- KHR: 3,000\n- KMF: 500\n- KRW: 800\n- KYD: 1\n- KZT: 300\n- LAK: 20,000\n- LKR: 200\n- LRD: 100\n- LSL: 10\n- MAD: 5\n- MDL: 10\n- MGA: 3,000\n- MKD: 50\n- MNT: 2,000\n- MOP: 5\n- MUR: 50\n- MVR: 8\n- MXN: 9\n- MWK: 1,000\n- MYR: 2\n- MZN: 50\n- NAD: 10\n- NGN: 700\n- NIO: 20\n- NOK: 5\n- NPR: 80\n- NZD: 0.9\n- PAB: 1\n- PEN: 2\n- PGK: 3\n- PHP: 35\n- PKR: 200\n- PLN: 2\n- PYG: 4,000\n- QAR: 2\n- RON: 2.5\n- RSD: 60\n- RWF: 1,000\n- SAR: 2\n- SBD: 4\n- SCR: 8\n- SEK: 5\n- SGD: 0.7\n- SHP: 1\n- SOS: 500\n- SRD: 20\n- SZL: 10\n- THB: 20\n- TJS: 5\n- TOP: 2\n- TRY: 30\n- TTD: 4\n- TWD: 20\n- TZS: 2,000\n- UAH: 30\n- UGX: 2,000\n- UYU: 20\n- UZS: 7,000\n- VND: 20,000\n- VUV: 100\n- WST: 2\n- XAF: 500\n- XCD: 2\n- XCG: 1\n- XOF: 500\n- XPF: 100\n- YER: 200\n- ZAR: 9\n- ZMW: 10\n- Other currencies: 50 minor units"
+          },
+          "seat_tiers": {
+            "$ref": "#/components/schemas/ProductPriceSeatTiers-Input",
+            "description": "Tiered pricing based on seat quantity"
+          },
+          "meter_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Meter Id",
+            "description": "The ID of the meter associated to the price."
+          },
+          "unit_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,5}|(?=[\\d.]{1,18}0*$)\\d{0,5}\\.\\d{0,12}0*$)"
+              }
+            ],
+            "title": "Unit Amount",
+            "description": "The price per unit in cents. Supports up to 12 decimal places."
+          },
+          "cap_amount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2147483647,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Amount",
+            "description": "Optional maximum amount in cents that can be charged, regardless of the number of units consumed."
+          },
+          "amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed",
+              "metered_unit",
+              "seat_based"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          }
+        },
+        "required": [
+          "amount_type"
+        ],
+        "title": "ProductCreatePricesItem"
+      },
+      "SubscriptionPricesItem": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp of the object."
+          },
+          "modified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modified At",
+            "description": "Last modification timestamp of the object."
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Id",
+            "description": "The ID of the price."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProductPriceSource",
+            "description": "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session."
+          },
+          "price_currency": {
+            "type": "string",
+            "title": "Price Currency",
+            "description": "The currency in which the customer will be charged."
+          },
+          "tax_behavior": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaxBehaviorOption"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The tax behavior of the price. If null, it defaults to the organization's default tax behavior."
+          },
+          "is_archived": {
+            "type": "boolean",
+            "title": "Is Archived",
+            "description": "Whether the price is archived and no longer available."
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Product Id",
+            "description": "The ID of the product owning the price."
+          },
+          "type": {
+            "type": "string",
+            "const": "recurring",
+            "title": "Type",
+            "description": "The type of the price."
+          },
+          "recurring_interval": {
+            "$ref": "#/components/schemas/RecurringInterval",
+            "description": "The recurring interval of the price."
+          },
+          "price_amount": {
+            "type": "integer",
+            "title": "Price Amount",
+            "description": "The price in cents."
+          },
+          "legacy": {
+            "type": "boolean",
+            "const": true,
+            "title": "Legacy",
+            "readOnly": true
+          },
+          "minimum_amount": {
+            "type": "integer",
+            "title": "Minimum Amount",
+            "description": "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'."
+          },
+          "maximum_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Amount",
+            "description": "The maximum amount the customer can pay."
+          },
+          "preset_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Amount",
+            "description": "The initial amount shown to the customer."
+          },
+          "legacy_recurring_product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "product_price_amount_type": {
+            "type": "string",
+            "enum": [
+              "custom",
+              "fixed",
+              "metered_unit",
+              "seat_based"
+            ],
+            "title": "amount_type",
+            "description": "Which variant this is. Selects which of the optional blocks above applies."
+          },
+          "seat_tiers": {
+            "$ref": "#/components/schemas/ProductPriceSeatTiers-Output",
+            "description": "Tiered pricing based on seat quantity"
+          },
+          "unit_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unit Amount",
+            "description": "The price per unit in cents."
+          },
+          "cap_amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Amount",
+            "description": "The maximum amount in cents that can be charged, regardless of the number of units consumed."
+          },
+          "meter_id": {
+            "type": "string",
+            "format": "uuid4",
+            "title": "Meter Id",
+            "description": "The ID of the meter associated to the price."
+          },
+          "meter": {
+            "$ref": "#/components/schemas/ProductPriceMeter",
+            "description": "The meter associated to the price."
+          }
+        },
+        "required": [
+          "created_at",
+          "modified_at",
+          "id",
+          "source",
+          "price_currency",
+          "tax_behavior",
+          "is_archived",
+          "product_id"
+        ],
+        "title": "SubscriptionPricesItem"
       }
     },
     "securitySchemes": {

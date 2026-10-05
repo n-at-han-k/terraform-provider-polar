@@ -123,9 +123,94 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "",
 			},
-			"discount": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"discount": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"duration": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"type": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"amount": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"currency": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"amounts": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Map of currency to fixed amount to discount from the total.",
+					},
+					"created_at": schema.StringAttribute{
+						Required:    true,
+						Description: "Creation timestamp of the object.",
+					},
+					"modified_at": schema.StringAttribute{
+						Required:    true,
+						Description: "Last modification timestamp of the object.",
+					},
+					"id": schema.StringAttribute{
+						Required:    true,
+						Description: "The ID of the object.",
+					},
+					"metadata": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+					"name": schema.StringAttribute{
+						Required:    true,
+						Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
+					},
+					"code": schema.StringAttribute{
+						Required:    true,
+						Description: "Code customers can use to apply the discount during checkout.",
+					},
+					"starts_at": schema.StringAttribute{
+						Required:    true,
+						Description: "Timestamp after which the discount is redeemable.",
+					},
+					"ends_at": schema.StringAttribute{
+						Required:    true,
+						Description: "Timestamp after which the discount is no longer redeemable.",
+					},
+					"max_redemptions": schema.Int64Attribute{
+						Required:    true,
+						Description: "Maximum number of times the discount can be redeemed.",
+					},
+					"max_redemptions_per_customer": schema.Int64Attribute{
+						Required:    true,
+						Description: "Maximum number of times the discount can be redeemed by a single customer.",
+					},
+					"redemptions_count": schema.Int64Attribute{
+						Required:    true,
+						Description: "Number of times the discount has been redeemed.",
+					},
+					"organization_id": schema.StringAttribute{
+						Required:    true,
+						Description: "The organization ID.",
+					},
+					"duration_in_months": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"basis_points": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
+					},
+				},
 				Description: "",
 			},
 			"url": schema.StringAttribute{

@@ -39,7 +39,7 @@ type Subscription struct {
 	Customer *SubscriptionCustomer `json:"customer,omitempty"`
 	Product *Product `json:"product,omitempty"`
 	Discount *SubscriptionDiscount `json:"discount,omitempty"`
-	Prices []PricesInner `json:"prices,omitempty"`
+	Prices []SubscriptionPricesItem `json:"prices,omitempty"`
 	Meters []SubscriptionMeter `json:"meters,omitempty"`
 	PendingUpdate *PendingSubscriptionUpdate `json:"pending_update,omitempty"`
 }

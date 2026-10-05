@@ -76,7 +76,6 @@ func (d *CustomerDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
 			},
 			"billing_address": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

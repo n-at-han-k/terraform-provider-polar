@@ -23,7 +23,7 @@ type CustomerModel struct {
 	EmailVerified types.Bool `tfsdk:"email_verified"`
 	Name types.String `tfsdk:"name"`
 	BillingName types.String `tfsdk:"billing_name"`
-	BillingAddress jsontypes.Normalized `tfsdk:"billing_address"`
+	BillingAddress *CustomerBillingAddressModel `tfsdk:"billing_address"`
 	TaxId jsontypes.Normalized `tfsdk:"tax_id"`
 	Locale types.String `tfsdk:"locale"`
 	OrganizationId types.String `tfsdk:"organization_id"`
@@ -33,6 +33,60 @@ type CustomerModel struct {
 	AvatarUrl types.String `tfsdk:"avatar_url"`
 	Type types.String `tfsdk:"type"`
 	Email types.String `tfsdk:"email"`
+}
+
+// CustomerBillingAddressModel is one `billing_address` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomerBillingAddressModel struct {
+	Line1 types.String `tfsdk:"line1"`
+	Line2 types.String `tfsdk:"line2"`
+	PostalCode types.String `tfsdk:"postal_code"`
+	City types.String `tfsdk:"city"`
+	State types.String `tfsdk:"state"`
+	Country types.String `tfsdk:"country"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomerBillingAddressModel) ToClientModel() (*client.AddressInput, error) {
+	out := &client.AddressInput{}
+	if !m.Line1.IsNull() && !m.Line1.IsUnknown() {
+		out.Line1 = m.Line1.ValueString()
+	}
+	if !m.Line2.IsNull() && !m.Line2.IsUnknown() {
+		out.Line2 = m.Line2.ValueString()
+	}
+	if !m.PostalCode.IsNull() && !m.PostalCode.IsUnknown() {
+		out.PostalCode = m.PostalCode.ValueString()
+	}
+	if !m.City.IsNull() && !m.City.IsUnknown() {
+		out.City = m.City.ValueString()
+	}
+	if !m.State.IsNull() && !m.State.IsUnknown() {
+		out.State = m.State.ValueString()
+	}
+	if !m.Country.IsNull() && !m.Country.IsUnknown() {
+		out.Country = m.Country.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
+	m.Line1 = types.StringValue(c.Line1)
+	m.Line2 = types.StringValue(c.Line2)
+	m.PostalCode = types.StringValue(c.PostalCode)
+	m.City = types.StringValue(c.City)
+	m.State = types.StringValue(c.State)
+	m.Country = types.StringValue(c.Country)
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -52,13 +106,12 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.BillingAddress.IsNull() && !m.BillingAddress.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.BillingAddress.ValueString()), &out.BillingAddress); err != nil {
+	if m.BillingAddress != nil {
+		converted, err := m.BillingAddress.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("billing_address: %w", err)
 		}
+		out.BillingAddress = converted
 	}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
@@ -108,14 +161,6 @@ func (m *CustomerModel) FromClientModel(c *client.Customer) {
 	}
 	m.Name = types.StringValue(c.Name)
 	m.BillingName = types.StringValue(c.BillingName)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.BillingAddress.IsUnknown() {
-		m.BillingAddress = jsontypes.NewNormalizedNull()
-	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once

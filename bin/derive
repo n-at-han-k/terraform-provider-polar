@@ -29,6 +29,20 @@ SOURCE  = File.join(ROOT, "reference", "polar-openapi.json")
 PRUNED  = File.join(ROOT, "reference", "polar-pruned.json")
 MANIFEST = File.join(ROOT, "reference", "resources.md")
 PROVENANCE = File.join(ROOT, "reference", "SOURCE")
+GENERATOR_CONFIG = File.join(ROOT, "reference", "generator-config.yaml")
+
+# What the generator is TOLD, rather than left to work out. The generator has no
+# Polar knowledge; this is the whole of its configuration and it is derived from
+# the document, so it cannot drift from what the document says.
+PROVIDER_NAME    = "polar"
+PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
+PROVIDER_VERSION = "1.0.0"
+
+# One level of nesting is typed; anything deeper is JSON inside its typed
+# parent. That is enough for Polar -- a product's prices is a list of flat
+# objects, a benefit's meter_credit_properties is a flat object -- and it is the
+# depth at which a Terraform block stays something a person can read.
+NESTED_MAX_DEPTH = 1
 
 # The version segment every Polar path opens with. Lifted off the paths and
 # onto the server URL below, so a resource is `polar_product` rather than
@@ -140,6 +154,130 @@ def drop_null_properties!(node, dropped)
   end
 
   dropped
+end
+
+# A FLATTENED UNION NEEDS A NAME OF ITS OWN.
+#
+# openapi-generator names an INLINE schema after the position it first met that
+# shape in, and reuses one model for every position whose shape matches. Both
+# halves of that bite here: `ProductCreate.prices.items` and a checkout's own
+# prices flattened to similar objects, so both got the single model
+# `CheckoutProductsCreatePricesValueInner` -- and that one carries the response
+# variant's REQUIRED `id`, so every `polar_product` demanded a price id that no
+# configuration can know and no create body accepts.
+#
+# Hoisting each flattened union into components.schemas under a name derived
+# from where it sits settles it: a named schema is one model, generated from
+# exactly these properties, and two positions that merely look alike stay apart.
+def hoist_inline_objects!(spec, schemas)
+  hoisted = []
+
+  # Only the named schemas' own properties: a flattened union inside a path's
+  # inline body is reached through them, since every request body here is a $ref.
+  schemas.keys.each do |owner|
+    schema = schemas[owner]
+    next unless schema.is_a?(Hash) && schema["properties"].is_a?(Hash)
+
+    schema["properties"].each do |property, subschema|
+      next unless subschema.is_a?(Hash)
+
+      # The union may be the property itself, or the items of an array of them.
+      holder, key = if subschema["type"] == "array" && subschema["items"].is_a?(Hash)
+                      [subschema, "items"]
+                    else
+                      [schema["properties"], property]
+                    end
+      target = holder[key]
+      next unless target.is_a?(Hash) && target["x-polar-flattened"]
+
+      name = "#{owner}#{property.split('_').map(&:capitalize).join}"
+      name = "#{name}Item" if holder.equal?(subschema)
+
+      # Deterministic, and a clash would silently merge two shapes again.
+      suffix = 2
+      base = name
+      name = "#{base}#{suffix}" while schemas.key?(name) && (suffix += 1)
+
+      target.delete("x-polar-flattened")
+      target["title"] = name
+      schemas[name] = target
+      holder[key] = { "$ref" => "#/components/schemas/#{name}" }
+      hoisted << name
+    end
+  end
+
+  # Anything still carrying the marker was not reachable as a named schema's
+  # property -- leave it inline rather than guessing a name for it.
+  strip = lambda do |node|
+    case node
+    when Hash
+      node.delete("x-polar-flattened")
+      node.each_value { |value| strip.call(value) }
+    when Array
+      node.each { |value| strip.call(value) }
+    end
+  end
+  strip.call(spec)
+
+  hoisted
+end
+
+# WHICH POSITIONS CANNOT BE A TYPED BLOCK, and must stay a string holding JSON.
+# The generator would otherwise try, and the two kinds here fail differently:
+#
+#   a FREEFORM object has no properties to make attributes out of. `metadata` is
+#   "a map of anything the merchant wants", so there is no schema to expand and
+#   nothing a configuration could be checked against.
+#
+#   an UNFLATTENED UNION is one flatten_unions! refused -- the recursive ones. A
+#   meter's `filter` has clauses that contain filters, and Terraform cannot
+#   express arbitrary nesting as a typed attribute at all.
+#
+# Named by PROPERTY NAME, which is what the generator matches on: these are the
+# same position wherever they appear, and `metadata` means the same freeform map
+# on a product as on a benefit.
+def json_only_properties(spec)
+  names = []
+
+  walk = lambda do |node|
+    case node
+    when Hash
+      (node["properties"] || {}).each do |property, schema|
+        next unless schema.is_a?(Hash)
+
+        subject = schema["type"] == "array" ? (schema["items"] || {}) : schema
+        next unless subject.is_a?(Hash)
+
+        # No $ref: a reference to a named schema is resolvable, and the
+        # generator expands it. Only an INLINE object with nothing in it is
+        # freeform.
+        freeform = subject["type"] == "object" && !subject.key?("$ref") &&
+                   (subject["properties"].nil? || subject["properties"].empty?)
+
+        # A UNION OF OBJECTS, which is the only kind flatten_unions! would have
+        # touched -- so one still here is one it refused, i.e. recursive.
+        #
+        # NOT any anyOf. Polar spells "nullable" as
+        # `anyOf: [{type: string}, {type: null}]`, which is how the first
+        # version of this put `name`, `description`, `type` and 170 others on
+        # the list -- every optional scalar in the document, each of them
+        # perfectly expandable.
+        members = subject["oneOf"] || subject["anyOf"] || []
+        union = members.size > 1 && members.all? do |member|
+          member.is_a?(Hash) && member["$ref"].to_s.start_with?("#/components/schemas/")
+        end
+
+        names << property if freeform || union
+      end
+
+      node.each_value { |value| walk.call(value) }
+    when Array
+      node.each { |value| walk.call(value) }
+    end
+  end
+
+  walk.call(spec)
+  names.uniq.sort
 end
 
 # Every schema a named schema reaches, transitively, including itself if it is
@@ -301,6 +439,9 @@ def flatten_unions!(node, schemas, flattened)
 
     title = node["title"] || variants.keys.first
     flattened << "#{title} (#{variants.size} variants, #{merged.size} properties)"
+    # Marked so hoist_inline_objects! can find it. An inline schema has no name,
+    # and the generator names one after wherever it first saw its shape.
+    node["x-polar-flattened"] = title
 
     node.delete("oneOf")
     node.delete("anyOf")
@@ -394,13 +535,57 @@ nulls = drop_null_properties!(spec, [])
 # below sees only the recurring variant's enum and merges to a plain optional
 # string. Flattened first, the two would have "collided" and produced a
 # `recurring_recurring_interval` nobody wants.
-unions = flatten_unions!(spec, spec["components"]["schemas"], [])
+# TO A FIXED POINT, because a union's variants may themselves be unions and the
+# inner ones have to collapse first. `Product.prices` is
+# `oneOf [LegacyRecurringProductPrice, ProductPrice]` and both of those are
+# unions of four price variants each -- so on a single pass, whichever of the
+# three the walk reached first saw members that were not yet objects, refused
+# them, and left the outer union standing. Repeating until nothing more
+# flattens costs a few passes over a 2.7 MB document and removes the ordering
+# question entirely.
+unions = []
+loop do
+  # The closure cache is keyed on schema names whose contents just changed, so
+  # a stale entry would answer the recursion check with the old shape.
+  $closures = {}
+  before_pass = unions.size
+  flatten_unions!(spec, spec["components"]["schemas"], unions)
+  break if unions.size == before_pass
+end
+
+hoisted = hoist_inline_objects!(spec, spec["components"]["schemas"])
 
 reachable = reachable_schemas(spec["paths"], spec["components"]["schemas"])
 before    = spec["components"]["schemas"].size
 spec["components"]["schemas"] = spec["components"]["schemas"].select { |name, _| reachable.include?(name) }
 
 File.write(PRUNED, JSON.pretty_generate(spec))
+
+json_only = json_only_properties(spec)
+
+# The generator's entire configuration, written here so that `bin/generate` is a
+# one-line invocation and every decision in it is traceable to the document.
+# A yaml file rather than --additional-properties because the list below is
+# longer than a command line should carry.
+File.write(GENERATOR_CONFIG, <<~YAML)
+  # GENERATED by bin/derive. Do not edit.
+  #
+  # Passed to the generator as `-c`. Every value is derived from the vendored
+  # OpenAPI description; see bin/derive for what each one means and why.
+  additionalProperties:
+    providerName: #{PROVIDER_NAME}
+    providerAddress: #{PROVIDER_ADDRESS}
+    providerVersion: #{PROVIDER_VERSION}
+
+    # Expand an object, or an array of objects, into a typed Terraform block
+    # rather than a string holding JSON.
+    nestedAttributes: "true"
+    nestedMaxDepth: "#{NESTED_MAX_DEPTH}"
+
+    # Positions that must stay JSON whatever their shape: freeform objects with
+    # no properties to expand, and the recursive unions flatten_unions! refused.
+    jsonAttributes: "#{json_only.join(',')}"
+YAML
 
 # The thing to actually read on a spec bump.
 File.open(MANIFEST, "w") do |io|
@@ -454,4 +639,7 @@ warn("dropped #{nulls.size} null-typed properties: #{nulls.uniq.sort.join(', ')}
 warn("flattened #{unions.size} unions of objects")
 unions.uniq.sort.each { |line| warn("  #{line}") }
 warn("schemas #{before} -> #{spec['components']['schemas'].size}")
-warn("wrote #{PRUNED.sub("#{ROOT}/", '')} and #{MANIFEST.sub("#{ROOT}/", '')}")
+warn("hoisted #{hoisted.size} flattened unions into named schemas")
+warn("json-only properties (#{json_only.size}): #{json_only.join(', ')}")
+warn("wrote #{PRUNED.sub("#{ROOT}/", '')}, #{MANIFEST.sub("#{ROOT}/", '')} and " \
+     "#{GENERATOR_CONFIG.sub("#{ROOT}/", '')}")

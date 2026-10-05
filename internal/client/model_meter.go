@@ -13,7 +13,7 @@ type Meter struct {
 	CustomLabel string `json:"custom_label,omitempty"`
 	CustomMultiplier int32 `json:"custom_multiplier,omitempty"`
 	Filter *Filter `json:"filter,omitempty"`
-	Aggregation *Aggregation `json:"aggregation,omitempty"`
+	Aggregation *MeterAggregation `json:"aggregation,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	ArchivedAt string `json:"archived_at,omitempty"`
 }

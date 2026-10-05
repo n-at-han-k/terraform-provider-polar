@@ -37,6 +37,100 @@ type {{resourceClassName}}Model struct {
 {{/tfAttributes}}
 }
 
+{{#nestedModels}}
+// {{nestedModel}} is one `{{terraformName}}` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type {{nestedModel}} struct {
+{{#nested}}
+	{{goName}} {{terraformType}} `tfsdk:"{{terraformName}}"`
+{{/nested}}
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) {
+	out := &client.{{nestedClientType}}{}
+{{#nested}}
+{{#isString}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = m.{{goName}}.ValueString()
+	}
+{{/isString}}
+{{#isRtid}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
+	}
+{{/isRtid}}
+{{#isInt64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+	}
+{{/isInt64}}
+{{#isFloat64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+	}
+{{/isFloat64}}
+{{#isBool}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		{{goName}} := m.{{goName}}.ValueBool()
+		out.{{goName}} = &{{goName}}
+	}
+{{/isBool}}
+{{#isJson}}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.{{goName}}.ValueString()), &out.{{goName}}); err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+	}
+{{/isJson}}
+{{/nested}}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
+{{#nested}}
+{{#isString}}
+	m.{{goName}} = types.StringValue(c.{{goName}})
+{{/isString}}
+{{#isRtid}}
+	m.{{goName}} = types.StringValue(string(c.{{goName}}))
+{{/isRtid}}
+{{#isInt64}}
+	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
+{{/isInt64}}
+{{#isFloat64}}
+	m.{{goName}} = types.Float64Value(float64(c.{{goName}}))
+{{/isFloat64}}
+{{#isBool}}
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.BoolValue(*c.{{goName}})
+	} else {
+		m.{{goName}} = types.BoolNull()
+	}
+{{/isBool}}
+{{#isJson}}
+	if encoded, err := json.Marshal(c.{{goName}}); err == nil {
+		if m.{{goName}}.IsNull() || m.{{goName}}.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.{{goName}}.ValueString()) {
+			m.{{goName}} = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+{{/isJson}}
+{{/nested}}
+}
+{{/nestedModels}}
+
 {{#requestModel}}
 // ToClientModel converts a Terraform model to a client model.
 func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, error) {
@@ -81,6 +175,29 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 		}
 	}
 {{/isJson}}
+{{#isNested}}
+{{#isNestedList}}
+	if len(m.{{goName}}) > 0 {
+		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}} = append(out.{{goName}}, *converted)
+		}
+	}
+{{/isNestedList}}
+{{#isNestedObject}}
+	if m.{{goName}} != nil {
+		converted, err := m.{{goName}}.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+		out.{{goName}} = {{^nestedPointer}}*{{/nestedPointer}}converted
+	}
+{{/isNestedObject}}
+{{/isNested}}
 {{/inRequest}}
 {{/tfAttributes}}
 	return out, nil
@@ -133,6 +250,29 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 		}
 	}
 {{/isJson}}
+{{#isNested}}
+{{#isNestedList}}
+	if len(m.{{goName}}) > 0 {
+		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}} = append(out.{{goName}}, *converted)
+		}
+	}
+{{/isNestedList}}
+{{#isNestedObject}}
+	if m.{{goName}} != nil {
+		converted, err := m.{{goName}}.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+		out.{{goName}} = {{^nestedPointer}}*{{/nestedPointer}}converted
+	}
+{{/isNestedObject}}
+{{/isNested}}
 {{/inUpdateRequest}}
 {{/tfAttributes}}
 	return out, nil
@@ -182,9 +322,54 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 		}
 	}
 {{/isJson}}
+{{#isNested}}
+{{#isNestedList}}
+	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
+	// compares element by element, so a server that reorders or adds a price is
+	// a diff -- which is correct: it did something the configuration did not say.
+	{{goName}} := make([]{{nestedModel}}, 0, len(c.{{goName}}))
+	for index := range c.{{goName}} {
+		block := {{nestedModel}}{}
+		if index < len(m.{{goName}}) {
+			block = m.{{goName}}[index]
+		}
+		block.FromClientModel(&c.{{goName}}[index])
+		{{goName}} = append({{goName}}, block)
+	}
+	m.{{goName}} = {{goName}}
+{{/isNestedList}}
+{{#isNestedObject}}
+{{#nestedPointer}}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.{{goName}} != nil {
+		block := {{nestedModel}}{}
+		if m.{{goName}} != nil {
+			block = *m.{{goName}}
+		}
+		block.FromClientModel(c.{{goName}})
+		m.{{goName}} = &block
+	} else {
+		m.{{goName}} = nil
+	}
+{{/nestedPointer}}
+{{^nestedPointer}}
+	{
+		block := {{nestedModel}}{}
+		if m.{{goName}} != nil {
+			block = *m.{{goName}}
+		}
+		block.FromClientModel(&c.{{goName}})
+		m.{{goName}} = &block
+	}
+{{/nestedPointer}}
+{{/isNestedObject}}
+{{/isNested}}
 {{/readBack}}
 {{^readBack}}
 {{#inRequest}}
+{{^isNested}}
 {{#isComputed}}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
@@ -195,6 +380,7 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isRtid}}types.StringNull(){{/isRtid}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}
 	}
 {{/isComputed}}
+{{/isNested}}
 {{/inRequest}}
 {{/readBack}}
 {{/tfAttributes}}

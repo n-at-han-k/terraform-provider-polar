@@ -86,10 +86,39 @@ func (r *CustomerResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
 			},
-			"billing_address": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"billing_address": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"line1": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"line2": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"postal_code": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"city": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"state": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"country": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
 			"tax_id": schema.StringAttribute{

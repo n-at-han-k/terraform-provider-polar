@@ -208,7 +208,6 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"customer_billing_address": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Billing address of the customer.",
 			},
@@ -230,7 +229,6 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"billing_address_fields": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Determine which billing address fields should be disabled, optional or required in the checkout form.",
 			},
@@ -252,17 +250,14 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.",
 			},
 			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of products available to select.",
 			},
 			"product": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Product selected to checkout.",
 			},
 			"product_price": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -272,7 +267,6 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "Mapping of product IDs to their list of prices.",
 			},
 			"discount": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -281,7 +275,6 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"attached_custom_fields": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

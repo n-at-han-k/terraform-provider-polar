@@ -8,7 +8,7 @@ type ProductCreate struct {
 	Name string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
-	Prices []CheckoutProductsCreatePricesValueInner `json:"prices,omitempty"`
+	Prices []ProductCreatePricesItem `json:"prices,omitempty"`
 	Medias []string `json:"medias,omitempty"`
 	AttachedCustomFields []AttachedCustomFieldCreate `json:"attached_custom_fields,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`

@@ -105,7 +105,6 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "",
 			},
 			"discount": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

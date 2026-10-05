@@ -30,8 +30,143 @@ type CheckoutLinkModel struct {
 	Seats types.Int64 `tfsdk:"seats"`
 	OrganizationId types.String `tfsdk:"organization_id"`
 	Products jsontypes.Normalized `tfsdk:"products"`
-	Discount jsontypes.Normalized `tfsdk:"discount"`
+	Discount *CheckoutLinkDiscountModel `tfsdk:"discount"`
 	Url types.String `tfsdk:"url"`
+}
+
+// CheckoutLinkDiscountModel is one `discount` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CheckoutLinkDiscountModel struct {
+	Duration types.String `tfsdk:"duration"`
+	Type types.String `tfsdk:"type"`
+	Amount types.Int64 `tfsdk:"amount"`
+	Currency types.String `tfsdk:"currency"`
+	Amounts jsontypes.Normalized `tfsdk:"amounts"`
+	CreatedAt types.String `tfsdk:"created_at"`
+	ModifiedAt types.String `tfsdk:"modified_at"`
+	Id types.String `tfsdk:"id"`
+	Metadata jsontypes.Normalized `tfsdk:"metadata"`
+	Name types.String `tfsdk:"name"`
+	Code types.String `tfsdk:"code"`
+	StartsAt types.String `tfsdk:"starts_at"`
+	EndsAt types.String `tfsdk:"ends_at"`
+	MaxRedemptions types.Int64 `tfsdk:"max_redemptions"`
+	MaxRedemptionsPerCustomer types.Int64 `tfsdk:"max_redemptions_per_customer"`
+	RedemptionsCount types.Int64 `tfsdk:"redemptions_count"`
+	OrganizationId types.String `tfsdk:"organization_id"`
+	DurationInMonths types.Int64 `tfsdk:"duration_in_months"`
+	BasisPoints types.Int64 `tfsdk:"basis_points"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CheckoutLinkDiscountModel) ToClientModel() (*client.CheckoutLinkDiscount, error) {
+	out := &client.CheckoutLinkDiscount{}
+	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
+		out.Duration = m.Duration.ValueString()
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		out.Amount = int32(m.Amount.ValueInt64())
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		out.Currency = m.Currency.ValueString()
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
+			return out, fmt.Errorf("amounts: %w", err)
+		}
+	}
+	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
+		out.CreatedAt = m.CreatedAt.ValueString()
+	}
+	if !m.ModifiedAt.IsNull() && !m.ModifiedAt.IsUnknown() {
+		out.ModifiedAt = m.ModifiedAt.ValueString()
+	}
+	if !m.Id.IsNull() && !m.Id.IsUnknown() {
+		out.Id = client.RTID(m.Id.ValueString())
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.Code.IsNull() && !m.Code.IsUnknown() {
+		out.Code = m.Code.ValueString()
+	}
+	if !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		out.StartsAt = m.StartsAt.ValueString()
+	}
+	if !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		out.EndsAt = m.EndsAt.ValueString()
+	}
+	if !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		out.MaxRedemptions = int32(m.MaxRedemptions.ValueInt64())
+	}
+	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+	}
+	if !m.RedemptionsCount.IsNull() && !m.RedemptionsCount.IsUnknown() {
+		out.RedemptionsCount = int32(m.RedemptionsCount.ValueInt64())
+	}
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
+	}
+	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
+		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
+	}
+	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
+		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CheckoutLinkDiscountModel) FromClientModel(c *client.CheckoutLinkDiscount) {
+	m.Duration = types.StringValue(c.Duration)
+	m.Type = types.StringValue(c.Type)
+	m.Amount = types.Int64Value(int64(c.Amount))
+	m.Currency = types.StringValue(c.Currency)
+	if encoded, err := json.Marshal(c.Amounts); err == nil {
+		if m.Amounts.IsNull() || m.Amounts.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Amounts.ValueString()) {
+			m.Amounts = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.CreatedAt = types.StringValue(c.CreatedAt)
+	m.ModifiedAt = types.StringValue(c.ModifiedAt)
+	m.Id = types.StringValue(string(c.Id))
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.Name = types.StringValue(c.Name)
+	m.Code = types.StringValue(c.Code)
+	m.StartsAt = types.StringValue(c.StartsAt)
+	m.EndsAt = types.StringValue(c.EndsAt)
+	m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
+	m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
+	m.RedemptionsCount = types.Int64Value(int64(c.RedemptionsCount))
+	m.OrganizationId = types.StringValue(c.OrganizationId)
+	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
+	m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -139,18 +274,18 @@ func (m *CheckoutLinkModel) FromClientModel(c *client.CheckoutLink) {
 	if m.Products.IsUnknown() {
 		m.Products = jsontypes.NewNormalizedNull()
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Discount); err == nil {
-		if m.Discount.IsNull() || m.Discount.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Discount.ValueString()) {
-			m.Discount = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Discount != nil {
+		block := CheckoutLinkDiscountModel{}
+		if m.Discount != nil {
+			block = *m.Discount
 		}
+		block.FromClientModel(c.Discount)
+		m.Discount = &block
+	} else {
+		m.Discount = nil
 	}
 	m.Url = types.StringValue(c.Url)
 }

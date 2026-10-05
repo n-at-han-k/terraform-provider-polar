@@ -108,6 +108,37 @@ provider "polar" {
 `https://sandbox-api.polar.sh/v1` is the sandbox, which takes a sandbox token
 and never a real payment.
 
+## The configuration the generator takes
+
+The generator has no Polar knowledge. Everything it is told is in
+`reference/generator-config.yaml`, written by `bin/derive` from the document and
+passed as `-c`:
+
+| | |
+|---|---|
+| `nestedAttributes` | expand an object, or an array of objects, into a typed Terraform block rather than a string holding JSON |
+| `nestedMaxDepth` | levels to expand before falling back to JSON. One types everything that matters here |
+| `jsonAttributes` | positions that must stay JSON whatever their shape — freeform maps with no properties (`metadata`), and the recursive unions `flatten_unions!` refused (`clauses`) |
+
+So `prices` is a block rather than a `jsonencode`:
+
+```hcl
+prices = [{
+  amount_type  = "fixed"
+  price_amount = 9795
+}]
+```
+
+`amount_type` is Required and carries the enum; every other child is Optional
+**and** Computed, because Polar fills in a price's currency and tax behaviour
+when the configuration omits them and an Optional-only attribute the server
+answers is "Provider produced inconsistent result after apply" on every apply.
+
+A block is only read back when the request and response shapes are the same one.
+Polar's often differ — a customer's `billing_address` goes out as an
+`AddressInput` and comes back as an `Address` — and where they do the attribute
+is not refreshed and not Computed, exactly as a divergent scalar is not.
+
 ## What the generator does
 
 `-g polar-terraform` is upstream's `terraform-provider` generator with the hooks
@@ -146,14 +177,10 @@ from.
 
 ## What it does not do yet
 
-- **Nested objects and arrays still become a `schema.StringAttribute` holding
-  JSON.** This is the one that matters, and the union half of it is done: the
-  schemas are now concrete and correctly named (see below), but the generator
-  collapses every nested object or array to a JSON string regardless of how well
-  described it is. Typed blocks need `schema.ListNestedAttribute` emitted by
-  `resource.mustache`, nested `tfsdk` structs in the model, and conversions that
-  walk them — template work, not spec work, and the last thing standing between
-  this and a drop-in replacement for a catalogue written against typed `prices`.
+- **Nesting deeper than one level is still JSON.** `nestedMaxDepth` is 1, so a
+  price's `seat_tiers` — an object inside an object — is a JSON string inside an
+  otherwise typed block. Raising it means recursion in `resource.mustache` and a
+  model struct per level.
 - **Polar's six overlays are not applied.** `sdk/overlays/*.yml` in
   `polarsource/polar` is what Polar itself layers on before generating its SDKs,
   and `read_only.yml` is exactly the input the Optional-vs-Computed inference

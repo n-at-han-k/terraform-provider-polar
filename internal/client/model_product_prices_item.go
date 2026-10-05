@@ -2,8 +2,8 @@
 
 package client
 
-// PricesInner - PricesInner struct
-type PricesInner struct {
+// ProductPricesItem - ProductPricesItem struct
+type ProductPricesItem struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`

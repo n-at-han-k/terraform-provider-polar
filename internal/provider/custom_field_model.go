@@ -20,12 +20,256 @@ type CustomFieldModel struct {
 	Slug types.String `tfsdk:"slug"`
 	Name types.String `tfsdk:"name"`
 	OrganizationId types.String `tfsdk:"organization_id"`
-	TextProperties jsontypes.Normalized `tfsdk:"text_properties"`
-	NumberProperties jsontypes.Normalized `tfsdk:"number_properties"`
-	DateProperties jsontypes.Normalized `tfsdk:"date_properties"`
-	CheckboxProperties jsontypes.Normalized `tfsdk:"checkbox_properties"`
-	SelectProperties jsontypes.Normalized `tfsdk:"select_properties"`
+	TextProperties *CustomFieldTextPropertiesModel `tfsdk:"text_properties"`
+	NumberProperties *CustomFieldNumberPropertiesModel `tfsdk:"number_properties"`
+	DateProperties *CustomFieldDatePropertiesModel `tfsdk:"date_properties"`
+	CheckboxProperties *CustomFieldCheckboxPropertiesModel `tfsdk:"checkbox_properties"`
+	SelectProperties *CustomFieldSelectPropertiesModel `tfsdk:"select_properties"`
 	Type types.String `tfsdk:"type"`
+}
+
+// CustomFieldTextPropertiesModel is one `text_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldTextPropertiesModel struct {
+	FormLabel types.String `tfsdk:"form_label"`
+	FormHelpText types.String `tfsdk:"form_help_text"`
+	FormPlaceholder types.String `tfsdk:"form_placeholder"`
+	Textarea types.Bool `tfsdk:"textarea"`
+	MinLength types.Int64 `tfsdk:"min_length"`
+	MaxLength types.Int64 `tfsdk:"max_length"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldTextPropertiesModel) ToClientModel() (*client.CustomFieldTextProperties, error) {
+	out := &client.CustomFieldTextProperties{}
+	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
+		out.FormLabel = m.FormLabel.ValueString()
+	}
+	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
+		out.FormHelpText = m.FormHelpText.ValueString()
+	}
+	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
+		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+	}
+	if !m.Textarea.IsNull() && !m.Textarea.IsUnknown() {
+		Textarea := m.Textarea.ValueBool()
+		out.Textarea = &Textarea
+	}
+	if !m.MinLength.IsNull() && !m.MinLength.IsUnknown() {
+		out.MinLength = int32(m.MinLength.ValueInt64())
+	}
+	if !m.MaxLength.IsNull() && !m.MaxLength.IsUnknown() {
+		out.MaxLength = int32(m.MaxLength.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldTextPropertiesModel) FromClientModel(c *client.CustomFieldTextProperties) {
+	m.FormLabel = types.StringValue(c.FormLabel)
+	m.FormHelpText = types.StringValue(c.FormHelpText)
+	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+	if c.Textarea != nil {
+		m.Textarea = types.BoolValue(*c.Textarea)
+	} else {
+		m.Textarea = types.BoolNull()
+	}
+	m.MinLength = types.Int64Value(int64(c.MinLength))
+	m.MaxLength = types.Int64Value(int64(c.MaxLength))
+}
+// CustomFieldNumberPropertiesModel is one `number_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldNumberPropertiesModel struct {
+	FormLabel types.String `tfsdk:"form_label"`
+	FormHelpText types.String `tfsdk:"form_help_text"`
+	FormPlaceholder types.String `tfsdk:"form_placeholder"`
+	Ge types.Int64 `tfsdk:"ge"`
+	Le types.Int64 `tfsdk:"le"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldNumberPropertiesModel) ToClientModel() (*client.CustomFieldNumberProperties, error) {
+	out := &client.CustomFieldNumberProperties{}
+	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
+		out.FormLabel = m.FormLabel.ValueString()
+	}
+	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
+		out.FormHelpText = m.FormHelpText.ValueString()
+	}
+	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
+		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+	}
+	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
+		out.Ge = int32(m.Ge.ValueInt64())
+	}
+	if !m.Le.IsNull() && !m.Le.IsUnknown() {
+		out.Le = int32(m.Le.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldNumberPropertiesModel) FromClientModel(c *client.CustomFieldNumberProperties) {
+	m.FormLabel = types.StringValue(c.FormLabel)
+	m.FormHelpText = types.StringValue(c.FormHelpText)
+	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+	m.Ge = types.Int64Value(int64(c.Ge))
+	m.Le = types.Int64Value(int64(c.Le))
+}
+// CustomFieldDatePropertiesModel is one `date_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldDatePropertiesModel struct {
+	FormLabel types.String `tfsdk:"form_label"`
+	FormHelpText types.String `tfsdk:"form_help_text"`
+	FormPlaceholder types.String `tfsdk:"form_placeholder"`
+	Ge types.Int64 `tfsdk:"ge"`
+	Le types.Int64 `tfsdk:"le"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldDatePropertiesModel) ToClientModel() (*client.CustomFieldDateProperties, error) {
+	out := &client.CustomFieldDateProperties{}
+	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
+		out.FormLabel = m.FormLabel.ValueString()
+	}
+	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
+		out.FormHelpText = m.FormHelpText.ValueString()
+	}
+	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
+		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+	}
+	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
+		out.Ge = int32(m.Ge.ValueInt64())
+	}
+	if !m.Le.IsNull() && !m.Le.IsUnknown() {
+		out.Le = int32(m.Le.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldDatePropertiesModel) FromClientModel(c *client.CustomFieldDateProperties) {
+	m.FormLabel = types.StringValue(c.FormLabel)
+	m.FormHelpText = types.StringValue(c.FormHelpText)
+	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+	m.Ge = types.Int64Value(int64(c.Ge))
+	m.Le = types.Int64Value(int64(c.Le))
+}
+// CustomFieldCheckboxPropertiesModel is one `checkbox_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldCheckboxPropertiesModel struct {
+	FormLabel types.String `tfsdk:"form_label"`
+	FormHelpText types.String `tfsdk:"form_help_text"`
+	FormPlaceholder types.String `tfsdk:"form_placeholder"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldCheckboxPropertiesModel) ToClientModel() (*client.CustomFieldCheckboxProperties, error) {
+	out := &client.CustomFieldCheckboxProperties{}
+	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
+		out.FormLabel = m.FormLabel.ValueString()
+	}
+	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
+		out.FormHelpText = m.FormHelpText.ValueString()
+	}
+	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
+		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldCheckboxPropertiesModel) FromClientModel(c *client.CustomFieldCheckboxProperties) {
+	m.FormLabel = types.StringValue(c.FormLabel)
+	m.FormHelpText = types.StringValue(c.FormHelpText)
+	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+}
+// CustomFieldSelectPropertiesModel is one `select_properties` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldSelectPropertiesModel struct {
+	FormLabel types.String `tfsdk:"form_label"`
+	FormHelpText types.String `tfsdk:"form_help_text"`
+	FormPlaceholder types.String `tfsdk:"form_placeholder"`
+	Options jsontypes.Normalized `tfsdk:"options"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldSelectPropertiesModel) ToClientModel() (*client.CustomFieldSelectProperties, error) {
+	out := &client.CustomFieldSelectProperties{}
+	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
+		out.FormLabel = m.FormLabel.ValueString()
+	}
+	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
+		out.FormHelpText = m.FormHelpText.ValueString()
+	}
+	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
+		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.Options.IsNull() && !m.Options.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Options.ValueString()), &out.Options); err != nil {
+			return out, fmt.Errorf("options: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldSelectPropertiesModel) FromClientModel(c *client.CustomFieldSelectProperties) {
+	m.FormLabel = types.StringValue(c.FormLabel)
+	m.FormHelpText = types.StringValue(c.FormHelpText)
+	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+	if encoded, err := json.Marshal(c.Options); err == nil {
+		if m.Options.IsNull() || m.Options.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Options.ValueString()) {
+			m.Options = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -45,45 +289,40 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldUpdate, error) {
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.TextProperties.IsNull() && !m.TextProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.TextProperties.ValueString()), &out.TextProperties); err != nil {
+	if m.TextProperties != nil {
+		converted, err := m.TextProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("text_properties: %w", err)
 		}
+		out.TextProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.NumberProperties.IsNull() && !m.NumberProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.NumberProperties.ValueString()), &out.NumberProperties); err != nil {
+	if m.NumberProperties != nil {
+		converted, err := m.NumberProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("number_properties: %w", err)
 		}
+		out.NumberProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.DateProperties.IsNull() && !m.DateProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.DateProperties.ValueString()), &out.DateProperties); err != nil {
+	if m.DateProperties != nil {
+		converted, err := m.DateProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("date_properties: %w", err)
 		}
+		out.DateProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.CheckboxProperties.IsNull() && !m.CheckboxProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.CheckboxProperties.ValueString()), &out.CheckboxProperties); err != nil {
+	if m.CheckboxProperties != nil {
+		converted, err := m.CheckboxProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("checkbox_properties: %w", err)
 		}
+		out.CheckboxProperties = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.SelectProperties.IsNull() && !m.SelectProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.SelectProperties.ValueString()), &out.SelectProperties); err != nil {
+	if m.SelectProperties != nil {
+		converted, err := m.SelectProperties.ToClientModel()
+		if err != nil {
 			return out, fmt.Errorf("select_properties: %w", err)
 		}
+		out.SelectProperties = converted
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -108,70 +347,70 @@ func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
 	m.Slug = types.StringValue(c.Slug)
 	m.Name = types.StringValue(c.Name)
 	m.OrganizationId = types.StringValue(c.OrganizationId)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.TextProperties); err == nil {
-		if m.TextProperties.IsNull() || m.TextProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.TextProperties.ValueString()) {
-			m.TextProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.TextProperties != nil {
+		block := CustomFieldTextPropertiesModel{}
+		if m.TextProperties != nil {
+			block = *m.TextProperties
 		}
+		block.FromClientModel(c.TextProperties)
+		m.TextProperties = &block
+	} else {
+		m.TextProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.NumberProperties); err == nil {
-		if m.NumberProperties.IsNull() || m.NumberProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.NumberProperties.ValueString()) {
-			m.NumberProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.NumberProperties != nil {
+		block := CustomFieldNumberPropertiesModel{}
+		if m.NumberProperties != nil {
+			block = *m.NumberProperties
 		}
+		block.FromClientModel(c.NumberProperties)
+		m.NumberProperties = &block
+	} else {
+		m.NumberProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.DateProperties); err == nil {
-		if m.DateProperties.IsNull() || m.DateProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.DateProperties.ValueString()) {
-			m.DateProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.DateProperties != nil {
+		block := CustomFieldDatePropertiesModel{}
+		if m.DateProperties != nil {
+			block = *m.DateProperties
 		}
+		block.FromClientModel(c.DateProperties)
+		m.DateProperties = &block
+	} else {
+		m.DateProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.CheckboxProperties); err == nil {
-		if m.CheckboxProperties.IsNull() || m.CheckboxProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.CheckboxProperties.ValueString()) {
-			m.CheckboxProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.CheckboxProperties != nil {
+		block := CustomFieldCheckboxPropertiesModel{}
+		if m.CheckboxProperties != nil {
+			block = *m.CheckboxProperties
 		}
+		block.FromClientModel(c.CheckboxProperties)
+		m.CheckboxProperties = &block
+	} else {
+		m.CheckboxProperties = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.SelectProperties); err == nil {
-		if m.SelectProperties.IsNull() || m.SelectProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.SelectProperties.ValueString()) {
-			m.SelectProperties = jsontypes.NewNormalizedValue(string(encoded))
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.SelectProperties != nil {
+		block := CustomFieldSelectPropertiesModel{}
+		if m.SelectProperties != nil {
+			block = *m.SelectProperties
 		}
+		block.FromClientModel(c.SelectProperties)
+		m.SelectProperties = &block
+	} else {
+		m.SelectProperties = nil
 	}
 	m.Type = types.StringValue(c.Type)
 }

@@ -100,12 +100,10 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "",
 			},
 			"prices": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of prices for this product.",
 			},
 			"benefits": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of benefits granted by the product.",
 			},
@@ -115,7 +113,6 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "List of medias associated to the product.",
 			},
 			"attached_custom_fields": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of custom fields attached to the product.",
 			},

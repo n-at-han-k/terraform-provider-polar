@@ -86,10 +86,21 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "Official website of the organization.",
 			},
-			"socials": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"socials": schema.ListNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"platform": schema.StringAttribute{
+							Required:    true,
+							Description: "The social platform of the URL",
+						},
+						"url": schema.StringAttribute{
+							Required:    true,
+							Description: "The URL to the organization profile",
+						},
+					},
+				},
 				Description: "Links to social profiles.",
 			},
 			"status": schema.StringAttribute{
@@ -119,34 +130,152 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "Default tax behavior applied on products.",
 			},
-			"feature_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"feature_settings": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"seat_based_pricing_enabled": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "If this organization has seat-based pricing enabled",
+					},
+					"member_model_enabled": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "If this organization has the Member model enabled",
+					},
+					"checkout_localization_enabled": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "If this organization has checkout localization enabled",
+					},
+					"overview_metrics": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Ordered list of metric slugs shown on the dashboard overview.",
+					},
+				},
 				Description: "Organization feature settings",
 			},
-			"subscription_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"subscription_settings": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"allow_multiple_subscriptions": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"proration_behavior": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"benefit_revocation_grace_period": schema.Int64Attribute{
+						Required:    true,
+						Description: "",
+					},
+					"prevent_trial_abuse": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"allow_customer_updates": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "Settings related to subscriptions management",
 			},
-			"customer_email_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"customer_email_settings": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"order_confirmation": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"payment_method_expiration_reminder": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_cancellation": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_confirmation": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_cycled": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_cycled_after_trial": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_past_due": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_paused": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_resumed": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_renewal_reminder": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_revoked": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_trial_conversion_reminder": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_uncanceled": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription_updated": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "Settings related to customer emails",
 			},
-			"customer_portal_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"customer_portal_settings": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"usage": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"subscription": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"customer": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "Settings related to the customer portal",
 			},
-			"dispute_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"dispute_settings": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"auto_accept_below_amount": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Concede disputes below this amount, in USD cents, without asking the organization. A dispute charged in another currency converts at the rate its payment settled at. `null` turns it off. The disputed amount and the processor's dispute fee are still deducted.",
+					},
+				},
 				Description: "Settings related to disputes",
 			},
 			"embed_hosts": schema.StringAttribute{
@@ -172,14 +301,94 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "ID of the payout account.",
 			},
-			"capabilities": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"capabilities": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"checkout_payments": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can accept new checkout payments.",
+					},
+					"subscription_renewals": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can process subscription renewals.",
+					},
+					"payouts": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can withdraw its balance.",
+					},
+					"refunds": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can issue refunds.",
+					},
+					"api_access": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can access the API.",
+					},
+					"dashboard_access": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether the organization can access the dashboard.",
+					},
+				},
 				Description: "Capabilities currently granted to the organization.",
 			},
-			"details": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"details": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"about": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Brief information about you and your business.",
+					},
+					"product_description": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Description of digital products being sold.",
+					},
+					"selling_categories": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Categories of products being sold.",
+					},
+					"pricing_models": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Pricing models used by the organization.",
+					},
+					"intended_use": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "How the organization will integrate and use Polar.",
+					},
+					"customer_acquisition": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Main customer acquisition channels.",
+					},
+					"future_annual_revenue": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Estimated revenue in the next 12 months",
+					},
+					"switching": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Switching from another platform?",
+					},
+					"switching_from": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Which platform the organization is migrating from.",
+					},
+					"previous_annual_revenue": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Revenue from last year if applicable.",
+					},
+				},
 				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
 			},
 		},

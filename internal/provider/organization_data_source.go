@@ -75,7 +75,6 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "Official website of the organization.",
 			},
 			"socials": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Links to social profiles.",
 			},
@@ -104,27 +103,22 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "Default tax behavior applied on products.",
 			},
 			"feature_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Organization feature settings",
 			},
 			"subscription_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Settings related to subscriptions management",
 			},
 			"customer_email_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Settings related to customer emails",
 			},
 			"customer_portal_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Settings related to the customer portal",
 			},
 			"dispute_settings": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Settings related to disputes",
 			},
@@ -150,12 +144,10 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "ID of the payout account.",
 			},
 			"capabilities": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Capabilities currently granted to the organization.",
 			},
 			"details": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
 			},

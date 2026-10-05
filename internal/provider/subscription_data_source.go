@@ -165,32 +165,26 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "Key-value object storing custom field values.",
 			},
 			"customer": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"product": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"discount": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"prices": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of enabled prices for the subscription.",
 			},
 			"meters": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of meters associated with the subscription.",
 			},
 			"pending_update": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Pending subscription update that will be applied at the beginning of the next period. If `null`, there is no pending update.",
 			},

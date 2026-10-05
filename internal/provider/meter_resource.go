@@ -80,16 +80,35 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Optional:    true,
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
-			"filter": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"filter": schema.SingleNestedAttribute{
 				Computed:    true,
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"conjunction": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"clauses": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
-			"aggregation": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"aggregation": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"property": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"func": schema.StringAttribute{
+						Required:    true,
+						Description: "Which variant this is. Selects which of the optional blocks above applies.",
+					},
+				},
 				Description: "",
 			},
 			"organization_id": schema.StringAttribute{

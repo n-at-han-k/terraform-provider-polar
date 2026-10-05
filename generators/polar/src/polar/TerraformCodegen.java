@@ -54,6 +54,36 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
     private static final Pattern PARAM = Pattern.compile("\\{([^{}/]+)\\}");
 
+    /**
+     * THE CONFIGURATION THIS GENERATOR TAKES, all of it, and all of it written
+     * by bin/derive rather than by hand -- derive has read the document and
+     * knows which positions can be a typed block and which cannot, so it says
+     * so instead of leaving the generator to guess.
+     *
+     * nestedAttributes   expand an object, or an array of objects, into a typed
+     *                    Terraform block instead of a string holding JSON.
+     *                    Without this every nested position is JSON, which is
+     *                    where this generator started.
+     *
+     * nestedMaxDepth     how many levels to expand before falling back to JSON.
+     *                    One is enough for Polar and is the default: a product's
+     *                    `prices` is a list of flat objects and a benefit's
+     *                    `meter_credit_properties` is a flat object, so one
+     *                    level types everything that matters. A child deeper
+     *                    than this is JSON inside its typed parent, not a
+     *                    reason to abandon the parent.
+     *
+     * jsonAttributes     positions that must stay JSON whatever their shape.
+     *                    derive puts two kinds here: freeform objects, where
+     *                    there are no properties to make attributes out of
+     *                    (`metadata` is a map of anything), and the unions it
+     *                    refused to flatten because they are recursive (a
+     *                    meter's `filter`, whose clauses contain filters).
+     */
+    private boolean nestedAttributes = true;
+    private int nestedMaxDepth = 1;
+    private final Set<String> jsonAttributes = new HashSet<>();
+
     public TerraformCodegen() {
         super();
     }
@@ -71,6 +101,23 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     @Override
     public void processOpts() {
         super.processOpts();
+
+        Object nested = additionalProperties().get("nestedAttributes");
+        nestedAttributes = nested == null || "true".equalsIgnoreCase(String.valueOf(nested));
+
+        Object depth = additionalProperties().get("nestedMaxDepth");
+        if (depth != null) {
+            nestedMaxDepth = Integer.parseInt(String.valueOf(depth).trim());
+        }
+
+        Object json = additionalProperties().get("jsonAttributes");
+        if (json != null) {
+            for (String name : String.valueOf(json).split(",")) {
+                if (!name.trim().isEmpty()) {
+                    jsonAttributes.add(name.trim());
+                }
+            }
+        }
 
         // What makes the output DEPLOYABLE rather than merely compilable: the
         // image that carries the binary and the workflow that publishes it.
@@ -404,8 +451,18 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // not need is as fatal as one it does.
         boolean usesTypes = tf != null && tf.stream()
                 .anyMatch(a -> String.valueOf(a.get("terraformType")).startsWith("types."));
-        boolean usesJson = tf != null && tf.stream()
-                .anyMatch(a -> Boolean.TRUE.equals(a.get("isJson")));
+        // A nested block's CHILDREN can be JSON too -- a price's seat_tiers is
+        // deeper than nestedMaxDepth -- and the parent attribute itself is not
+        // flagged isJson, so the child has to be looked at or jsontypes is
+        // imported nowhere and the nested struct will not compile.
+        boolean usesJson = tf != null && (tf.stream()
+                .anyMatch(a -> Boolean.TRUE.equals(a.get("isJson")))
+                || tf.stream().flatMap(a -> nestedOf(a).stream())
+                        .anyMatch(child -> Boolean.TRUE.equals(child.get("isJson"))));
+        // Every nested conversion wraps its error, so fmt is needed wherever one
+        // is emitted at all -- and types, because every child is a types.*.
+        boolean anyNested = tf != null && tf.stream()
+                .anyMatch(a -> Boolean.TRUE.equals(a.get("isNested")));
         boolean request = processed.getOperations().get("requestModel") != null;
         boolean response = processed.getOperations().get("responseModel") != null;
 
@@ -423,10 +480,10 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         boolean fromJson = response && tf != null && tf.stream().anyMatch(a ->
                 Boolean.TRUE.equals(a.get("isJson")) && Boolean.TRUE.equals(a.get("readBack")));
 
-        processed.getOperations().put("usesTypes", usesTypes);
+        processed.getOperations().put("usesTypes", usesTypes || anyNested);
         processed.getOperations().put("usesJsontypes", usesJson);
-        processed.getOperations().put("usesEncodingJson", toJson || fromJson);
-        processed.getOperations().put("usesFmt", toJson);
+        processed.getOperations().put("usesEncodingJson", toJson || fromJson || usesJson);
+        processed.getOperations().put("usesFmt", toJson || anyNested);
         processed.getOperations().put("hasClientModel", request || response);
 
         Object createModel = processed.getOperations().get("requestModel");
@@ -547,6 +604,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             attributes.add(writeOnlyAttribute(entry.getValue()));
         }
 
+        nest(attributes, allModels, writable, String.valueOf(operations.get("resourceClassName")));
+
         for (Map<String, Object> attribute : attributes) {
             String terraformName = String.valueOf(attribute.get("terraformName"));
 
@@ -569,7 +628,19 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         }
 
         boolean anyJson = attributes.stream()
-                .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isJson")));
+                .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isJson")))
+                || attributes.stream()
+                        .filter(attribute -> attribute.get("nested") != null)
+                        .flatMap(attribute -> nestedOf(attribute).stream())
+                        .anyMatch(child -> Boolean.TRUE.equals(child.get("isJson")));
+
+        // The nested blocks, collected so the model file can declare a struct
+        // for each one. Mustache cannot gather them itself.
+        List<Map<String, Object>> nestedModels = attributes.stream()
+                .filter(attribute -> Boolean.TRUE.equals(attribute.get("isNested")))
+                .collect(java.util.stream.Collectors.toList());
+        operations.put("nestedModels", nestedModels);
+        operations.put("hasNestedModels", !nestedModels.isEmpty());
 
         // Nothing is a types.List any more, so the import that served them is
         // not needed and the JSON one is.
@@ -798,6 +869,170 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         }
 
         return names;
+    }
+
+    /**
+     * A NESTED OBJECT IS A TERRAFORM BLOCK, not a string holding JSON.
+     *
+     * This is what `nestedAttributes` buys. Upstream renders any object or
+     * array of objects as one opaque attribute, so a product's prices were
+     * written as
+     *
+     *   prices = jsonencode([{ amount_type = "fixed", price_amount = 9795 }])
+     *
+     * and nothing checked a field name, a type or a missing required value
+     * until Polar answered 422. Expanded, the same thing is
+     *
+     *   prices = [{ amount_type = "fixed", price_amount = 9795 }]
+     *
+     * and the schema refuses a typo before a request is made.
+     *
+     * RUN AFTER the attributes are built, not during: the Go type the client
+     * carries -- `[]ProductPriceFixedCreate` -- is what names the model whose
+     * properties become the block's attributes, and that is only set by then.
+     *
+     * A CHILD TOO DEEP IS JSON INSIDE A TYPED PARENT. A price's `seat_tiers` is
+     * an object of its own, and at depth one it stays JSON -- but it does not
+     * disqualify `prices`, which was the first version of this and threw away
+     * the whole block for one field in a variant nobody here uses.
+     *
+     * CHILDREN ARE Optional AND Computed, except where the document requires
+     * them. Polar fills in a price's `price_currency` and `tax_behavior` when
+     * the configuration omits them, and an Optional-only attribute that the
+     * server answers is "Provider produced inconsistent result after apply" on
+     * every single apply. Optional means a configuration may say it; Computed
+     * means the server may.
+     */
+    private void nest(List<Map<String, Object>> attributes, List<ModelMap> allModels,
+                      Map<String, CodegenProperty> writable, String resourceClassName) {
+        if (!nestedAttributes || nestedMaxDepth < 1) {
+            return;
+        }
+
+        for (Map<String, Object> attribute : attributes) {
+            if (!Boolean.TRUE.equals(attribute.get("isJson"))) {
+                continue;
+            }
+
+            String terraformName = String.valueOf(attribute.get("terraformName"));
+            if (jsonAttributes.contains(terraformName)) {
+                continue;
+            }
+
+            // THE SHAPE A CONFIGURATION WRITES IS THE REQUEST'S, not the
+            // response's, and Polar's two often differ: a customer's
+            // `billing_address` goes out as an AddressInput and comes back as
+            // an Address, and a checkout link's `products` goes out as a list
+            // of ids and comes back as a list of objects. The attribute's own
+            // goType is the RESPONSE type, because that is what the schema was
+            // built from -- so nesting on it produced a block whose
+            // ToClientModel assigned an Address into an AddressInput field.
+            String responseGo = String.valueOf(attribute.get("goType"));
+            CodegenProperty writes = writable.get(String.valueOf(attribute.get("name"))
+                    .toLowerCase(Locale.ROOT));
+            String go = writes != null ? writes.dataType : responseGo;
+
+            boolean list = go.startsWith("[]");
+            // WHETHER THE CLIENT FIELD IS A POINTER, which decides how the
+            // conversion assigns it. `*BenefitMeterCreditCreateProperties`
+            // takes the converted pointer; a plain struct field takes what it
+            // points at. Getting this from the shape rather than guessing is
+            // the difference between compiling and "cannot use *converted
+            // (variable of struct type X) as *X value in assignment".
+            boolean pointer = go.replace("[]", "").startsWith("*");
+            String bare = go.replace("[]", "").replace("*", "");
+
+            CodegenModel model = modelNamed(allModels, bare);
+            if (model == null || model.vars == null || model.vars.isEmpty()) {
+                continue;
+            }
+
+            List<Map<String, Object>> children = new ArrayList<>();
+            for (CodegenProperty property : model.vars) {
+                children.add(childAttribute(property));
+            }
+
+            // Mustache cannot ask whether it is on the last item, and a Go
+            // composite literal tolerates a trailing comma, so nothing needs a
+            // separator here -- but the struct does need to know it has any.
+            if (children.isEmpty()) {
+                continue;
+            }
+
+            String nestedModel = resourceClassName + camelize(attribute.get("goName").toString()) + "Model";
+
+            attribute.put("isJson", false);
+            attribute.put("isNested", true);
+            attribute.put("isNestedList", list);
+            attribute.put("isNestedObject", !list);
+            attribute.put("nested", children);
+            attribute.put("nestedModel", nestedModel);
+            attribute.put("nestedClientType", bare);
+            attribute.put("nestedPointer", pointer);
+
+            // READ BACK ONLY WHERE THE TWO SHAPES ARE THE SAME ONE. Where they
+            // differ there is nothing to convert the answer into -- the nested
+            // model is the request's -- so the attribute is not refreshed,
+            // exactly as a scalar whose request and response spellings diverge
+            // is not. And then it must not be Computed either: a Computed
+            // attribute nothing assigns stays unknown past the apply, which is
+            // "provider returned invalid result object after apply".
+            boolean readBack = go.equals(responseGo) && Boolean.TRUE.equals(attribute.get("readBack"));
+            attribute.put("readBack", readBack);
+            attribute.put("isComputed", readBack);
+            attribute.put("terraformType", list ? "[]" + nestedModel : "*" + nestedModel);
+            attribute.put("terraformAttrType",
+                    list ? "schema.ListNestedAttribute" : "schema.SingleNestedAttribute");
+            // A nested block is never Required as a whole here: which half of a
+            // flattened union applies depends on the discriminator, and a
+            // Required block on a product with no prices cannot be satisfied.
+            attribute.put("isRequired", false);
+            attribute.put("isOptional", true);
+        }
+    }
+
+    /**
+     * One attribute inside a nested block. The same shaping the top level gets
+     * -- a pointer to a scalar is that scalar, an identifier is an RTID -- and
+     * then anything still composite is JSON, because this is depth one and
+     * there is nowhere further to go.
+     */
+    private Map<String, Object> childAttribute(CodegenProperty property) {
+        Map<String, Object> attribute = new HashMap<>();
+
+        attribute.put("name", property.baseName);
+        attribute.put("terraformName", underscore(property.baseName).toLowerCase(Locale.ROOT));
+        attribute.put("goName", camelize(property.baseName));
+        attribute.put("goType", property.dataType);
+        attribute.put("description", property.description != null
+                ? property.description.replace("\"", "'").replace("\n", " ")
+                : "");
+        attribute.put("isRequired", property.required);
+        // Everything the document does not require, the server may still
+        // answer -- see the note on nest().
+        attribute.put("isOptional", !property.required);
+        attribute.put("isComputed", !property.required);
+        attribute.put("isString", "string".equals(property.dataType));
+        attribute.put("isInt64", "int64".equals(property.dataType) || "int32".equals(property.dataType));
+        attribute.put("isFloat64", "float64".equals(property.dataType) || "float32".equals(property.dataType));
+        attribute.put("isBool", "bool".equals(property.dataType));
+        attribute.put("isList", false);
+        attribute.put("isObject", false);
+        attribute.put("isSensitive", false);
+        attribute.put("terraformType", goType(property.dataType));
+        attribute.put("terraformAttrType", goAttrType(property.dataType));
+
+        unpoint(attribute);
+        retype(attribute);
+        identifiers(attribute);
+
+        return attribute;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> nestedOf(Map<String, Object> attribute) {
+        Object nested = attribute.get("nested");
+        return nested == null ? new ArrayList<>() : (List<Map<String, Object>>) nested;
     }
 
     /**

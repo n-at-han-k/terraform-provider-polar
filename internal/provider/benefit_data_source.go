@@ -76,32 +76,26 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "The visibility of the benefit in the customer portal.",
 			},
 			"custom_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"discord_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"github_repository_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"downloadables_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"license_keys_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"meter_credit_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -111,7 +105,6 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
 			"slack_shared_channel_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -156,32 +149,26 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "",
 			},
 			"benefit_custom_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"benefit_discord_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"benefit_git_hub_repository_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"benefit_downloadables_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"benefit_license_keys_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"benefit_meter_credit_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -191,7 +178,6 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
 			"benefit_slack_shared_channel_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

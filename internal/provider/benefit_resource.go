@@ -86,34 +86,116 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional:    true,
 				Description: "The visibility of the benefit in the customer portal.",
 			},
-			"custom_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"custom_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"note": schema.StringAttribute{
+						Required:    true,
+						Description: "Private note to be shared with customers who have this benefit granted.",
+					},
+				},
 				Description: "",
 			},
-			"discord_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"discord_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"guild_id": schema.StringAttribute{
+						Required:    true,
+						Description: "The ID of the Discord server.",
+					},
+					"role_id": schema.StringAttribute{
+						Required:    true,
+						Description: "The ID of the Discord role to grant.",
+					},
+					"kick_member": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether to kick the member from the Discord server on revocation.",
+					},
+					"guild_token": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"github_repository_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"github_repository_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"repository_owner": schema.StringAttribute{
+						Required:    true,
+						Description: "The owner of the repository.",
+					},
+					"repository_name": schema.StringAttribute{
+						Required:    true,
+						Description: "The name of the repository.",
+					},
+					"permission": schema.StringAttribute{
+						Required:    true,
+						Description: "The permission level to grant. Read more about roles and their permissions on [GitHub documentation](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role).",
+					},
+				},
 				Description: "",
 			},
-			"downloadables_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"downloadables_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"archived": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+					"files": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"license_keys_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"license_keys_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"prefix": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"expires": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"activations": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"limit_usage": schema.Int64Attribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"meter_credit_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"meter_credit_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"units": schema.Int64Attribute{
+						Required:    true,
+						Description: "",
+					},
+					"rollover": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"meter_id": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
 			"feature_flag_properties": schema.StringAttribute{
@@ -121,9 +203,40 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:    true,
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
-			"slack_shared_channel_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"slack_shared_channel_properties": schema.SingleNestedAttribute{
 				Computed:    true,
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"slack_integration_id": schema.StringAttribute{
+						Required:    true,
+						Description: "Polar Slack integration linked to this benefit.",
+					},
+					"channel_name_template": schema.StringAttribute{
+						Required:    true,
+						Description: "Template for the channel name. Supports placeholders: {customer_name}, {customer_email_local}, and {metadata.<key>} for any value stored in customer user metadata.",
+					},
+					"private": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Create the channel as private (recommended).",
+					},
+					"welcome_message": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Optional message posted to the channel right after creation.",
+					},
+					"archive_on_revoke": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Archive the channel when the benefit is revoked.",
+					},
+					"team_invitees": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Slack user IDs from the merchant workspace to invite to every channel created for this benefit.",
+					},
+				},
 				Description: "",
 			},
 			"visibility_configurable": schema.BoolAttribute{
@@ -166,34 +279,111 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional:    true,
 				Description: "",
 			},
-			"benefit_custom_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_custom_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"note": schema.StringAttribute{
+						Required:    true,
+						Description: "Private note to be shared with customers who have this benefit granted.",
+					},
+				},
 				Description: "",
 			},
-			"benefit_discord_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_discord_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"guild_token": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"role_id": schema.StringAttribute{
+						Required:    true,
+						Description: "The ID of the Discord role to grant.",
+					},
+					"kick_member": schema.BoolAttribute{
+						Required:    true,
+						Description: "Whether to kick the member from the Discord server on revocation.",
+					},
+				},
 				Description: "",
 			},
-			"benefit_git_hub_repository_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_git_hub_repository_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"repository_owner": schema.StringAttribute{
+						Required:    true,
+						Description: "The owner of the repository.",
+					},
+					"repository_name": schema.StringAttribute{
+						Required:    true,
+						Description: "The name of the repository.",
+					},
+					"permission": schema.StringAttribute{
+						Required:    true,
+						Description: "The permission level to grant. Read more about roles and their permissions on [GitHub documentation](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role).",
+					},
+				},
 				Description: "",
 			},
-			"benefit_downloadables_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_downloadables_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"archived": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"files": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"benefit_license_keys_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_license_keys_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"prefix": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"expires": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"activations": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"limit_usage": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
-			"benefit_meter_credit_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_meter_credit_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"units": schema.Int64Attribute{
+						Required:    true,
+						Description: "",
+					},
+					"rollover": schema.BoolAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"meter_id": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
 			"benefit_feature_flag_update_properties": schema.StringAttribute{
@@ -201,9 +391,39 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional:    true,
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
-			"benefit_slack_shared_channel_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"benefit_slack_shared_channel_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"slack_integration_id": schema.StringAttribute{
+						Required:    true,
+						Description: "Polar Slack integration to use for this benefit.",
+					},
+					"channel_name_template": schema.StringAttribute{
+						Required:    true,
+						Description: "",
+					},
+					"private": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"welcome_message": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"archive_on_revoke": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"team_invitees": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+				},
 				Description: "",
 			},
 		},

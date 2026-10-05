@@ -25,6 +25,7 @@ type WebhooksEndpointModel struct {
 	Enabled types.Bool `tfsdk:"enabled"`
 }
 
+
 // ToClientModel converts a Terraform model to a client model.
 func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, error) {
 	out := &client.WebhookEndpointCreate{}
