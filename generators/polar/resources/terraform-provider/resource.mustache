@@ -413,7 +413,13 @@ func (r *{{resourceClassName}}Resource) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	state.FromClientModel(&result)
+	// AN IMPORT TAKES EVERYTHING; a refresh takes only what it may. See
+	// importing() in the model for why the two cannot use the same path.
+	if state.importing() {
+		state.FromAnswer(&result)
+	} else {
+		state.FromClientModel(&result)
+	}
 {{/responseModel}}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

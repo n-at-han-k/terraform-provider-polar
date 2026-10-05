@@ -324,6 +324,61 @@ func (m *ProductModel) FromClientModel(c *client.Product) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *ProductModel) importing() bool {
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		return false
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		return false
+	}
+	if !m.Description.IsNull() && !m.Description.IsUnknown() {
+		return false
+	}
+	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		return false
+	}
+	if len(m.Prices) > 0 {
+		return false
+	}
+	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
+		return false
+	}
+	if len(m.AttachedCustomFields) > 0 {
+		return false
+	}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		return false
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		return false
+	}
+	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
+		return false
+	}
+	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
+		return false
+	}
+	if !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
+		return false
+	}
+	if !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

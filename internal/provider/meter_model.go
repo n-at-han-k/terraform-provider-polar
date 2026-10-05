@@ -214,6 +214,43 @@ func (m *MeterModel) FromClientModel(c *client.Meter) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *MeterModel) importing() bool {
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		return false
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		return false
+	}
+	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
+		return false
+	}
+	if !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
+		return false
+	}
+	if !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
+		return false
+	}
+	if m.Filter != nil {
+		return false
+	}
+	if m.Aggregation != nil {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

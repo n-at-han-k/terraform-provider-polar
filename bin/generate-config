@@ -33,7 +33,7 @@ MANIFEST = File.join(ROOT, "reference", "resources.md")
 
 PROVIDER_NAME = "polar"
 PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
-PROVIDER_VERSION = "1.1.0"
+PROVIDER_VERSION = "1.2.0"
 
 # The leading segment that is the API version rather than part of a resource's
 # name. It belongs in the base URL the client already carries.

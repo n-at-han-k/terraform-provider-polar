@@ -303,7 +303,13 @@ func (r *CustomFieldResource) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	state.FromClientModel(&result)
+	// AN IMPORT TAKES EVERYTHING; a refresh takes only what it may. See
+	// importing() in the model for why the two cannot use the same path.
+	if state.importing() {
+		state.FromAnswer(&result)
+	} else {
+		state.FromClientModel(&result)
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

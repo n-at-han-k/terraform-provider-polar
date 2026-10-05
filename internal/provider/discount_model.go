@@ -173,6 +173,67 @@ func (m *DiscountModel) FromClientModel(c *client.Discount) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *DiscountModel) importing() bool {
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		return false
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		return false
+	}
+	if !m.Code.IsNull() && !m.Code.IsUnknown() {
+		return false
+	}
+	if !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		return false
+	}
+	if !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		return false
+	}
+	if !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		return false
+	}
+	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		return false
+	}
+	if !m.Products.IsNull() && !m.Products.IsUnknown() {
+		return false
+	}
+	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
+		return false
+	}
+	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
+		return false
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		return false
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		return false
+	}
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		return false
+	}
+	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
+		return false
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

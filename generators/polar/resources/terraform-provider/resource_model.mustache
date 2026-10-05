@@ -389,6 +389,41 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *{{resourceClassName}}Model) importing() bool {
+{{#tfAttributes}}
+{{#inRequest}}
+{{^isNested}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		return false
+	}
+{{/isNested}}
+{{#isNestedList}}
+	if len(m.{{goName}}) > 0 {
+		return false
+	}
+{{/isNestedList}}
+{{#isNestedObject}}
+	if m.{{goName}} != nil {
+		return false
+	}
+{{/isNestedObject}}
+{{/inRequest}}
+{{/tfAttributes}}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

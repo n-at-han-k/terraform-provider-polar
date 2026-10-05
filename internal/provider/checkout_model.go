@@ -346,6 +346,112 @@ func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *CheckoutModel) importing() bool {
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		return false
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		return false
+	}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		return false
+	}
+	if !m.CustomFieldData.IsNull() && !m.CustomFieldData.IsUnknown() {
+		return false
+	}
+	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		return false
+	}
+	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
+		return false
+	}
+	if !m.RequireBillingAddress.IsNull() && !m.RequireBillingAddress.IsUnknown() {
+		return false
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		return false
+	}
+	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		return false
+	}
+	if !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
+		return false
+	}
+	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
+		return false
+	}
+	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
+		return false
+	}
+	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		return false
+	}
+	if !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
+		return false
+	}
+	if !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
+		return false
+	}
+	if !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
+		return false
+	}
+	if !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
+		return false
+	}
+	if !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
+		return false
+	}
+	if !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
+		return false
+	}
+	if m.CustomerBillingAddress != nil {
+		return false
+	}
+	if !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
+		return false
+	}
+	if !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
+		return false
+	}
+	if !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
+		return false
+	}
+	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		return false
+	}
+	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		return false
+	}
+	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
+		return false
+	}
+	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
+		return false
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		return false
+	}
+	if !m.Products.IsNull() && !m.Products.IsUnknown() {
+		return false
+	}
+	if !m.Prices.IsNull() && !m.Prices.IsUnknown() {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

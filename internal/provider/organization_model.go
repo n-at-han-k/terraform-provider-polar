@@ -829,6 +829,67 @@ func (m *OrganizationModel) FromClientModel(c *client.Organization) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *OrganizationModel) importing() bool {
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		return false
+	}
+	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
+		return false
+	}
+	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
+		return false
+	}
+	if m.LegalEntity != nil {
+		return false
+	}
+	if !m.Email.IsNull() && !m.Email.IsUnknown() {
+		return false
+	}
+	if !m.Website.IsNull() && !m.Website.IsUnknown() {
+		return false
+	}
+	if len(m.Socials) > 0 {
+		return false
+	}
+	if m.Details != nil {
+		return false
+	}
+	if !m.Country.IsNull() && !m.Country.IsUnknown() {
+		return false
+	}
+	if m.FeatureSettings != nil {
+		return false
+	}
+	if m.SubscriptionSettings != nil {
+		return false
+	}
+	if m.CustomerEmailSettings != nil {
+		return false
+	}
+	if m.CustomerPortalSettings != nil {
+		return false
+	}
+	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
+		return false
+	}
+	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.

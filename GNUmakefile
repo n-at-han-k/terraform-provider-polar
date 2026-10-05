@@ -13,8 +13,8 @@ build:
 # Install provider locally
 .PHONY: install
 install: build
-	mkdir -p ~/.terraform.d/plugins/ghcr.io/n-at-han-k/polar/1.1.0/$(shell go env GOOS)_$(shell go env GOARCH)
-	mv terraform-provider-polar ~/.terraform.d/plugins/ghcr.io/n-at-han-k/polar/1.1.0/$(shell go env GOOS)_$(shell go env GOARCH)/
+	mkdir -p ~/.terraform.d/plugins/ghcr.io/n-at-han-k/polar/1.2.0/$(shell go env GOOS)_$(shell go env GOARCH)
+	mv terraform-provider-polar ~/.terraform.d/plugins/ghcr.io/n-at-han-k/polar/1.2.0/$(shell go env GOOS)_$(shell go env GOARCH)/
 
 # Generate documentation
 .PHONY: docs

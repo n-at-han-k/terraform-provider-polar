@@ -163,6 +163,64 @@ func (m *CheckoutLinkModel) FromClientModel(c *client.CheckoutLink) {
 	m.fromAnswer(c, false)
 }
 
+// WHETHER THIS STATE CAME FROM AN IMPORT rather than from an apply.
+//
+// ImportState is a passthrough of the identifier: after it, state carries the id
+// and nothing else, and only then does the framework call Read. FromClientModel's
+// guard -- which exists so a refresh cannot clobber what the configuration said --
+// therefore skips every writable attribute, leaving them null. The next plan then
+// proposes to ADD url, format and events to a webhook endpoint that already has
+// all three, and shows `name` going to (known after apply) when the server has a
+// name for it.
+//
+// So: the identifier is set and nothing the create body owns is. That is an
+// import, and an import wants everything the server answered.
+func (m *CheckoutLinkModel) importing() bool {
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		return false
+	}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		return false
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		return false
+	}
+	if !m.PaymentProcessor.IsNull() && !m.PaymentProcessor.IsUnknown() {
+		return false
+	}
+	if !m.Label.IsNull() && !m.Label.IsUnknown() {
+		return false
+	}
+	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
+		return false
+	}
+	if !m.RequireBillingAddress.IsNull() && !m.RequireBillingAddress.IsUnknown() {
+		return false
+	}
+	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		return false
+	}
+	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		return false
+	}
+	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		return false
+	}
+	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		return false
+	}
+	if !m.ProductPriceId.IsNull() && !m.ProductPriceId.IsUnknown() {
+		return false
+	}
+	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
+		return false
+	}
+	if !m.Products.IsNull() && !m.Products.IsUnknown() {
+		return false
+	}
+	return true
+}
+
 // FromAnswer writes every attribute the server answered, which is what a DATA
 // SOURCE wants: there is no configuration behind it to disagree with, and its
 // schema says Computed for everything but the identifier it was given.
