@@ -1,0 +1,6 @@
+url:     https://docs.polar.sh/openapi.json
+version: 2026-04
+sha256:  b5fafab90f8de4ef5cd839217229b934b6ff8862614055e6010dc03d5f8d15d7
+fetched: 2026-10-05
+paths:   127
+schemas: 1010

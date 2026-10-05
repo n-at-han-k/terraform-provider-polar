@@ -1,0 +1,84 @@
+{{>partial_header}}
+package provider
+
+import "encoding/json"
+
+// THE SERVER ANSWERS MORE THAN IT WAS ASKED, and for a JSON attribute that is
+// fatal unless it is handled here.
+//
+// RT takes a partial object, fills in every default it has an opinion about,
+// and hands the whole thing back. Send
+//
+//	{"skipLoginConsent":true,"skipLogoutConsent":true}
+//
+// and the answer also carries saas, fragment, enableAuthorization,
+// attestationMetaData and a list of additional properties. Writing that answer
+// into state breaks the one rule the plugin protocol will not bend on -- the
+// value after apply must equal the value in the plan -- so the apply fails
+// with "Provider produced inconsistent result after apply" AFTER the write has
+// already landed. The change is made, nothing is recorded, and the next
+// reconcile does it all again: an apply that can never succeed and never stops
+// trying.
+//
+// Taking the answer on refresh is no better: state then holds the expansion,
+// the configuration holds the partial, and every plan proposes an update that
+// changes nothing.
+//
+// So: if everything the practitioner wrote is present in the answer and agrees
+// with it, the answer says nothing the configuration does not already say --
+// keep theirs. If any of it is missing or different, that is real drift and
+// the answer wins.
+func jsonSupersetOf(server, configured string) bool {
+	if configured == "" {
+		return false
+	}
+
+	var s, c any
+	if json.Unmarshal([]byte(server), &s) != nil || json.Unmarshal([]byte(configured), &c) != nil {
+		return false
+	}
+
+	return jsonContains(s, c)
+}
+
+// Recursive, because the expansion happens at every depth: RT answers a
+// claim mapping the configuration never mentioned inside an object it did.
+//
+// A LIST MUST MATCH ELEMENT FOR ELEMENT. Only objects are treated as
+// extensible: a list the server has added to, reordered or trimmed is a
+// different list, and a provider that quietly accepted that would hide the one
+// kind of drift most likely to matter (an authorized API removed, a redirect
+// URI added by hand).
+func jsonContains(server, configured any) bool {
+	switch want := configured.(type) {
+	case map[string]any:
+		have, ok := server.(map[string]any)
+		if !ok {
+			return false
+		}
+		for key, value := range want {
+			other, present := have[key]
+			if !present || !jsonContains(other, value) {
+				return false
+			}
+		}
+		return true
+
+	case []any:
+		have, ok := server.([]any)
+		if !ok || len(have) != len(want) {
+			return false
+		}
+		for i := range want {
+			if !jsonContains(have[i], want[i]) {
+				return false
+			}
+		}
+		return true
+
+	default:
+		// Scalars, including nulls. json.Unmarshal gives float64 for every
+		// number, so == is comparing like with like.
+		return server == configured
+	}
+}

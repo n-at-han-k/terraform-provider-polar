@@ -1,0 +1,203 @@
+{{!
+    Upstream's template, with the non-scalar attributes made to work: it
+    declares them and never converts them, so an organization's `attributes`
+    and a tenant's `owners` reached the schema and the struct and were silently
+    never sent or read. Here they are JSON, and ToClientModel can fail.
+}}
+{{#operations}}
+{{>partial_header}}
+package provider
+
+import (
+{{#usesEncodingJson}}
+	"encoding/json"
+{{/usesEncodingJson}}
+{{#usesFmt}}
+	"fmt"
+{{/usesFmt}}
+{{#usesEncodingJson}}
+
+{{/usesEncodingJson}}
+{{#usesTypes}}
+	"github.com/hashicorp/terraform-plugin-framework/types"
+{{/usesTypes}}
+{{#usesJsontypes}}
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+{{/usesJsontypes}}
+{{#hasClientModel}}
+
+	"{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/internal/client"
+{{/hasClientModel}}
+)
+
+// {{resourceClassName}}Model is the Terraform model for {{resourceName}}.
+type {{resourceClassName}}Model struct {
+{{#tfAttributes}}
+	{{goName}} {{terraformType}} `tfsdk:"{{terraformName}}"`
+{{/tfAttributes}}
+}
+
+{{#requestModel}}
+// ToClientModel converts a Terraform model to a client model.
+func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, error) {
+	out := &client.{{requestModel}}{}
+{{#tfAttributes}}
+{{#inRequest}}
+{{#isString}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = m.{{goName}}.ValueString()
+	}
+{{/isString}}
+{{#isRtid}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
+	}
+{{/isRtid}}
+{{#isInt64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+	}
+{{/isInt64}}
+{{#isFloat64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+	}
+{{/isFloat64}}
+{{#isBool}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		// Addressed, not assigned: the client field is a *bool so that an
+		// explicit false is sent rather than dropped by `omitempty`.
+		{{goName}} := m.{{goName}}.ValueBool()
+		out.{{goName}} = &{{goName}}
+	}
+{{/isBool}}
+{{#isJson}}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.{{goName}}.ValueString()), &out.{{goName}}); err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+	}
+{{/isJson}}
+{{/inRequest}}
+{{/tfAttributes}}
+	return out, nil
+}
+{{/requestModel}}
+
+{{#hasSeparateUpdateModel}}
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: RT's update bodies have no
+// inboundProtocolConfiguration and no id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestModel}}, error) {
+	out := &client.{{updateRequestModel}}{}
+{{#tfAttributes}}
+{{#inUpdateRequest}}
+{{#isString}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = m.{{goName}}.ValueString()
+	}
+{{/isString}}
+{{#isRtid}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = client.RTID(m.{{goName}}.ValueString())
+	}
+{{/isRtid}}
+{{#isInt64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+	}
+{{/isInt64}}
+{{#isFloat64}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+	}
+{{/isFloat64}}
+{{#isBool}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		{{goName}} := m.{{goName}}.ValueBool()
+		out.{{goName}} = &{{goName}}
+	}
+{{/isBool}}
+{{#isJson}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.{{goName}}.ValueString()), &out.{{goName}}); err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+	}
+{{/isJson}}
+{{/inUpdateRequest}}
+{{/tfAttributes}}
+	return out, nil
+}
+{{/hasSeparateUpdateModel}}
+
+{{#responseModel}}
+// FromClientModel updates the Terraform model from a client model.
+func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}) {
+{{#tfAttributes}}
+{{#readBack}}
+{{#isString}}
+	m.{{goName}} = types.StringValue(c.{{goName}})
+{{/isString}}
+{{#isRtid}}
+	m.{{goName}} = types.StringValue(string(c.{{goName}}))
+{{/isRtid}}
+{{#isInt64}}
+	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
+{{/isInt64}}
+{{#isFloat64}}
+	m.{{goName}} = types.Float64Value(float64(c.{{goName}}))
+{{/isFloat64}}
+{{#isBool}}
+	// A bool the server does not answer leaves the pointer nil, and a Computed
+	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
+	// value ... all values must be known after apply". Unknown becomes null; a
+	// value the plan already knows is left alone.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.BoolValue(*c.{{goName}})
+	} else if m.{{goName}}.IsUnknown() {
+		m.{{goName}} = types.BoolNull()
+	}
+{{/isBool}}
+{{#isJson}}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.{{goName}}); err == nil {
+		if m.{{goName}}.IsNull() || m.{{goName}}.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.{{goName}}.ValueString()) {
+			m.{{goName}} = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+{{/isJson}}
+{{/readBack}}
+{{^readBack}}
+{{#inRequest}}
+{{#isComputed}}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.{{goName}}.IsUnknown() {
+		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isRtid}}types.StringNull(){{/isRtid}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}
+	}
+{{/isComputed}}
+{{/inRequest}}
+{{/readBack}}
+{{/tfAttributes}}
+}
+{{/responseModel}}
+{{/operations}}

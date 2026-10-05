@@ -1,0 +1,3 @@
+[submodule "reference/openapi-schema-rt"]
+	path = reference/openapi-schema-rt
+	url = https://github.com/n-at-han-k/openapi-schema-rt.git

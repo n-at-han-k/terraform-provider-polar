@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+#
+# Refresh the VENDORED OpenAPI description. Run deliberately, read the diff,
+# commit it -- this is the one step that reaches the network, and it is not part
+# of bin/generate for exactly that reason: a build that silently re-downloads
+# its own input is a build whose output nobody can reproduce.
+#
+#   bin/vendor-spec     # fetch, record provenance, leave a diff to review
+#
+# WHERE IT COMES FROM. Polar's own SDK pipeline
+# (polarsource/polar-go/.speakeasy/workflow.yaml) names
+# https://api.polar.sh/openapi.json, and that URL now 404s -- the description
+# moved to the docs host and Polar's committed workflow was not updated. There
+# is no copy in polarsource/polar either: the document is produced by their
+# FastAPI app at runtime, so the published one is the only source and this file
+# is the only pin on it.
+#
+# Polar also applies six overlays before generating its own SDKs
+# (sdk/overlays/*.yml in polarsource/polar), one of which -- read_only.yml --
+# is what would let the generator tell a Computed attribute from an Optional
+# one. Not applied here yet; see reference/resources.md.
+require "digest"
+require "json"
+require "net/http"
+require "uri"
+
+ROOT   = File.expand_path("..", __dir__)
+SPEC   = File.join(ROOT, "reference", "polar-openapi.json")
+SOURCE = File.join(ROOT, "reference", "SOURCE")
+
+URL = "https://api.polar.sh/openapi.json"
+# The live location. Answers a 301 to itself on the docs host.
+PUBLISHED = "https://docs.polar.sh/openapi.json"
+
+response = Net::HTTP.get_response(URI(PUBLISHED))
+response = Net::HTTP.get_response(URI(response["location"])) if response.is_a?(Net::HTTPRedirection)
+
+raise "GET #{PUBLISHED} answered #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+body = response.body
+spec = JSON.parse(body)
+
+version = spec.dig("info", "version")
+digest  = Digest::SHA256.hexdigest(body)
+
+File.write(SPEC, body)
+File.write(SOURCE, <<~PROVENANCE)
+  url:     #{PUBLISHED}
+  version: #{version}
+  sha256:  #{digest}
+  fetched: #{Time.now.utc.strftime('%Y-%m-%d')}
+  paths:   #{spec['paths'].size}
+  schemas: #{spec.dig('components', 'schemas').size}
+PROVENANCE
+
+warn("vendored Polar #{version} (#{spec['paths'].size} paths, sha256 #{digest[0, 16]}...)")
+warn("wrote reference/polar-openapi.json and reference/SOURCE -- read the diff, then commit")

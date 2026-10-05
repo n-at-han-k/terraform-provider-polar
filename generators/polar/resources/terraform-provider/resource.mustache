@@ -1,0 +1,468 @@
+{{!
+    Upstream's template, with the non-scalar attributes made to work.
+
+    It declares an object as a string and a list as a ListAttribute, and then
+    converts neither -- the field reaches the schema and the model struct and
+    is silently never sent or read. Here anything that is not a scalar is a
+    JSON string: jsontypes.Normalized so that a re-ordered object coming back
+    from the server is not a permanent diff, and json.Marshal/Unmarshal either
+    side of the wire.
+}}
+{{#operations}}
+{{>partial_header}}
+package provider
+
+import (
+	"context"
+{{#hasRead}}
+	"errors"
+{{/hasRead}}
+	"fmt"
+{{#hasRead}}
+	"net/http"
+{{/hasRead}}
+{{#responseModel}}
+	"encoding/json"
+{{/responseModel}}
+
+{{#importParts}}{{#-first}}
+	"strings"
+{{/-first}}{{/importParts}}
+
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+{{#hasCreate}}{{#hasIdAttribute}}
+	"github.com/hashicorp/terraform-plugin-framework/types"
+{{/hasIdAttribute}}{{/hasCreate}}
+{{#hasJsonAttributes}}
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+{{/hasJsonAttributes}}
+{{#hasCreate}}
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+{{/hasCreate}}
+{{^hasCreate}}{{#hasUpdate}}
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+{{/hasUpdate}}{{/hasCreate}}
+{{^hasCreate}}{{^hasUpdate}}{{#hasDelete}}
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+{{/hasDelete}}{{/hasUpdate}}{{/hasCreate}}
+
+	"{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/internal/client"
+)
+
+var _ resource.Resource = &{{resourceClassName}}Resource{}
+var _ resource.ResourceWithImportState = &{{resourceClassName}}Resource{}
+
+func New{{resourceClassName}}Resource() resource.Resource {
+	return &{{resourceClassName}}Resource{}
+}
+
+type {{resourceClassName}}Resource struct {
+	client *client.Client
+}
+
+func (r *{{resourceClassName}}Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_{{resourceName}}"
+}
+
+func (r *{{resourceClassName}}Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Manages a {{resourceName}} resource.",
+		Attributes: map[string]schema.Attribute{
+{{#tfAttributes}}
+			"{{terraformName}}": {{terraformAttrType}}{
+{{#isJson}}
+				CustomType:  jsontypes.NormalizedType{},
+{{/isJson}}
+{{#isRequired}}
+				Required:    true,
+{{/isRequired}}
+{{#isComputed}}
+				Computed:    true,
+{{/isComputed}}
+{{#isOptional}}
+				Optional:    true,
+{{/isOptional}}
+{{#isSensitive}}
+				Sensitive:   true,
+{{/isSensitive}}
+{{#isList}}
+				ElementType: {{listElementType}},
+{{/isList}}
+				Description: "{{{description}}}",
+			},
+{{/tfAttributes}}
+		},
+	}
+}
+
+func (r *{{resourceClassName}}Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	c, ok := req.ProviderData.(*client.Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *client.Client, got: %T.", req.ProviderData),
+		)
+		return
+	}
+
+	r.client = c
+}
+
+{{#hasCreate}}
+func (r *{{resourceClassName}}Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan {{resourceClassName}}Model
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+{{#requestModel}}
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid {{resourceName}} configuration", err.Error())
+		return
+	}
+{{/requestModel}}
+{{^requestModel}}
+	// This operation takes no request body.
+	var reqBody interface{}
+{{/requestModel}}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "{{createMethod}}", {{#createHasPathParams}}fmt.Sprintf("{{createPath}}"{{#createArgs}}, {{expr}}{{/createArgs}}){{/createHasPathParams}}{{^createHasPathParams}}"{{createPath}}"{{/createHasPathParams}}, reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating {{resourceName}}", err.Error())
+		return
+	}
+
+{{#hasRead}}
+	// RT's create answers a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+{{#hasIdAttribute}}
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.{{idFieldExported}} = types.StringValue(created)
+	}
+{{/hasIdAttribute}}
+{{^hasIdAttribute}}
+	// Nothing in this resource's schema holds an identifier, so the Location
+	// header has nowhere to go.
+	_ = location
+{{/hasIdAttribute}}
+
+{{#readHasPathParams}}
+	respBody, err = r.client.DoRequest(ctx, "{{readMethod}}", fmt.Sprintf("{{readPath}}"{{^readArgsPlan}}, plan.{{idFieldExported}}{{idFieldValueAccessor}}{{/readArgsPlan}}{{#readArgsPlan}}, {{expr}}{{/readArgsPlan}}), nil)
+{{/readHasPathParams}}
+{{^readHasPathParams}}
+	respBody, err = r.client.DoRequest(ctx, "{{readMethod}}", "{{readPath}}", nil)
+{{/readHasPathParams}}
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created {{resourceName}}", err.Error())
+		return
+	}
+{{/hasRead}}
+{{^hasRead}}
+	// Nothing to read back with: the create's own answer is all there is.
+{{#hasIdAttribute}}
+	if len(respBody) == 0 {
+		plan.{{idFieldExported}} = types.StringValue(client.IDFromLocation(location))
+	}
+{{/hasIdAttribute}}
+{{^hasIdAttribute}}
+	_ = location
+{{/hasIdAttribute}}
+{{/hasRead}}
+
+{{^responseModel}}
+	_ = respBody
+{{/responseModel}}
+{{#responseModel}}
+	if len(respBody) > 0 {
+		var result client.{{responseModel}}
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+{{/responseModel}}
+
+	tflog.Trace(ctx, "created {{resourceName}} resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+{{/hasCreate}}
+{{^hasCreate}}
+func (r *{{resourceClassName}}Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	resp.Diagnostics.AddError("Not Supported", "Create is not supported for {{resourceName}}")
+}
+{{/hasCreate}}
+
+{{#hasRead}}
+func (r *{{resourceClassName}}Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state {{resourceClassName}}Model
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+{{#readHasPathParams}}
+{{#idIsString}}
+	// A resource with no identifier is not a resource. Without this the read
+	// interpolates an empty id and asks the COLLECTION endpoint, which answers
+	// 200 and a list -- so a state written before the id was known would look
+	// healthy forever instead of being adopted again.
+	if state.{{idFieldExported}}.ValueString() == "" {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+{{/idIsString}}
+	respBody, err := r.client.DoRequest(ctx, "{{readMethod}}", fmt.Sprintf("{{readPath}}"{{^readArgs}}, state.{{idFieldExported}}{{idFieldValueAccessor}}{{/readArgs}}{{#readArgs}}, {{expr}}{{/readArgs}}), nil)
+{{/readHasPathParams}}
+{{^readHasPathParams}}
+	respBody, err := r.client.DoRequest(ctx, "{{readMethod}}", "{{readPath}}", nil)
+{{/readHasPathParams}}
+	if err != nil {
+		// GONE IS NOT BROKEN. A 404 here means the resource this state row
+		// describes no longer exists -- deleted by hand, or by something else
+		// that owns it -- and the honest answer is to drop the row and let the
+		// plan decide whether to recreate it. Raising instead fails every plan
+		// in the configuration, including the ones with nothing to do with this
+		// resource, and leaves no way out but editing state by hand.
+		//
+		// ONLY IN Read. The same 404 after a create or an update is a real
+		// failure: something we just wrote is missing.
+		var apiErr *client.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError("Error reading {{resourceName}}", err.Error())
+		return
+	}
+
+{{^responseModel}}
+	_ = respBody
+{{/responseModel}}
+{{#responseModel}}
+	var result client.{{responseModel}}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		resp.Diagnostics.AddError("Error parsing response", err.Error())
+		return
+	}
+
+	state.FromClientModel(&result)
+{{/responseModel}}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+{{/hasRead}}
+{{^hasRead}}
+func (r *{{resourceClassName}}Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// No read endpoint available; keep existing state as-is.
+}
+{{/hasRead}}
+
+{{#hasUpdate}}
+func (r *{{resourceClassName}}Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan {{resourceClassName}}Model
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+{{#updateHasPathParams}}
+	// The identifiers come off state: they cannot change on an update, and the
+	// plan's copy of a Computed one is unknown -- which is also the only place
+	// an imported nested resource's parents live.
+	var state {{resourceClassName}}Model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+{{/updateHasPathParams}}
+
+{{#hasSeparateUpdateModel}}
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid {{resourceName}} configuration", err.Error())
+		return
+	}
+{{/hasSeparateUpdateModel}}
+{{^hasSeparateUpdateModel}}
+{{#requestModel}}
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid {{resourceName}} configuration", err.Error())
+		return
+	}
+{{/requestModel}}
+{{^requestModel}}
+	// This operation takes no request body.
+	var reqBody interface{}
+{{/requestModel}}
+{{/hasSeparateUpdateModel}}
+
+{{#updateHasPathParams}}
+	respBody, err := r.client.DoRequest(ctx, "{{updateMethod}}", fmt.Sprintf("{{updatePath}}"{{^updateArgs}}, plan.{{idFieldExported}}{{idFieldValueAccessor}}{{/updateArgs}}{{#updateArgs}}, {{expr}}{{/updateArgs}}), reqBody)
+{{/updateHasPathParams}}
+{{^updateHasPathParams}}
+	respBody, err := r.client.DoRequest(ctx, "{{updateMethod}}", "{{updatePath}}", reqBody)
+{{/updateHasPathParams}}
+	if err != nil {
+		resp.Diagnostics.AddError("Error updating {{resourceName}}", err.Error())
+		return
+	}
+
+{{^responseModel}}
+	_ = respBody
+{{/responseModel}}
+{{#responseModel}}
+{{#hasRead}}
+	// AN UPDATE'S ANSWER IS NOT THE READ'S. RT answers a PUT with the list of
+	// changes it made -- ["Description changed from 'a' to 'b'"] -- and some
+	// updates answer nothing at all; neither is the resource, and
+	// unmarshalling either one is "Error parsing response" AFTER the server
+	// has already accepted the change. What it now looks like is read back.
+{{#readHasPathParams}}
+	respBody, err = r.client.DoRequest(ctx, "{{readMethod}}", fmt.Sprintf("{{readPath}}"{{^readArgs}}, state.{{idFieldExported}}{{idFieldValueAccessor}}{{/readArgs}}{{#readArgs}}, {{expr}}{{/readArgs}}), nil)
+{{/readHasPathParams}}
+{{^readHasPathParams}}
+	respBody, err = r.client.DoRequest(ctx, "{{readMethod}}", "{{readPath}}", nil)
+{{/readHasPathParams}}
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the updated {{resourceName}}", err.Error())
+		return
+	}
+{{/hasRead}}
+
+	if len(respBody) > 0 {
+		var result client.{{responseModel}}
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+{{/responseModel}}
+
+	tflog.Trace(ctx, "updated {{resourceName}} resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+{{/hasUpdate}}
+{{^hasUpdate}}
+func (r *{{resourceClassName}}Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// No update endpoint: nothing here can change on the server, so the plan
+	// stands. But EVERY Computed attribute is unknown in a plan, and a provider
+	// must answer known values after an apply -- persisting the plan as it
+	// stands earns "Provider returned invalid result object after apply". The
+	// known values come from a read.
+	var plan {{resourceClassName}}Model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+{{#hasRead}}
+{{#readHasPathParams}}
+
+	// The identifier off STATE, not the plan: it is Computed, so the plan has
+	// it as unknown, and it cannot change on an update anyway.
+	var state {{resourceClassName}}Model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	respBody, err := r.client.DoRequest(ctx, "{{readMethod}}", fmt.Sprintf("{{readPath}}"{{^readArgs}}, state.{{idFieldExported}}{{idFieldValueAccessor}}{{/readArgs}}{{#readArgs}}, {{expr}}{{/readArgs}}), nil)
+{{/readHasPathParams}}
+{{^readHasPathParams}}
+
+	respBody, err := r.client.DoRequest(ctx, "{{readMethod}}", "{{readPath}}", nil)
+{{/readHasPathParams}}
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading {{resourceName}}", err.Error())
+		return
+	}
+
+{{^responseModel}}
+	_ = respBody
+{{/responseModel}}
+{{#responseModel}}
+	var result client.{{responseModel}}
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		resp.Diagnostics.AddError("Error parsing response", err.Error())
+		return
+	}
+
+	plan.FromClientModel(&result)
+{{/responseModel}}
+{{/hasRead}}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+{{/hasUpdate}}
+
+{{#hasDelete}}
+func (r *{{resourceClassName}}Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state {{resourceClassName}}Model
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+{{#deleteHasPathParams}}
+	_, err := r.client.DoRequest(ctx, "{{deleteMethod}}", fmt.Sprintf("{{deletePath}}"{{^deleteArgs}}, state.{{idFieldExported}}{{idFieldValueAccessor}}{{/deleteArgs}}{{#deleteArgs}}, {{expr}}{{/deleteArgs}}), nil)
+{{/deleteHasPathParams}}
+{{^deleteHasPathParams}}
+	_, err := r.client.DoRequest(ctx, "{{deleteMethod}}", "{{deletePath}}", nil)
+{{/deleteHasPathParams}}
+	if err != nil {
+		resp.Diagnostics.AddError("Error deleting {{resourceName}}", err.Error())
+		return
+	}
+
+	tflog.Trace(ctx, "deleted {{resourceName}} resource")
+}
+{{/hasDelete}}
+{{^hasDelete}}
+func (r *{{resourceClassName}}Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	// No delete endpoint available; remove the resource from state.
+}
+{{/hasDelete}}
+
+func (r *{{resourceClassName}}Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+{{#importParts}}{{#-first}}
+	// A nested resource is addressed by its parents as well as itself, and an
+	// import id carries only what it is given.
+	parts := strings.Split(req.ID, "/")
+
+	if len(parts) != {{importPartCount}} {
+		resp.Diagnostics.AddError(
+			"Unexpected import identifier",
+			"Expected \"{{{importHint}}}\", got: "+req.ID,
+		)
+		return
+	}
+{{/-first}}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("{{terraformName}}"), parts[{{index}}])...)
+{{/importParts}}
+{{^importParts}}
+	resource.ImportStatePassthroughID(ctx, path.Root("{{idFieldTerraformName}}"), req, resp)
+{{/importParts}}
+}
+{{/operations}}

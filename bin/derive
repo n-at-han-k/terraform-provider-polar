@@ -1,0 +1,275 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+#
+# THE POLAR DOCUMENT IN, A DOCUMENT THE GENERATOR CAN BE POINTED AT OUT.
+#
+# Every Polar-specific decision in this provider is made HERE, against the
+# published OpenAPI description, and lands as a committed artifact -- a pruned
+# document and a manifest beside it. The generator itself knows nothing about
+# Polar: it is pointed at reference/polar-pruned.json and groups whatever it is
+# given. That is the whole reason this file exists rather than five more hooks
+# in generators/polar/src/polar/TerraformCodegen.java.
+#
+# WHY A DERIVED ARTIFACT AND NOT A HEURISTIC AT GENERATE TIME. Polar versions
+# its document (`info.version`, "2026-04") and ships a new one without asking.
+# A rule that runs inside the generator answers differently on the new document
+# and says nothing about it; a rule that runs here produces a diff -- two
+# resources added, one dropped -- which is a thing to read before committing.
+# The manifest is written for exactly that review.
+#
+#   bin/vendor-spec   # refresh the vendored description (the only network step)
+#   bin/derive        # prune the vendored one, write both artifacts
+#
+# NOTHING HERE IS HAND-MAINTAINED. Do not edit polar-pruned.json; edit the
+# rules below and run this again.
+require "json"
+
+ROOT    = File.expand_path("..", __dir__)
+SOURCE  = File.join(ROOT, "reference", "polar-openapi.json")
+PRUNED  = File.join(ROOT, "reference", "polar-pruned.json")
+MANIFEST = File.join(ROOT, "reference", "resources.md")
+PROVENANCE = File.join(ROOT, "reference", "SOURCE")
+
+# The version segment every Polar path opens with. Lifted off the paths and
+# onto the server URL below, so a resource is `polar_product` rather than
+# `polar_v1_product` -- the version belongs in the base URL the client already
+# carries, not in a type a configuration has to spell.
+VERSION_PREFIX = "/v1"
+
+# Not infrastructure: these authenticate with a CUSTOMER SESSION token minted
+# for one end customer, never with the organization access token this provider
+# holds. Several of them are creatable and readable (members, seats,
+# payment-methods), so the rules below would otherwise keep them -- it is the
+# audience that rules them out, and only this list knows that.
+CUSTOMER_FACING = "#{VERSION_PREFIX}/customer-portal"
+
+# A trailing /{param} is the member of a collection, not a collection.
+def collection_of(path)
+  trimmed = path.length > 1 && path.end_with?("/") ? path[0..-2] : path
+  cut     = trimmed.rindex("/")
+
+  if cut && cut > 0 && trimmed.end_with?("}") && trimmed[(cut + 1)..].start_with?("{")
+    trimmed[0...cut]
+  else
+    trimmed
+  end
+end
+
+def member?(path)
+  collection_of(path) != (path.end_with?("/") && path.length > 1 ? path[0..-2] : path)
+end
+
+HTTP_METHODS = %w[get post put patch delete].freeze
+
+# TERRAFORM OWNS WHAT IT CAN BOTH MAKE AND READ BACK. Two rules, and between
+# them they take 127 paths down to the handful a configuration can own.
+#
+#   no CREATE on the collection -> it is a REPORT. /metrics, /events, /payments
+#     and /benefit-grants are readable and cannot be brought into being; as a
+#     resource, tofu offers to create one on the first plan and the apply fails.
+#
+#   no READ on the member -> it is a VERB. /events/ingest, /oauth2/register,
+#     /license-keys/validate, /orders/{id}/finalize and
+#     /webhooks/endpoints/{id}/secret all take a POST and answer nothing
+#     addressable afterwards, so there is no state to refresh and no drift to
+#     detect.
+def classify(paths)
+  collections = {}
+
+  paths.each do |path, item|
+    group = collections[collection_of(path)] ||= { create: false, read: false, methods: {} }
+
+    item.each_key do |method|
+      next unless HTTP_METHODS.include?(method)
+
+      group[:methods][path] ||= []
+      group[:methods][path] << method.upcase
+
+      if member?(path)
+        group[:read] = true if method == "get"
+      elsif method == "post" && (item[method]["responses"] || {}).key?("201")
+        group[:create] = true
+      end
+    end
+  end
+
+  collections
+end
+
+def keep?(collection, group)
+  return false if collection == CUSTOMER_FACING || collection.start_with?("#{CUSTOMER_FACING}/")
+
+  group[:create] && group[:read]
+end
+
+# OpenAPI 3.1 lets a property be pinned to `null`, and Go has no such type.
+#
+# Polar uses it to say "this variant does not have that field": a one-time
+# product is a ProductCreate whose `recurring_interval` is {"type": "null"}, as
+# against the recurring variant's enum. The generator renders a declared type
+# faithfully, so the struct field came out `RecurringInterval *nil` and the
+# client would not compile -- "nil (untyped nil) is not a type", 8 of them.
+#
+# A field that can only ever be null CARRIES NO VALUE, so it is deleted here
+# rather than mapped to something. That is also the right shape for the
+# provider: "one-time" is spelled by OMITTING recurring_interval, which is what
+# the hand-written catalogue already does, so there is no attribute a
+# configuration could set to the wrong thing.
+def drop_null_properties!(node, dropped)
+  case node
+  when Hash
+    properties = node["properties"]
+
+    if properties.is_a?(Hash)
+      properties.keys.each do |name|
+        schema = properties[name]
+        next unless schema.is_a?(Hash) && schema["type"] == "null"
+
+        properties.delete(name)
+        dropped << name
+        # A required property that cannot hold a value is a body no client can
+        # satisfy; it goes from both lists or the generator makes it Required.
+        node["required"] = Array(node["required"]) - [name] if node["required"]
+        node.delete("required") if node["required"].is_a?(Array) && node["required"].empty?
+      end
+    end
+
+    node.each_value { |value| drop_null_properties!(value, dropped) }
+  when Array
+    node.each { |value| drop_null_properties!(value, dropped) }
+  end
+
+  dropped
+end
+
+# Every $ref under a node, by schema name.
+def refs_in(node, found = [])
+  case node
+  when Hash
+    ref = node["$ref"]
+    found << ref.split("/").last if ref.is_a?(String) && ref.start_with?("#/components/schemas/")
+    node.each_value { |value| refs_in(value, found) }
+  when Array
+    node.each { |value| refs_in(value, found) }
+  end
+
+  found
+end
+
+# What the kept paths actually reach, transitively. Without this the client
+# carries a Go file per schema in the document -- 1136 of them, almost all for
+# paths that are no longer here, which is a build to wait on and a diff nobody
+# can read.
+def reachable_schemas(paths, schemas)
+  frontier = refs_in(paths).uniq
+  seen     = {}
+
+  until frontier.empty?
+    name = frontier.pop
+    next if seen[name] || !schemas.key?(name)
+
+    seen[name] = true
+    frontier.concat(refs_in(schemas[name]))
+  end
+
+  seen.keys
+end
+
+# THE VENDORED DESCRIPTION, and nothing else. This script does not reach the
+# network: the input is a committed file, so the same checkout derives the same
+# provider however long from now and whatever Polar has published since.
+# bin/vendor-spec is the deliberate step that moves it.
+unless File.exist?(SOURCE)
+  abort("missing reference/polar-openapi.json -- run bin/vendor-spec to fetch it")
+end
+
+spec = JSON.parse(File.read(SOURCE))
+
+warn("#{spec.dig('info', 'title')} #{spec.dig('info', 'version')}: #{spec['paths'].size} paths, " \
+     "#{spec.dig('components', 'schemas').size} schemas")
+warn(File.read(PROVENANCE).lines.grep(/sha256|fetched/).map(&:strip).join(", ")) if File.exist?(PROVENANCE)
+
+# OpenAPI 3.1 `webhooks` are 41 INCOMING event descriptions -- what Polar sends
+# us, which a provider never calls and whose payload schemas drag in a third of
+# the document. The app verifies those (app/controllers/webhooks/polar_controller.rb);
+# Terraform only declares the endpoint they arrive at.
+spec.delete("webhooks")
+
+collections = classify(spec["paths"])
+kept, dropped_collections = collections.partition { |collection, group| keep?(collection, group) }
+
+# Every path belonging to a kept collection -- the collection path and its
+# member both, since the resource needs the create on one and the read on the
+# other.
+keep_paths = kept.flat_map { |_, group| group[:methods].keys }.each_with_object({}) { |path, set| set[path] = true }
+
+spec["paths"] = spec["paths"].select { |path, _| keep_paths.key?(path) }
+
+# The version comes off every path and goes onto the servers, which is the one
+# place it is true of the whole API rather than of each route.
+spec["paths"] = spec["paths"].transform_keys do |path|
+  path.start_with?(VERSION_PREFIX) ? (path.delete_prefix(VERSION_PREFIX).then { |p| p.empty? ? "/" : p }) : path
+end
+spec["servers"] = Array(spec["servers"]).map do |server|
+  server.merge("url" => "#{server['url'].to_s.chomp('/')}#{VERSION_PREFIX}")
+end
+
+nulls = drop_null_properties!(spec, [])
+
+reachable = reachable_schemas(spec["paths"], spec["components"]["schemas"])
+before    = spec["components"]["schemas"].size
+spec["components"]["schemas"] = spec["components"]["schemas"].select { |name, _| reachable.include?(name) }
+
+File.write(PRUNED, JSON.pretty_generate(spec))
+
+# The thing to actually read on a spec bump.
+File.open(MANIFEST, "w") do |io|
+  io.puts "<!-- GENERATED by bin/derive. Do not edit. -->"
+  io.puts
+  io.puts "# Polar #{spec.dig('info', 'version')} -> provider resources"
+  io.puts
+  io.puts "`bin/derive` keeps a collection when it has a **create** (`POST` answering 201)"
+  io.puts "and a **read** on its member (`GET /thing/{id}`). Everything else is a report or"
+  io.puts "a verb. The customer portal is dropped whole: it authenticates with a customer"
+  io.puts "session, not this provider's organization token."
+  io.puts
+  io.puts "#{kept.size} resources from #{collections.size} collections."
+  io.puts
+  io.puts "| resource | collection | operations | note |"
+  io.puts "|---|---|---|---|"
+
+  kept.sort_by(&:first).each do |collection, group|
+    segments = collection.delete_prefix(VERSION_PREFIX).split("/").reject { |s| s.empty? || s.start_with?("{") }
+    name     = "polar_" + segments.each_with_index.map { |s, i|
+      s = s.tr("-", "_")
+      i == segments.size - 1 ? s.sub(/s\z/, "") : s
+    }.join("_")
+
+    verbs = group[:methods].values.flatten.uniq
+    note  = verbs.include?("DELETE") ? "" : "**no DELETE** -- cannot be destroyed or replaced"
+
+    io.puts "| `#{name}` | `#{collection}` | #{verbs.sort.join(', ')} | #{note} |"
+  end
+
+  io.puts
+  io.puts "## Dropped (#{dropped_collections.size})"
+  io.puts
+  io.puts "| collection | why |"
+  io.puts "|---|---|"
+
+  dropped_collections.sort_by(&:first).each do |collection, group|
+    why = if collection == CUSTOMER_FACING || collection.start_with?("#{CUSTOMER_FACING}/")
+            "customer-session auth, not an organization token"
+          else
+            [group[:create] ? nil : "no create (a report)",
+             group[:read] ? nil : "no member read (a verb)"].compact.join(", ")
+          end
+
+    io.puts "| `#{collection}` | #{why} |"
+  end
+end
+
+warn("kept #{kept.size} collections, dropped #{dropped_collections.size}")
+warn("dropped #{nulls.size} null-typed properties: #{nulls.uniq.sort.join(', ')}")
+warn("schemas #{before} -> #{spec['components']['schemas'].size}")
+warn("wrote #{PRUNED.sub("#{ROOT}/", '')} and #{MANIFEST.sub("#{ROOT}/", '')}")

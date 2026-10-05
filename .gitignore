@@ -1,0 +1,16 @@
+*.dll
+*.exe
+*.exe~
+*.dylib
+*.so
+*.test
+*.out
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+*.tfvars.json
+terraform-provider-rt
+
+# nix build output
+/result

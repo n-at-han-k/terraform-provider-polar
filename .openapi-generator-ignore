@@ -1,0 +1,4 @@
+# The generator's .gitignore knows about Go and Terraform, and nothing about
+# reference/ or nix results, which is why ours is the one that stays.
+.gitignore
+README.md

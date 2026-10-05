@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# The whole build: Polar's published document in, one deployable provider out.
+#
+# What lands in the repo is COMMITTED -- the Dockerfile compiles what is here,
+# not what a regeneration would produce. Run this, look at the diff, commit it.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# NOT the published document -- the PRUNED one. bin/derive fetches Polar's,
+# makes every Polar-specific decision against it (which collections are
+# resources, which paths are reports or verbs, the customer portal, the version
+# prefix, OpenAPI 3.1's pinned nulls) and writes this beside a manifest of what
+# it kept. The generator below knows nothing about Polar and is pointed at the
+# result; `reference/resources.md` is the thing to read on a spec bump.
+SPEC=reference/polar-pruned.json
+
+bin/derive
+
+test -f "$SPEC" || { echo "missing $SPEC -- bin/derive did not write it"; exit 1; }
+
+# Everything under internal/ is generated, and a rename leaves the old file
+# behind -- a stale resource compiles just as well as the new one.
+rm -rf internal/provider internal/client
+
+openapi-generator-polar generate \
+  -i "$SPEC" \
+  -g polar-terraform \
+  -o . \
+  --git-host github.com \
+  --git-user-id n-at-han-k \
+  --git-repo-id terraform-provider-polar \
+  --additional-properties="providerName=polar,providerAddress=ghcr.io/n-at-han-k/polar,providerVersion=1.0.0"
+
+# The generator cannot write a go.sum -- only the toolchain knows the hashes,
+# and the Dockerfile builds with no network for the module cache.
+CGO_ENABLED=0 go mod tidy
+
+CGO_ENABLED=0 go build ./...
+echo "built clean"
