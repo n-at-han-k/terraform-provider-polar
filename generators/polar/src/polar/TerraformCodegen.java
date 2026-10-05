@@ -148,6 +148,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         supportingFiles.add(new SupportingFile("dockerignore.mustache", "", ".dockerignore"));
         supportingFiles.add(new SupportingFile("build_image_workflow.mustache",
                 ".github" + File.separator + "workflows", "build-image.yml"));
+        // The same binary as that image, as release assets -- for a consumer with
+        // no cluster to copy it out of. ~/infra/clan's tofu root resolves this
+        // provider from a filesystem mirror, and a released binary is a fetchurl
+        // and a sha256 rather than a vendorHash to recompute by hand.
+        supportingFiles.add(new SupportingFile("release_workflow.mustache",
+                ".github" + File.separator + "workflows", "release.yml"));
 
     }
 

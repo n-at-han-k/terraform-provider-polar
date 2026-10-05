@@ -1,0 +1,92 @@
+name: Release binaries
+# Publish the provider binary for every platform a filesystem mirror might ask
+# for, as plain release assets.
+#
+# WHY A BINARY AND NOT ONLY THE IMAGE. build-image.yml already publishes an
+# image, and that is how the CLUSTER gets this provider: provider-opentofu runs
+# it as an initContainer and copies the binary out. A workstation has no cluster
+# to copy out of, and ~/infra/clan's tofu root needs the same provider in its own
+# filesystem mirror -- so it was building from source with buildGoModule, which
+# means a vendorHash to recompute by hand every time go.mod moves. A released
+# binary is a fetchurl and a sha256, and neither of those drifts.
+#
+# THE ASSET NAME IS THE MIRROR'S PATH. OpenTofu resolves an unpacked filesystem
+# mirror at
+#   <mirror>/<host>/<ns>/<type>/<version>/<os>_<arch>/terraform-provider-<type>_v<version>
+# so each asset is named for that leaf and the consumer only has to place it.
+#
+# NO setup-go AND NO RELEASE ACTION. GitHub's runners ship Go, and `gh` is
+# already authenticated from GITHUB_TOKEN -- the same reasoning build-image.yml
+# gives for `docker login` over a third-party action: one less unpinned
+# dependency to keep current.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. v1.0.0'
+        required: true
+
+permissions:
+  # Required to create the release and upload assets with GITHUB_TOKEN.
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: release-{{providerName}}-binaries
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      # A tag push carries the version in the ref; a manual run is told it.
+      - name: Resolve version
+        run: |
+          version='${{ inputs.version }}'
+          [ -n "$version" ] || version="$GITHUB_REF_NAME"
+          case "$version" in
+            v*) ;;
+            *) echo "version must start with v: $version" >&2; exit 1 ;;
+          esac
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      # CGO off: the binary is copied into other images and must not depend on
+      # the libc of whichever one built it.
+      - name: Build
+        run: |
+          mkdir -p dist
+          for pair in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64; do
+            goos="${pair%/*}"
+            goarch="${pair#*/}"
+            GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 go build \
+              -trimpath \
+              -o "dist/terraform-provider-{{providerName}}_${VERSION}_${goos}_${goarch}" \
+              .
+          done
+          cd dist && sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      # Idempotent: re-running the same tag uploads over the existing release
+      # rather than failing, which is what a retried job should do.
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" dist/* --clobber
+          else
+            gh release create "$VERSION" dist/* --title "$VERSION" --generate-notes
+          fi
+
+      - name: Summary
+        run: |
+          echo "Published \`$VERSION\`:" >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          sed 's/^/    /' dist/SHA256SUMS >> "$GITHUB_STEP_SUMMARY"

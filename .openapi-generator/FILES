@@ -1,5 +1,6 @@
 .dockerignore
 .github/workflows/build-image.yml
+.github/workflows/release.yml
 Dockerfile
 GNUmakefile
 examples/provider/provider.tf
