@@ -49,7 +49,7 @@ jobs:
       # A tag push carries the version in the ref; a manual run is told it.
       - name: Resolve version
         run: |
-          version='$'
+          version='${{ inputs.version }}'
           [ -n "$version" ] || version="$GITHUB_REF_NAME"
           case "$version" in
             v*) ;;
@@ -77,7 +77,7 @@ jobs:
       # rather than failing, which is what a retried job should do.
       - name: Publish
         env:
-          GH_TOKEN: $
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" dist/* --clobber

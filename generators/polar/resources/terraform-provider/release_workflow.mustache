@@ -1,3 +1,12 @@
+{{=<% %>=}}
+<%! DELIMITERS SWAPPED ON PURPOSE, exactly as build_image_workflow.mustache does
+    it. A GitHub workflow is full of GitHub's own dollar-brace-brace expressions,
+    which mustache reads as its own tags: the first version of this file rendered
+    the inputs.version expression as a bare dollar sign, and every tag push died
+    on "version must start with v: $". With the delimiters moved, GitHub's
+    expressions pass through untouched and this template's own variables are
+    angle-percent. Do not write a closing angle-percent inside this comment --
+    it ends the comment, which is the second way this file was broken. %>
 name: Release binaries
 # Publish the provider binary for every platform a filesystem mirror might ask
 # for, as plain release assets.
@@ -38,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
 
     concurrency:
-      group: release-{{providerName}}-binaries
+      group: release-<%providerName%>-binaries
       cancel-in-progress: false
 
     steps:
@@ -67,7 +76,7 @@ jobs:
             goarch="${pair#*/}"
             GOOS="$goos" GOARCH="$goarch" CGO_ENABLED=0 go build \
               -trimpath \
-              -o "dist/terraform-provider-{{providerName}}_${VERSION}_${goos}_${goarch}" \
+              -o "dist/terraform-provider-<%providerName%>_${VERSION}_${goos}_${goarch}" \
               .
           done
           cd dist && sha256sum * > SHA256SUMS
