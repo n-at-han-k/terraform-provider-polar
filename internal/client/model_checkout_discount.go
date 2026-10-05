@@ -4,14 +4,14 @@ package client
 
 // CheckoutDiscount - CheckoutDiscount struct
 type CheckoutDiscount struct {
-	Duration string `json:"duration,omitempty"`
-	Type string `json:"type,omitempty"`
-	Amount int32 `json:"amount,omitempty"`
-	Currency string `json:"currency,omitempty"`
-	Amounts map[string]int32 `json:"amounts,omitempty"`
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Code string `json:"code,omitempty"`
-	DurationInMonths int32 `json:"duration_in_months,omitempty"`
-	BasisPoints int32 `json:"basis_points,omitempty"`
+	Duration         string           `json:"duration,omitempty"`
+	Type             string           `json:"type,omitempty"`
+	Amount           int32            `json:"amount,omitempty"`
+	Currency         string           `json:"currency,omitempty"`
+	Amounts          map[string]int32 `json:"amounts,omitempty"`
+	Id               string           `json:"id,omitempty"`
+	Name             string           `json:"name,omitempty"`
+	Code             string           `json:"code,omitempty"`
+	DurationInMonths int32            `json:"duration_in_months,omitempty"`
+	BasisPoints      int32            `json:"basis_points,omitempty"`
 }

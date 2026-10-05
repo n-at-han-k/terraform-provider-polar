@@ -4,9 +4,9 @@ package client
 
 // WebhookEndpointCreate - Schema to create a webhook endpoint.
 type WebhookEndpointCreate struct {
-	Url string `json:"url,omitempty"`
-	Name string `json:"name,omitempty"`
-	Format string `json:"format,omitempty"`
-	Events []WebhookEventType `json:"events,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
+	Url            string   `json:"url,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	Format         string   `json:"format,omitempty"`
+	Events         []string `json:"events,omitempty"`
+	OrganizationId string   `json:"organization_id,omitempty"`
 }

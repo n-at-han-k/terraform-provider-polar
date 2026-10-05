@@ -5,6 +5,6 @@ package client
 // CustomerPortalSubscriptionSettings - CustomerPortalSubscriptionSettings struct
 type CustomerPortalSubscriptionSettings struct {
 	UpdateSeats *bool `json:"update_seats,omitempty"`
-	UpdatePlan *bool `json:"update_plan,omitempty"`
-	Pause *bool `json:"pause,omitempty"`
+	UpdatePlan  *bool `json:"update_plan,omitempty"`
+	Pause       *bool `json:"pause,omitempty"`
 }

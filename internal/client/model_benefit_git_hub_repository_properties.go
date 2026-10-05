@@ -5,6 +5,6 @@ package client
 // BenefitGitHubRepositoryProperties - Properties for a benefit of type `github_repository`.
 type BenefitGitHubRepositoryProperties struct {
 	RepositoryOwner string `json:"repository_owner,omitempty"`
-	RepositoryName string `json:"repository_name,omitempty"`
-	Permission string `json:"permission,omitempty"`
+	RepositoryName  string `json:"repository_name,omitempty"`
+	Permission      string `json:"permission,omitempty"`
 }

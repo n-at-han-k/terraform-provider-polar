@@ -4,8 +4,8 @@ package client
 
 // OrganizationFeatureSettingsUpdate - Feature settings that organizations can update themselves.  Other feature settings are managed by Polar staff: they're ignored if provided and keep their current value.
 type OrganizationFeatureSettingsUpdate struct {
-	SeatBasedPricingEnabled *bool `json:"seat_based_pricing_enabled,omitempty"`
-	MemberModelEnabled *bool `json:"member_model_enabled,omitempty"`
-	CheckoutLocalizationEnabled *bool `json:"checkout_localization_enabled,omitempty"`
-	OverviewMetrics []string `json:"overview_metrics,omitempty"`
+	SeatBasedPricingEnabled     *bool    `json:"seat_based_pricing_enabled,omitempty"`
+	MemberModelEnabled          *bool    `json:"member_model_enabled,omitempty"`
+	CheckoutLocalizationEnabled *bool    `json:"checkout_localization_enabled,omitempty"`
+	OverviewMetrics             []string `json:"overview_metrics,omitempty"`
 }

@@ -30,8 +30,20 @@ import (
 {{/-first}}{{/importParts}}
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
+{{#hasExactlyOneOf}}
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
+{{/hasExactlyOneOf}}
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+{{#hasStringValidators}}
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+{{/hasStringValidators}}
+{{#hasPatternValidators}}
+	"regexp"
+{{/hasPatternValidators}}
+{{#hasStringValidators}}
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+{{/hasStringValidators}}
 {{#hasCreate}}{{#hasIdAttribute}}
 	"github.com/hashicorp/terraform-plugin-framework/types"
 {{/hasIdAttribute}}{{/hasCreate}}
@@ -52,7 +64,13 @@ import (
 )
 
 var _ resource.Resource = &{{resourceClassName}}Resource{}
+{{#hasExactlyOneOf}}
+var _ resource.ResourceWithConfigValidators = &{{resourceClassName}}Resource{}
+{{/hasExactlyOneOf}}
 var _ resource.ResourceWithImportState = &{{resourceClassName}}Resource{}
+{{#hasVariantRules}}
+var _ resource.ResourceWithValidateConfig = &{{resourceClassName}}Resource{}
+{{/hasVariantRules}}
 
 func New{{resourceClassName}}Resource() resource.Resource {
 	return &{{resourceClassName}}Resource{}
@@ -90,6 +108,29 @@ func (r *{{resourceClassName}}Resource) Schema(_ context.Context, _ resource.Sch
 {{#isList}}
 				ElementType: {{listElementType}},
 {{/isList}}
+{{#hasStringValidator}}
+				Validators: []validator.String{
+{{#validatorLengthAtMost}}
+					stringvalidator.LengthAtMost({{.}}),
+{{/validatorLengthAtMost}}
+{{#validatorLengthAtLeast}}
+					stringvalidator.LengthAtLeast({{.}}),
+{{/validatorLengthAtLeast}}
+				{{#validatorPattern}}
+					stringvalidator.RegexMatches(
+						regexp.MustCompile("{{{validatorPattern}}}"),
+						"{{validatorMessage}}",
+					),
+{{/validatorPattern}}
+{{#hasOneOf}}
+					stringvalidator.OneOf(
+{{#validatorOneOf}}
+						"{{.}}",
+{{/validatorOneOf}}
+					),
+{{/hasOneOf}}
+				},
+{{/hasStringValidator}}
 {{#isNested}}
 {{>nested_schema}}
 {{/isNested}}
@@ -99,7 +140,114 @@ func (r *{{resourceClassName}}Resource) Schema(_ context.Context, _ resource.Sch
 		},
 	}
 }
+{{#hasVariantRules}}
 
+// ValidateConfig refuses WHAT THE DISCRIMINATOR SAYS: a field that belongs to
+// another variant, and one the chosen variant demands and nobody set.
+//
+// {{#variantRules}}{{#-first}}{{attribute}}{{/-first}}{{/variantRules}}{{^variantRules}}{{#alsoRequires}}{{#-first}}{{attribute}}{{/-first}}{{/alsoRequires}}{{/variantRules}} are the
+// fields a flattened union became, one set per variant, and nothing in the schema
+// stops a configuration from filling two of them -- or from filling the one
+// {{discriminator}} did not ask for. Polar answers 422 for that, which arrives
+// after the plan as a refused request rather than as a message naming the two
+// attributes that disagreed.
+//
+// The plan is where it can be named.
+func (r *{{resourceClassName}}Resource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config {{resourceClassName}}Model
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+{{#discriminatorGo}}
+	// {{discriminator}} may be unknown while a variable decides it, and there is
+	// nothing to check against until it is known.
+	if config.{{discriminatorGo}}.IsUnknown() {
+		return
+	}
+{{/discriminatorGo}}
+
+{{#hasVariantBlocks}}
+	chosen := config.{{discriminatorGo}}.ValueString()
+
+	// WHICH BLOCK EACH VALUE WANTS. A value with no block of its own -- one the
+	// document declares but this provider does not expose -- maps to nothing, and
+	// any block set is then wrong.
+	expected := map[string]string{
+{{#variantBlocks}}
+		"{{label}}": "{{attribute}}",
+{{/variantBlocks}}
+	}
+{{/hasVariantBlocks}}
+
+{{#variantRules}}
+{{#wholeBlock}}
+	if {{{isSet}}} && chosen != "{{label}}" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("{{attribute}}"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when {{discriminator}} is %q. Use %q instead.", "{{attribute}}", chosen, expected[chosen]),
+		)
+	}
+{{/wholeBlock}}
+{{^wholeBlock}}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if {{{isSet}}} && !config.{{chosenGo}}.IsUnknown() && config.{{chosenGo}}.ValueString() != "{{label}}" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("{{attribute}}"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when {{discriminator}} is %q.", "{{attribute}}", "{{label}}"),
+		)
+	}
+{{/wholeBlock}}
+{{/variantRules}}
+{{#alsoRequires}}
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of {{marker}} -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if {{{isSet}}} && config.{{markerGo}}.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("{{attribute}}"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "{{attribute}}", "{{marker}}"),
+		)
+	}
+{{/alsoRequires}}
+{{#variantDemands}}
+	if config.{{chosenGo}}.ValueString() == "{{label}}" && {{{notSet}}} {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("{{attribute}}"),
+			"Missing required property",
+			fmt.Sprintf("%q is required when {{discriminator}} is %q.", "{{attribute}}", "{{label}}"),
+		)
+	}
+{{/variantDemands}}
+}
+{{/hasVariantRules}}
+
+{{#hasExactlyOneOf}}
+// ConfigValidators refuses WHICH ARM OF THE UNION a configuration meant, where
+// there is no discriminator to read it off.
+//
+// The create body is a oneOf whose arms are told apart by the one attribute each
+// of them alone declares. Nothing in the schema says they are alternatives, so a
+// configuration setting two of them -- or none -- is a request Polar answers 422
+// to, after the plan rather than in it.
+func (r *{{resourceClassName}}Resource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.ExactlyOneOf(
+{{#exactlyOneOf}}
+			path.MatchRoot("{{attribute}}"),
+{{/exactlyOneOf}}
+		),
+	}
+}
+
+{{/hasExactlyOneOf}}
 func (r *{{resourceClassName}}Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return

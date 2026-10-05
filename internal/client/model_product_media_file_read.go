@@ -4,21 +4,21 @@ package client
 
 // ProductMediaFileRead - File to be used as a product media file.
 type ProductMediaFileRead struct {
-	Id string `json:"id,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Path string `json:"path,omitempty"`
-	MimeType string `json:"mime_type,omitempty"`
-	Size int32 `json:"size,omitempty"`
-	StorageVersion string `json:"storage_version,omitempty"`
-	ChecksumEtag string `json:"checksum_etag,omitempty"`
+	Id                   string `json:"id,omitempty"`
+	OrganizationId       string `json:"organization_id,omitempty"`
+	Name                 string `json:"name,omitempty"`
+	Path                 string `json:"path,omitempty"`
+	MimeType             string `json:"mime_type,omitempty"`
+	Size                 int32  `json:"size,omitempty"`
+	StorageVersion       string `json:"storage_version,omitempty"`
+	ChecksumEtag         string `json:"checksum_etag,omitempty"`
 	ChecksumSha256Base64 string `json:"checksum_sha256_base64,omitempty"`
-	ChecksumSha256Hex string `json:"checksum_sha256_hex,omitempty"`
-	LastModifiedAt string `json:"last_modified_at,omitempty"`
-	Version string `json:"version,omitempty"`
-	Service string `json:"service,omitempty"`
-	IsUploaded *bool `json:"is_uploaded,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
-	SizeReadable string `json:"size_readable,omitempty"`
-	PublicUrl string `json:"public_url,omitempty"`
+	ChecksumSha256Hex    string `json:"checksum_sha256_hex,omitempty"`
+	LastModifiedAt       string `json:"last_modified_at,omitempty"`
+	Version              string `json:"version,omitempty"`
+	Service              string `json:"service,omitempty"`
+	IsUploaded           *bool  `json:"is_uploaded,omitempty"`
+	CreatedAt            string `json:"created_at,omitempty"`
+	SizeReadable         string `json:"size_readable,omitempty"`
+	PublicUrl            string `json:"public_url,omitempty"`
 }

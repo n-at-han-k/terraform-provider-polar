@@ -4,16 +4,16 @@ package client
 
 // ProductUpdate - Schema to update a product.
 type ProductUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	TrialInterval string `json:"trial_interval,omitempty"`
-	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	RecurringInterval string `json:"recurring_interval,omitempty"`
-	RecurringIntervalCount int32 `json:"recurring_interval_count,omitempty"`
-	IsArchived *bool `json:"is_archived,omitempty"`
-	Visibility string `json:"visibility,omitempty"`
-	Prices []ProductUpdatePricesInner `json:"prices,omitempty"`
-	Medias []string `json:"medias,omitempty"`
-	AttachedCustomFields []AttachedCustomFieldCreate `json:"attached_custom_fields,omitempty"`
+	Metadata               map[string]string           `json:"metadata,omitempty"`
+	TrialInterval          string                      `json:"trial_interval,omitempty"`
+	TrialIntervalCount     int32                       `json:"trial_interval_count,omitempty"`
+	Name                   string                      `json:"name,omitempty"`
+	Description            string                      `json:"description,omitempty"`
+	RecurringInterval      string                      `json:"recurring_interval,omitempty"`
+	RecurringIntervalCount int32                       `json:"recurring_interval_count,omitempty"`
+	IsArchived             *bool                       `json:"is_archived,omitempty"`
+	Visibility             string                      `json:"visibility,omitempty"`
+	Prices                 []ProductUpdatePricesInner  `json:"prices,omitempty"`
+	Medias                 []string                    `json:"medias,omitempty"`
+	AttachedCustomFields   []AttachedCustomFieldCreate `json:"attached_custom_fields,omitempty"`
 }

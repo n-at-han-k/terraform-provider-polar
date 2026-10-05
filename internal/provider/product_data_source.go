@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,24 +33,22 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 		Description: "Fetches a product data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
+			"is_archived": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
+				Description: "Whether the product is archived. If `true`, the product won't be available for purchase anymore. Existing customers will still have access to their benefits, and subscriptions will continue normally.",
 			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The name of the product.",
 			},
 			"description": schema.StringAttribute{
@@ -61,14 +57,13 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"visibility": schema.StringAttribute{
 				Computed:    true,
-				Description: "The visibility of the product.",
+				Description: "",
 			},
 			"prices": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "List of prices for this product.",
 			},
 			"medias": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "List of medias associated to the product.",
 			},
@@ -76,13 +71,9 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "List of custom fields attached to the product.",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the product.",
-			},
 			"trial_interval": schema.StringAttribute{
 				Computed:    true,
-				Description: "The interval unit for the trial period.",
+				Description: "",
 			},
 			"trial_interval_count": schema.Int64Attribute{
 				Computed:    true,
@@ -90,7 +81,7 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"recurring_interval": schema.StringAttribute{
 				Computed:    true,
-				Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
+				Description: "",
 			},
 			"recurring_interval_count": schema.Int64Attribute{
 				Computed:    true,
@@ -98,7 +89,7 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"meter_interval": schema.StringAttribute{
 				Computed:    true,
-				Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
+				Description: "",
 			},
 			"meter_interval_count": schema.Int64Attribute{
 				Computed:    true,
@@ -145,7 +136,7 @@ func (d *ProductDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read product data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

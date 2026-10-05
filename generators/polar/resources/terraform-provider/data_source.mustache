@@ -54,12 +54,15 @@ func (d *{{resourceClassName}}DataSource) Schema(_ context.Context, _ datasource
 {{#isJson}}
 				CustomType:  jsontypes.NormalizedType{},
 {{/isJson}}
-{{#isRequired}}
+{{#isSelector}}
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
 				Required:    true,
-{{/isRequired}}
-{{^isRequired}}
+{{/isSelector}}
+{{^isSelector}}
 				Computed:    true,
-{{/isRequired}}
+{{/isSelector}}
 				Description: "{{{description}}}",
 			},
 {{/tfAttributes}}
@@ -114,7 +117,7 @@ func (d *{{resourceClassName}}DataSource) Read(ctx context.Context, req datasour
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 {{/responseModel}}
 
 	tflog.Trace(ctx, "read {{resourceName}} data source")

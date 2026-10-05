@@ -4,17 +4,17 @@ package client
 
 // SubscriptionUpdate - SubscriptionUpdate struct
 type SubscriptionUpdate struct {
-	ProductId string `json:"product_id,omitempty"`
-	ProrationBehavior string `json:"proration_behavior,omitempty"`
-	DiscountId string `json:"discount_id,omitempty"`
-	TrialEnd interface{} `json:"trial_end,omitempty"`
-	Seats int32 `json:"seats,omitempty"`
-	CurrentBillingPeriodEnd string `json:"current_billing_period_end,omitempty"`
-	CustomerCancellationReason string `json:"customer_cancellation_reason,omitempty"`
+	ProductId                   string `json:"product_id,omitempty"`
+	ProrationBehavior           string `json:"proration_behavior,omitempty"`
+	DiscountId                  string `json:"discount_id,omitempty"`
+	TrialEnd                    string `json:"trial_end,omitempty"`
+	Seats                       int32  `json:"seats,omitempty"`
+	CurrentBillingPeriodEnd     string `json:"current_billing_period_end,omitempty"`
+	CustomerCancellationReason  string `json:"customer_cancellation_reason,omitempty"`
 	CustomerCancellationComment string `json:"customer_cancellation_comment,omitempty"`
-	CancelAtPeriodEnd *bool `json:"cancel_at_period_end,omitempty"`
-	Revoke *bool `json:"revoke,omitempty"`
-	PauseAtPeriodEnd *bool `json:"pause_at_period_end,omitempty"`
-	ResumesAt string `json:"resumes_at,omitempty"`
-	Resume *bool `json:"resume,omitempty"`
+	CancelAtPeriodEnd           *bool  `json:"cancel_at_period_end,omitempty"`
+	Revoke                      *bool  `json:"revoke,omitempty"`
+	PauseAtPeriodEnd            *bool  `json:"pause_at_period_end,omitempty"`
+	ResumesAt                   string `json:"resumes_at,omitempty"`
+	Resume                      *bool  `json:"resume,omitempty"`
 }

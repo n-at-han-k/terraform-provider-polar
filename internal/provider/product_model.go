@@ -2,34 +2,30 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // ProductModel is the Terraform model for product.
 type ProductModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Name types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Visibility types.String `tfsdk:"visibility"`
-	Prices []ProductPricesModel `tfsdk:"prices"`
-	Medias jsontypes.Normalized `tfsdk:"medias"`
-	AttachedCustomFields []ProductAttachedCustomFieldsModel `tfsdk:"attached_custom_fields"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
-	RecurringInterval types.String `tfsdk:"recurring_interval"`
-	RecurringIntervalCount types.Int64 `tfsdk:"recurring_interval_count"`
-	MeterInterval types.String `tfsdk:"meter_interval"`
-	MeterIntervalCount types.Int64 `tfsdk:"meter_interval_count"`
+	Id                     types.String                       `tfsdk:"id"`
+	IsArchived             types.Bool                         `tfsdk:"is_archived"`
+	Metadata               types.Map                          `tfsdk:"metadata"`
+	Name                   types.String                       `tfsdk:"name"`
+	Description            types.String                       `tfsdk:"description"`
+	Visibility             types.String                       `tfsdk:"visibility"`
+	Prices                 []ProductPricesModel               `tfsdk:"prices"`
+	Medias                 types.List                         `tfsdk:"medias"`
+	AttachedCustomFields   []ProductAttachedCustomFieldsModel `tfsdk:"attached_custom_fields"`
+	TrialInterval          types.String                       `tfsdk:"trial_interval"`
+	TrialIntervalCount     types.Int64                        `tfsdk:"trial_interval_count"`
+	RecurringInterval      types.String                       `tfsdk:"recurring_interval"`
+	RecurringIntervalCount types.Int64                        `tfsdk:"recurring_interval_count"`
+	MeterInterval          types.String                       `tfsdk:"meter_interval"`
+	MeterIntervalCount     types.Int64                        `tfsdk:"meter_interval_count"`
 }
 
 // ProductPricesModel is one `prices` block.
@@ -39,37 +35,22 @@ type ProductModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type ProductPricesModel struct {
-	FixedAmountType types.String `tfsdk:"fixed_amount_type"`
-	CustomAmountType types.String `tfsdk:"custom_amount_type"`
-	SeatBasedAmountType types.String `tfsdk:"seat_based_amount_type"`
-	MeteredUnitAmountType types.String `tfsdk:"metered_unit_amount_type"`
-	PriceCurrency types.String `tfsdk:"price_currency"`
-	TaxBehavior types.String `tfsdk:"tax_behavior"`
-	PriceAmount types.Int64 `tfsdk:"price_amount"`
-	MinimumAmount types.Int64 `tfsdk:"minimum_amount"`
-	MaximumAmount types.Int64 `tfsdk:"maximum_amount"`
-	PresetAmount types.Int64 `tfsdk:"preset_amount"`
-	SeatTiers types.String `tfsdk:"seat_tiers"`
-	MeterId types.String `tfsdk:"meter_id"`
-	UnitAmount types.String `tfsdk:"unit_amount"`
-	CapAmount types.Int64 `tfsdk:"cap_amount"`
+	PriceCurrency types.String                       `tfsdk:"price_currency"`
+	TaxBehavior   types.String                       `tfsdk:"tax_behavior"`
+	PriceAmount   types.Int64                        `tfsdk:"price_amount"`
+	MinimumAmount types.Int64                        `tfsdk:"minimum_amount"`
+	MaximumAmount types.Int64                        `tfsdk:"maximum_amount"`
+	PresetAmount  types.Int64                        `tfsdk:"preset_amount"`
+	SeatTiers     []ProductPricesModelSeatTiersModel `tfsdk:"seat_tiers"`
+	MeterId       types.String                       `tfsdk:"meter_id"`
+	UnitAmount    types.String                       `tfsdk:"unit_amount"`
+	CapAmount     types.Int64                        `tfsdk:"cap_amount"`
+	AmountType    types.String                       `tfsdk:"amount_type"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPrices, error) {
 	out := &client.ProductCreateRecurringPrices{}
-	if !m.FixedAmountType.IsNull() && !m.FixedAmountType.IsUnknown() {
-		out.FixedAmountType = m.FixedAmountType.ValueString()
-	}
-	if !m.CustomAmountType.IsNull() && !m.CustomAmountType.IsUnknown() {
-		out.CustomAmountType = m.CustomAmountType.ValueString()
-	}
-	if !m.SeatBasedAmountType.IsNull() && !m.SeatBasedAmountType.IsUnknown() {
-		out.SeatBasedAmountType = m.SeatBasedAmountType.ValueString()
-	}
-	if !m.MeteredUnitAmountType.IsNull() && !m.MeteredUnitAmountType.IsUnknown() {
-		out.MeteredUnitAmountType = m.MeteredUnitAmountType.ValueString()
-	}
 	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
 		out.PriceCurrency = m.PriceCurrency.ValueString()
 	}
@@ -97,6 +78,9 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 	if !m.CapAmount.IsNull() && !m.CapAmount.IsUnknown() {
 		out.CapAmount = int32(m.CapAmount.ValueInt64())
 	}
+	if !m.AmountType.IsNull() && !m.AmountType.IsUnknown() {
+		out.AmountType = m.AmountType.ValueString()
+	}
 	return out, nil
 }
 
@@ -107,10 +91,6 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductPricesModel) FromClientModel(c *client.ProductCreateRecurringPrices) {
-	m.FixedAmountType = types.StringValue(c.FixedAmountType)
-	m.CustomAmountType = types.StringValue(c.CustomAmountType)
-	m.SeatBasedAmountType = types.StringValue(c.SeatBasedAmountType)
-	m.MeteredUnitAmountType = types.StringValue(c.MeteredUnitAmountType)
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
 	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
@@ -120,7 +100,48 @@ func (m *ProductPricesModel) FromClientModel(c *client.ProductCreateRecurringPri
 	m.MeterId = types.StringValue(c.MeterId)
 	m.UnitAmount = types.StringValue(c.UnitAmount)
 	m.CapAmount = types.Int64Value(int64(c.CapAmount))
+	m.AmountType = types.StringValue(c.AmountType)
 }
+
+// ProductPricesModelSeatTiersModel is one `seat_tiers` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type ProductPricesModelSeatTiersModel struct {
+	MinSeats     types.Int64 `tfsdk:"min_seats"`
+	MaxSeats     types.Int64 `tfsdk:"max_seats"`
+	PricePerSeat types.Int64 `tfsdk:"price_per_seat"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *ProductPricesModelSeatTiersModel) ToClientModel() (*client.ProductPriceSeatTier, error) {
+	out := &client.ProductPriceSeatTier{}
+	if !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
+		out.MinSeats = int32(m.MinSeats.ValueInt64())
+	}
+	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
+		out.MaxSeats = int32(m.MaxSeats.ValueInt64())
+	}
+	if !m.PricePerSeat.IsNull() && !m.PricePerSeat.IsUnknown() {
+		out.PricePerSeat = int32(m.PricePerSeat.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *ProductPricesModelSeatTiersModel) FromClientModel(c *client.ProductPriceSeatTier) {
+	m.MinSeats = types.Int64Value(int64(c.MinSeats))
+	m.MaxSeats = types.Int64Value(int64(c.MaxSeats))
+	m.PricePerSeat = types.Int64Value(int64(c.PricePerSeat))
+}
+
 // ProductAttachedCustomFieldsModel is one `attached_custom_fields` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -129,7 +150,7 @@ func (m *ProductPricesModel) FromClientModel(c *client.ProductCreateRecurringPri
 // in step with the fields by hand.
 type ProductAttachedCustomFieldsModel struct {
 	CustomFieldId types.String `tfsdk:"custom_field_id"`
-	Required types.Bool `tfsdk:"required"`
+	Required      types.Bool   `tfsdk:"required"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -163,12 +184,10 @@ func (m *ProductAttachedCustomFieldsModel) FromClientModel(c *client.AttachedCus
 // ToClientModel converts a Terraform model to a client model.
 func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 	out := &client.ProductCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -190,12 +209,12 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 			out.Prices = append(out.Prices, *converted)
 		}
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
 	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Medias.ValueString()), &out.Medias); err != nil {
-			return out, fmt.Errorf("medias: %w", err)
+		out.Medias = make([]string, 0, len(m.Medias.Elements()))
+		for _, element := range m.Medias.Elements() {
+			out.Medias = append(out.Medias, element.(types.String).ValueString())
 		}
 	}
 	if len(m.AttachedCustomFields) > 0 {
@@ -207,9 +226,6 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 			}
 			out.AttachedCustomFields = append(out.AttachedCustomFields, *converted)
 		}
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
 		out.TrialInterval = m.TrialInterval.ValueString()
@@ -242,9 +258,14 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 // generator only emits the ones it has.
 func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
 	out := &client.ProductUpdate{}
+	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
+		IsArchived := m.IsArchived.ValueBool()
+		out.IsArchived = &IsArchived
+	}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -256,9 +277,12 @@ func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		out.Visibility = m.Visibility.ValueString()
 	}
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
 	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Medias.ValueString()), &out.Medias); err != nil {
-			return out, fmt.Errorf("medias: %w", err)
+		out.Medias = make([]string, 0, len(m.Medias.Elements()))
+		for _, element := range m.Medias.Elements() {
+			out.Medias = append(out.Medias, element.(types.String).ValueString())
 		}
 	}
 	if len(m.AttachedCustomFields) > 0 {
@@ -286,35 +310,80 @@ func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *ProductModel) FromClientModel(c *client.Product) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *ProductModel) FromAnswer(c *client.Product) {
+	m.fromAnswer(c, true)
+}
+
+func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	// A bool the server does not answer leaves the pointer nil, and a Computed
+	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
+	// value ... all values must be known after apply". Unknown becomes null; a
+	// value the plan already knows is left alone.
+	if c.IsArchived != nil {
+		m.IsArchived = types.BoolValue(*c.IsArchived)
+	} else if m.IsArchived.IsUnknown() {
+		m.IsArchived = types.BoolNull()
 	}
-	m.Name = types.StringValue(c.Name)
-	m.Description = types.StringValue(c.Description)
-	m.Visibility = types.StringValue(c.Visibility)
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
+	}
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		m.Description = types.StringValue(c.Description)
+	}
+	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		m.Visibility = types.StringValue(c.Visibility)
+	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
 	// the apply is over: "provider returned invalid result object after apply".
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.Medias.IsUnknown() {
-		m.Medias = jsontypes.NewNormalizedNull()
+		m.Medias = types.ListNull(types.StringType)
 	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	m.MeterInterval = types.StringValue(c.MeterInterval)
-	m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		m.TrialInterval = types.StringValue(c.TrialInterval)
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	}
+	if everything || !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
+		m.RecurringInterval = types.StringValue(c.RecurringInterval)
+	}
+	if everything || !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
+		m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
+	}
+	if everything || !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
+		m.MeterInterval = types.StringValue(c.MeterInterval)
+	}
+	if everything || !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
+		m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
+	}
 }

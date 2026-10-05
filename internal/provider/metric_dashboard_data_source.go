@@ -7,7 +7,6 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -34,28 +33,19 @@ func (d *MetricDashboardDataSource) Schema(_ context.Context, _ datasource.Schem
 		Description: "Fetches a metric_dashboard data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"name": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Display name for the dashboard.",
 			},
 			"metrics": schema.StringAttribute{
 				Computed:    true,
 				Description: "List of metric slugs displayed in this dashboard.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning this dashboard.",
 			},
 		},
 	}
@@ -98,7 +88,7 @@ func (d *MetricDashboardDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read metric_dashboard data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

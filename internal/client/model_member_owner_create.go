@@ -4,7 +4,7 @@ package client
 
 // MemberOwnerCreate - Schema for creating an owner member during customer creation.
 type MemberOwnerCreate struct {
-	Email string `json:"email,omitempty"`
-	Name string `json:"name,omitempty"`
+	Email      string `json:"email,omitempty"`
+	Name       string `json:"name,omitempty"`
 	ExternalId string `json:"external_id,omitempty"`
 }

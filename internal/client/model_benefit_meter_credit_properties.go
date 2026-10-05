@@ -4,7 +4,7 @@ package client
 
 // BenefitMeterCreditProperties - Properties for a benefit of type `meter_unit`.
 type BenefitMeterCreditProperties struct {
-	Units int32 `json:"units,omitempty"`
-	Rollover *bool `json:"rollover,omitempty"`
-	MeterId string `json:"meter_id,omitempty"`
+	Units    int32  `json:"units,omitempty"`
+	Rollover *bool  `json:"rollover,omitempty"`
+	MeterId  string `json:"meter_id,omitempty"`
 }

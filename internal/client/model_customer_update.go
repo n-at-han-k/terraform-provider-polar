@@ -4,12 +4,12 @@ package client
 
 // CustomerUpdate - CustomerUpdate struct
 type CustomerUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Email string `json:"email,omitempty"`
-	Name string `json:"name,omitempty"`
-	BillingAddress *AddressInput `json:"billing_address,omitempty"`
-	TaxId string `json:"tax_id,omitempty"`
-	Locale string `json:"locale,omitempty"`
-	ExternalId string `json:"external_id,omitempty"`
-	Type string `json:"type,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	Email          string            `json:"email,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	BillingAddress *AddressInput     `json:"billing_address,omitempty"`
+	TaxId          string            `json:"tax_id,omitempty"`
+	Locale         string            `json:"locale,omitempty"`
+	ExternalId     string            `json:"external_id,omitempty"`
+	Type           string            `json:"type,omitempty"`
 }

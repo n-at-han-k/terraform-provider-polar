@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,19 +33,13 @@ func (d *CustomerDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 		Description: "Fetches a customer data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the customer.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -64,17 +56,12 @@ func (d *CustomerDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"tax_id": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"locale": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the customer.",
 			},
 			"owner": schema.StringAttribute{
 				Computed:    true,
@@ -137,7 +124,7 @@ func (d *CustomerDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read customer data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

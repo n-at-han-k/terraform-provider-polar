@@ -4,6 +4,6 @@ package client
 
 // SsoEnforcementRequiresConnection - SsoEnforcementRequiresConnection struct
 type SsoEnforcementRequiresConnection struct {
-	Error string `json:"error,omitempty"`
+	Error  string `json:"error,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }

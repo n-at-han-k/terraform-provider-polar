@@ -4,8 +4,8 @@ package client
 
 // BenefitDiscordProperties - Properties for a benefit of type `discord`.
 type BenefitDiscordProperties struct {
-	GuildId string `json:"guild_id,omitempty"`
-	RoleId string `json:"role_id,omitempty"`
-	KickMember *bool `json:"kick_member,omitempty"`
+	GuildId    string `json:"guild_id,omitempty"`
+	RoleId     string `json:"role_id,omitempty"`
+	KickMember *bool  `json:"kick_member,omitempty"`
 	GuildToken string `json:"guild_token,omitempty"`
 }

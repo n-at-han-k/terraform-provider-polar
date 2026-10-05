@@ -4,6 +4,6 @@ package client
 
 // Filter - Filter struct
 type Filter struct {
-	Conjunction string `json:"conjunction,omitempty"`
-	Clauses []FilterClauses `json:"clauses,omitempty"`
+	Conjunction string          `json:"conjunction,omitempty"`
+	Clauses     []FilterClauses `json:"clauses,omitempty"`
 }

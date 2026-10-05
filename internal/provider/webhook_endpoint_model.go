@@ -2,27 +2,22 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // WebhookEndpointModel is the Terraform model for webhook_endpoint.
 type WebhookEndpointModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Url types.String `tfsdk:"url"`
-	Name types.String `tfsdk:"name"`
-	Format types.String `tfsdk:"format"`
-	Events jsontypes.Normalized `tfsdk:"events"`
-	OrganizationId types.String `tfsdk:"organization_id"`
+	Id      types.String `tfsdk:"id"`
+	Enabled types.Bool   `tfsdk:"enabled"`
+	Secret  types.String `tfsdk:"secret"`
+	Url     types.String `tfsdk:"url"`
+	Name    types.String `tfsdk:"name"`
+	Format  types.String `tfsdk:"format"`
+	Events  types.Set    `tfsdk:"events"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, error) {
@@ -36,16 +31,14 @@ func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, e
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
 		out.Format = m.Format.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
 	if !m.Events.IsNull() && !m.Events.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Events.ValueString()), &out.Events); err != nil {
-			return out, fmt.Errorf("events: %w", err)
+		out.Events = make([]string, 0, len(m.Events.Elements()))
+		for _, element := range m.Events.Elements() {
+			out.Events = append(out.Events, element.(types.String).ValueString())
 		}
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	return out, nil
 }
@@ -60,6 +53,10 @@ func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, e
 // generator only emits the ones it has.
 func (m *WebhookEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, error) {
 	out := &client.WebhookEndpointUpdate{}
+	if !m.Enabled.IsNull() && !m.Enabled.IsUnknown() {
+		Enabled := m.Enabled.ValueBool()
+		out.Enabled = &Enabled
+	}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
 		out.Url = m.Url.ValueString()
 	}
@@ -69,34 +66,70 @@ func (m *WebhookEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, e
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
 		out.Format = m.Format.ValueString()
 	}
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
 	if !m.Events.IsNull() && !m.Events.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Events.ValueString()), &out.Events); err != nil {
-			return out, fmt.Errorf("events: %w", err)
+		out.Events = make([]string, 0, len(m.Events.Elements()))
+		for _, element := range m.Events.Elements() {
+			out.Events = append(out.Events, element.(types.String).ValueString())
 		}
 	}
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *WebhookEndpointModel) FromClientModel(c *client.WebhookEndpoint) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *WebhookEndpointModel) FromAnswer(c *client.WebhookEndpoint) {
+	m.fromAnswer(c, true)
+}
+
+func (m *WebhookEndpointModel) fromAnswer(c *client.WebhookEndpoint, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Url = types.StringValue(c.Url)
+	// A bool the server does not answer leaves the pointer nil, and a Computed
+	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
+	// value ... all values must be known after apply". Unknown becomes null; a
+	// value the plan already knows is left alone.
+	if c.Enabled != nil {
+		m.Enabled = types.BoolValue(*c.Enabled)
+	} else if m.Enabled.IsUnknown() {
+		m.Enabled = types.BoolNull()
+	}
+	m.Secret = types.StringValue(c.Secret)
+	if everything || !m.Url.IsNull() && !m.Url.IsUnknown() {
+		m.Url = types.StringValue(c.Url)
+	}
 	m.Name = types.StringValue(c.Name)
-	m.Format = types.StringValue(c.Format)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Events); err == nil {
-		if m.Events.IsNull() || m.Events.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Events.ValueString()) {
-			m.Events = jsontypes.NewNormalizedValue(string(encoded))
+	if everything || !m.Format.IsNull() && !m.Format.IsUnknown() {
+		m.Format = types.StringValue(c.Format)
+	}
+	if everything || !m.Events.IsNull() && !m.Events.IsUnknown() {
+		// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know
+		// yet has to end up known either way -- "provider still indicated an unknown
+		// value ... all values must be known after apply".
+		if c.Events == nil {
+			m.Events = types.SetNull(types.StringType)
+		} else {
+			Events := make([]attr.Value, 0, len(c.Events))
+			for _, element := range c.Events {
+				Events = append(Events, types.StringValue(element))
+			}
+			m.Events = types.SetValueMust(types.StringType, Events)
 		}
 	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
 }

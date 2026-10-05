@@ -4,19 +4,19 @@ package client
 
 // OrganizationFeatureSettings - OrganizationFeatureSettings struct
 type OrganizationFeatureSettings struct {
-	IssueFundingEnabled *bool `json:"issue_funding_enabled,omitempty"`
-	SeatBasedPricingEnabled *bool `json:"seat_based_pricing_enabled,omitempty"`
-	WalletsEnabled *bool `json:"wallets_enabled,omitempty"`
-	MemberModelEnabled *bool `json:"member_model_enabled,omitempty"`
-	CheckoutLocalizationEnabled *bool `json:"checkout_localization_enabled,omitempty"`
-	OverviewMetrics []string `json:"overview_metrics,omitempty"`
-	ResetProrationBehaviorEnabled *bool `json:"reset_proration_behavior_enabled,omitempty"`
-	OffSessionChargesEnabled *bool `json:"off_session_charges_enabled,omitempty"`
-	SlackBenefitEnabled *bool `json:"slack_benefit_enabled,omitempty"`
-	PreviewAccessEnabled *bool `json:"preview_access_enabled,omitempty"`
-	DisputesEnabled *bool `json:"disputes_enabled,omitempty"`
-	SsoEnabled *bool `json:"sso_enabled,omitempty"`
-	DisputeAutoAcceptEnabled *bool `json:"dispute_auto_accept_enabled,omitempty"`
-	CompassEnabled *bool `json:"compass_enabled,omitempty"`
-	MerchantMigrationEnabled *bool `json:"merchant_migration_enabled,omitempty"`
+	IssueFundingEnabled           *bool    `json:"issue_funding_enabled,omitempty"`
+	SeatBasedPricingEnabled       *bool    `json:"seat_based_pricing_enabled,omitempty"`
+	WalletsEnabled                *bool    `json:"wallets_enabled,omitempty"`
+	MemberModelEnabled            *bool    `json:"member_model_enabled,omitempty"`
+	CheckoutLocalizationEnabled   *bool    `json:"checkout_localization_enabled,omitempty"`
+	OverviewMetrics               []string `json:"overview_metrics,omitempty"`
+	ResetProrationBehaviorEnabled *bool    `json:"reset_proration_behavior_enabled,omitempty"`
+	OffSessionChargesEnabled      *bool    `json:"off_session_charges_enabled,omitempty"`
+	SlackBenefitEnabled           *bool    `json:"slack_benefit_enabled,omitempty"`
+	PreviewAccessEnabled          *bool    `json:"preview_access_enabled,omitempty"`
+	DisputesEnabled               *bool    `json:"disputes_enabled,omitempty"`
+	SsoEnabled                    *bool    `json:"sso_enabled,omitempty"`
+	DisputeAutoAcceptEnabled      *bool    `json:"dispute_auto_accept_enabled,omitempty"`
+	CompassEnabled                *bool    `json:"compass_enabled,omitempty"`
+	MerchantMigrationEnabled      *bool    `json:"merchant_migration_enabled,omitempty"`
 }

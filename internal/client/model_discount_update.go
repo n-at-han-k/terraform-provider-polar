@@ -4,19 +4,19 @@ package client
 
 // DiscountUpdate - Schema to update a discount.
 type DiscountUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Name string `json:"name,omitempty"`
-	Code string `json:"code,omitempty"`
-	StartsAt string `json:"starts_at,omitempty"`
-	EndsAt string `json:"ends_at,omitempty"`
-	MaxRedemptions int32 `json:"max_redemptions,omitempty"`
-	MaxRedemptionsPerCustomer int32 `json:"max_redemptions_per_customer,omitempty"`
-	Duration string `json:"duration,omitempty"`
-	DurationInMonths int32 `json:"duration_in_months,omitempty"`
-	Type string `json:"type,omitempty"`
-	Amount int32 `json:"amount,omitempty"`
-	Currency string `json:"currency,omitempty"`
-	Amounts map[string]int32 `json:"amounts,omitempty"`
-	BasisPoints int32 `json:"basis_points,omitempty"`
-	Products []string `json:"products,omitempty"`
+	Metadata                  map[string]string `json:"metadata,omitempty"`
+	Name                      string            `json:"name,omitempty"`
+	Code                      string            `json:"code,omitempty"`
+	StartsAt                  string            `json:"starts_at,omitempty"`
+	EndsAt                    string            `json:"ends_at,omitempty"`
+	MaxRedemptions            int32             `json:"max_redemptions,omitempty"`
+	MaxRedemptionsPerCustomer int32             `json:"max_redemptions_per_customer,omitempty"`
+	Duration                  string            `json:"duration,omitempty"`
+	DurationInMonths          int32             `json:"duration_in_months,omitempty"`
+	Type                      string            `json:"type,omitempty"`
+	Amount                    int32             `json:"amount,omitempty"`
+	Currency                  string            `json:"currency,omitempty"`
+	Amounts                   map[string]int32  `json:"amounts,omitempty"`
+	BasisPoints               int32             `json:"basis_points,omitempty"`
+	Products                  []string          `json:"products,omitempty"`
 }

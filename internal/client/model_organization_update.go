@@ -4,20 +4,20 @@ package client
 
 // OrganizationUpdate - OrganizationUpdate struct
 type OrganizationUpdate struct {
-	Name string `json:"name,omitempty"`
-	AvatarUrl string `json:"avatar_url,omitempty"`
-	Email string `json:"email,omitempty"`
-	Website string `json:"website,omitempty"`
-	Socials []OrganizationSocialLink `json:"socials,omitempty"`
-	Details *OrganizationDetails `json:"details,omitempty"`
-	Country string `json:"country,omitempty"`
-	FeatureSettings *OrganizationFeatureSettingsUpdate `json:"feature_settings,omitempty"`
-	SubscriptionSettings *OrganizationSubscriptionSettings `json:"subscription_settings,omitempty"`
-	CustomerEmailSettings *OrganizationCustomerEmailSettings `json:"customer_email_settings,omitempty"`
-	CustomerPortalSettings *OrganizationCustomerPortalSettings `json:"customer_portal_settings,omitempty"`
-	DisputeSettings *OrganizationDisputeSettingsUpdate `json:"dispute_settings,omitempty"`
-	EmbedHosts []string `json:"embed_hosts,omitempty"`
-	DefaultPresentmentCurrency string `json:"default_presentment_currency,omitempty"`
-	DefaultTaxBehavior string `json:"default_tax_behavior,omitempty"`
-	SsoEnforced *bool `json:"sso_enforced,omitempty"`
+	Name                       string                              `json:"name,omitempty"`
+	AvatarUrl                  string                              `json:"avatar_url,omitempty"`
+	Email                      string                              `json:"email,omitempty"`
+	Website                    string                              `json:"website,omitempty"`
+	Socials                    []OrganizationSocialLink            `json:"socials,omitempty"`
+	Details                    *OrganizationDetails                `json:"details,omitempty"`
+	Country                    string                              `json:"country,omitempty"`
+	FeatureSettings            *OrganizationFeatureSettingsUpdate  `json:"feature_settings,omitempty"`
+	SubscriptionSettings       *OrganizationSubscriptionSettings   `json:"subscription_settings,omitempty"`
+	CustomerEmailSettings      *OrganizationCustomerEmailSettings  `json:"customer_email_settings,omitempty"`
+	CustomerPortalSettings     *OrganizationCustomerPortalSettings `json:"customer_portal_settings,omitempty"`
+	DisputeSettings            *OrganizationDisputeSettingsUpdate  `json:"dispute_settings,omitempty"`
+	EmbedHosts                 []string                            `json:"embed_hosts,omitempty"`
+	DefaultPresentmentCurrency string                              `json:"default_presentment_currency,omitempty"`
+	DefaultTaxBehavior         string                              `json:"default_tax_behavior,omitempty"`
+	SsoEnforced                *bool                               `json:"sso_enforced,omitempty"`
 }

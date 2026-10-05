@@ -4,9 +4,9 @@ package client
 
 // ValidationError - ValidationError struct
 type ValidationError struct {
-	Loc []LocationInner `json:"loc,omitempty"`
-	Msg string `json:"msg,omitempty"`
-	Type string `json:"type,omitempty"`
-	Input interface{} `json:"input,omitempty"`
-	Ctx map[string]interface{} `json:"ctx,omitempty"`
+	Loc   []string               `json:"loc,omitempty"`
+	Msg   string                 `json:"msg,omitempty"`
+	Type  string                 `json:"type,omitempty"`
+	Input interface{}            `json:"input,omitempty"`
+	Ctx   map[string]interface{} `json:"ctx,omitempty"`
 }

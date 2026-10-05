@@ -4,7 +4,7 @@ package client
 
 // SubscriptionCreateExternalCustomer - Create a subscription for an existing customer identified by an external ID.
 type SubscriptionCreateExternalCustomer struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	ProductId string `json:"product_id,omitempty"`
-	ExternalCustomerId string `json:"external_customer_id,omitempty"`
+	Metadata           map[string]string `json:"metadata,omitempty"`
+	ProductId          string            `json:"product_id,omitempty"`
+	ExternalCustomerId string            `json:"external_customer_id,omitempty"`
 }

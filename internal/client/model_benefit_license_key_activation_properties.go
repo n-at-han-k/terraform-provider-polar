@@ -4,6 +4,6 @@ package client
 
 // BenefitLicenseKeyActivationProperties - BenefitLicenseKeyActivationProperties struct
 type BenefitLicenseKeyActivationProperties struct {
-	Limit int32 `json:"limit,omitempty"`
+	Limit               int32 `json:"limit,omitempty"`
 	EnableCustomerAdmin *bool `json:"enable_customer_admin,omitempty"`
 }

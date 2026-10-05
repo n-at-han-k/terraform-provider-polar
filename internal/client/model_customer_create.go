@@ -4,16 +4,16 @@ package client
 
 // CustomerCreate - CustomerCreate struct
 type CustomerCreate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	ExternalId string `json:"external_id,omitempty"`
-	Name string `json:"name,omitempty"`
-	BillingAddress *AddressInput `json:"billing_address,omitempty"`
-	TaxId string `json:"tax_id,omitempty"`
-	Locale string `json:"locale,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	Owner *MemberOwnerCreate `json:"owner,omitempty"`
-	CustomerIndividualType string `json:"customer_individual_type,omitempty"`
-	CustomerTeamType string `json:"customer_team_type,omitempty"`
-	CustomerIndividualEmail string `json:"customer_individual_email,omitempty"`
-	CustomerTeamEmail string `json:"customer_team_email,omitempty"`
+	Metadata                map[string]string  `json:"metadata,omitempty"`
+	ExternalId              string             `json:"external_id,omitempty"`
+	Name                    string             `json:"name,omitempty"`
+	BillingAddress          *AddressInput      `json:"billing_address,omitempty"`
+	TaxId                   string             `json:"tax_id,omitempty"`
+	Locale                  string             `json:"locale,omitempty"`
+	OrganizationId          string             `json:"organization_id,omitempty"`
+	Owner                   *MemberOwnerCreate `json:"owner,omitempty"`
+	CustomerIndividualType  string             `json:"customer_individual_type,omitempty"`
+	CustomerTeamType        string             `json:"customer_team_type,omitempty"`
+	CustomerIndividualEmail string             `json:"customer_individual_email,omitempty"`
+	CustomerTeamEmail       string             `json:"customer_team_email,omitempty"`
 }

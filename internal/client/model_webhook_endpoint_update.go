@@ -4,9 +4,9 @@ package client
 
 // WebhookEndpointUpdate - Schema to update a webhook endpoint.
 type WebhookEndpointUpdate struct {
-	Url string `json:"url,omitempty"`
-	Name string `json:"name,omitempty"`
-	Format string `json:"format,omitempty"`
-	Events []WebhookEventType `json:"events,omitempty"`
-	Enabled *bool `json:"enabled,omitempty"`
+	Url     string   `json:"url,omitempty"`
+	Name    string   `json:"name,omitempty"`
+	Format  string   `json:"format,omitempty"`
+	Events  []string `json:"events,omitempty"`
+	Enabled *bool    `json:"enabled,omitempty"`
 }

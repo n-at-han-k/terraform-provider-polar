@@ -2,32 +2,27 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // CustomerModel is the Terraform model for customer.
 type CustomerModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	ExternalId types.String `tfsdk:"external_id"`
-	Name types.String `tfsdk:"name"`
-	BillingAddress *CustomerBillingAddressModel `tfsdk:"billing_address"`
-	TaxId jsontypes.Normalized `tfsdk:"tax_id"`
-	Locale types.String `tfsdk:"locale"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Owner *CustomerOwnerModel `tfsdk:"owner"`
-	CustomerIndividualType types.String `tfsdk:"customer_individual_type"`
-	CustomerTeamType types.String `tfsdk:"customer_team_type"`
-	CustomerIndividualEmail types.String `tfsdk:"customer_individual_email"`
-	CustomerTeamEmail types.String `tfsdk:"customer_team_email"`
+	Id                      types.String                 `tfsdk:"id"`
+	Metadata                types.Map                    `tfsdk:"metadata"`
+	ExternalId              types.String                 `tfsdk:"external_id"`
+	Name                    types.String                 `tfsdk:"name"`
+	BillingAddress          *CustomerBillingAddressModel `tfsdk:"billing_address"`
+	TaxId                   types.String                 `tfsdk:"tax_id"`
+	Locale                  types.String                 `tfsdk:"locale"`
+	Owner                   *CustomerOwnerModel          `tfsdk:"owner"`
+	CustomerIndividualType  types.String                 `tfsdk:"customer_individual_type"`
+	CustomerTeamType        types.String                 `tfsdk:"customer_team_type"`
+	CustomerIndividualEmail types.String                 `tfsdk:"customer_individual_email"`
+	CustomerTeamEmail       types.String                 `tfsdk:"customer_team_email"`
 }
 
 // CustomerBillingAddressModel is one `billing_address` block.
@@ -37,12 +32,12 @@ type CustomerModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type CustomerBillingAddressModel struct {
-	Line1 types.String `tfsdk:"line1"`
-	Line2 types.String `tfsdk:"line2"`
+	Line1      types.String `tfsdk:"line1"`
+	Line2      types.String `tfsdk:"line2"`
 	PostalCode types.String `tfsdk:"postal_code"`
-	City types.String `tfsdk:"city"`
-	State types.String `tfsdk:"state"`
-	Country types.String `tfsdk:"country"`
+	City       types.String `tfsdk:"city"`
+	State      types.String `tfsdk:"state"`
+	Country    types.String `tfsdk:"country"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -83,6 +78,7 @@ func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
 	m.State = types.StringValue(c.State)
 	m.Country = types.StringValue(c.Country)
 }
+
 // CustomerOwnerModel is one `owner` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -90,8 +86,8 @@ func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type CustomerOwnerModel struct {
-	Email types.String `tfsdk:"email"`
-	Name types.String `tfsdk:"name"`
+	Email      types.String `tfsdk:"email"`
+	Name       types.String `tfsdk:"name"`
 	ExternalId types.String `tfsdk:"external_id"`
 }
 
@@ -125,12 +121,10 @@ func (m *CustomerOwnerModel) FromClientModel(c *client.MemberOwnerCreate) {
 // ToClientModel converts a Terraform model to a client model.
 func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 	out := &client.CustomerCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
@@ -146,19 +140,8 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 		}
 		out.BillingAddress = converted
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.TaxId.IsNull() && !m.TaxId.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.TaxId.ValueString()), &out.TaxId); err != nil {
-			return out, fmt.Errorf("tax_id: %w", err)
-		}
-	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		out.Locale = m.Locale.ValueString()
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if m.Owner != nil {
 		converted, err := m.Owner.ToClientModel()
@@ -193,8 +176,9 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 func (m *CustomerModel) ToUpdateModel() (*client.CustomerUpdate, error) {
 	out := &client.CustomerUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
@@ -210,72 +194,51 @@ func (m *CustomerModel) ToUpdateModel() (*client.CustomerUpdate, error) {
 		}
 		out.BillingAddress = converted
 	}
-	if !m.TaxId.IsNull() && !m.TaxId.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.TaxId.ValueString()), &out.TaxId); err != nil {
-			return out, fmt.Errorf("tax_id: %w", err)
-		}
-	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		out.Locale = m.Locale.ValueString()
 	}
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *CustomerModel) FromClientModel(c *client.Customer) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *CustomerModel) FromAnswer(c *client.Customer) {
+	m.fromAnswer(c, true)
+}
+
+func (m *CustomerModel) fromAnswer(c *client.Customer, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.ExternalId = types.StringValue(c.ExternalId)
-	m.Name = types.StringValue(c.Name)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.TaxId.IsUnknown() {
-		m.TaxId = jsontypes.NewNormalizedNull()
+	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
+		m.ExternalId = types.StringValue(c.ExternalId)
 	}
-	m.Locale = types.StringValue(c.Locale)
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.CustomerIndividualType.IsUnknown() {
-		m.CustomerIndividualType = types.StringNull()
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
 	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.CustomerTeamType.IsUnknown() {
-		m.CustomerTeamType = types.StringNull()
-	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.CustomerIndividualEmail.IsUnknown() {
-		m.CustomerIndividualEmail = types.StringNull()
-	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.CustomerTeamEmail.IsUnknown() {
-		m.CustomerTeamEmail = types.StringNull()
+	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
+		m.Locale = types.StringValue(c.Locale)
 	}
 }

@@ -4,10 +4,10 @@ package client
 
 // OrganizationCapabilities - OrganizationCapabilities struct
 type OrganizationCapabilities struct {
-	CheckoutPayments *bool `json:"checkout_payments,omitempty"`
+	CheckoutPayments     *bool `json:"checkout_payments,omitempty"`
 	SubscriptionRenewals *bool `json:"subscription_renewals,omitempty"`
-	Payouts *bool `json:"payouts,omitempty"`
-	Refunds *bool `json:"refunds,omitempty"`
-	ApiAccess *bool `json:"api_access,omitempty"`
-	DashboardAccess *bool `json:"dashboard_access,omitempty"`
+	Payouts              *bool `json:"payouts,omitempty"`
+	Refunds              *bool `json:"refunds,omitempty"`
+	ApiAccess            *bool `json:"api_access,omitempty"`
+	DashboardAccess      *bool `json:"dashboard_access,omitempty"`
 }

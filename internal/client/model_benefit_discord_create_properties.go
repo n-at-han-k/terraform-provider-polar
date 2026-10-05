@@ -5,6 +5,6 @@ package client
 // BenefitDiscordCreateProperties - Properties to create a benefit of type `discord`.
 type BenefitDiscordCreateProperties struct {
 	GuildToken string `json:"guild_token,omitempty"`
-	RoleId string `json:"role_id,omitempty"`
-	KickMember *bool `json:"kick_member,omitempty"`
+	RoleId     string `json:"role_id,omitempty"`
+	KickMember *bool  `json:"kick_member,omitempty"`
 }

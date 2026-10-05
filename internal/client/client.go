@@ -51,13 +51,15 @@ func (e *APIError) Error() string {
 }
 
 // Client is the API client used to interact with the API.
+//
+// ONE CREDENTIAL. The document declares several security schemes and the
+// provider block is told which one this provider holds (see `provider.token` in
+// the generator configuration), so the others -- a personal token, a customer
+// session, a browser -- have nothing to offer here and no field to offer it in.
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
-	ApiKey     string
 	Token      string
-	Username   string
-	Password   string
 }
 
 // NewClient creates a new API client with the given base URL.
@@ -123,12 +125,6 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 	// guess -- see bearerPrefix() in the generator.
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
-	} else if c.ApiKey != "" {
-		// The whole header value, verbatim, for a scheme this client does not
-		// spell.
-		req.Header.Set("Authorization", c.ApiKey)
-	} else if c.Username != "" {
-		req.SetBasicAuth(c.Username, c.Password)
 	}
 
 	resp, err := c.HTTPClient.Do(req)

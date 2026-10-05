@@ -4,18 +4,18 @@ package client
 
 // OrganizationCustomerEmailSettings - OrganizationCustomerEmailSettings struct
 type OrganizationCustomerEmailSettings struct {
-	OrderConfirmation *bool `json:"order_confirmation,omitempty"`
-	PaymentMethodExpirationReminder *bool `json:"payment_method_expiration_reminder,omitempty"`
-	SubscriptionCancellation *bool `json:"subscription_cancellation,omitempty"`
-	SubscriptionConfirmation *bool `json:"subscription_confirmation,omitempty"`
-	SubscriptionCycled *bool `json:"subscription_cycled,omitempty"`
-	SubscriptionCycledAfterTrial *bool `json:"subscription_cycled_after_trial,omitempty"`
-	SubscriptionPastDue *bool `json:"subscription_past_due,omitempty"`
-	SubscriptionPaused *bool `json:"subscription_paused,omitempty"`
-	SubscriptionResumed *bool `json:"subscription_resumed,omitempty"`
-	SubscriptionRenewalReminder *bool `json:"subscription_renewal_reminder,omitempty"`
-	SubscriptionRevoked *bool `json:"subscription_revoked,omitempty"`
+	OrderConfirmation                   *bool `json:"order_confirmation,omitempty"`
+	PaymentMethodExpirationReminder     *bool `json:"payment_method_expiration_reminder,omitempty"`
+	SubscriptionCancellation            *bool `json:"subscription_cancellation,omitempty"`
+	SubscriptionConfirmation            *bool `json:"subscription_confirmation,omitempty"`
+	SubscriptionCycled                  *bool `json:"subscription_cycled,omitempty"`
+	SubscriptionCycledAfterTrial        *bool `json:"subscription_cycled_after_trial,omitempty"`
+	SubscriptionPastDue                 *bool `json:"subscription_past_due,omitempty"`
+	SubscriptionPaused                  *bool `json:"subscription_paused,omitempty"`
+	SubscriptionResumed                 *bool `json:"subscription_resumed,omitempty"`
+	SubscriptionRenewalReminder         *bool `json:"subscription_renewal_reminder,omitempty"`
+	SubscriptionRevoked                 *bool `json:"subscription_revoked,omitempty"`
 	SubscriptionTrialConversionReminder *bool `json:"subscription_trial_conversion_reminder,omitempty"`
-	SubscriptionUncanceled *bool `json:"subscription_uncanceled,omitempty"`
-	SubscriptionUpdated *bool `json:"subscription_updated,omitempty"`
+	SubscriptionUncanceled              *bool `json:"subscription_uncanceled,omitempty"`
+	SubscriptionUpdated                 *bool `json:"subscription_updated,omitempty"`
 }

@@ -4,16 +4,16 @@ package client
 
 // Meter - Meter struct
 type Meter struct {
-	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Unit string `json:"unit,omitempty"`
-	CustomLabel string `json:"custom_label,omitempty"`
-	CustomMultiplier int32 `json:"custom_multiplier,omitempty"`
-	Filter *Filter `json:"filter,omitempty"`
-	Aggregation *MeterAggregation `json:"aggregation,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	ArchivedAt string `json:"archived_at,omitempty"`
+	Metadata         map[string]string `json:"metadata,omitempty"`
+	CreatedAt        string            `json:"created_at,omitempty"`
+	ModifiedAt       string            `json:"modified_at,omitempty"`
+	Id               string            `json:"id,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	Unit             string            `json:"unit,omitempty"`
+	CustomLabel      string            `json:"custom_label,omitempty"`
+	CustomMultiplier int32             `json:"custom_multiplier,omitempty"`
+	Filter           *Filter           `json:"filter,omitempty"`
+	Aggregation      *MeterAggregation `json:"aggregation,omitempty"`
+	OrganizationId   string            `json:"organization_id,omitempty"`
+	ArchivedAt       string            `json:"archived_at,omitempty"`
 }

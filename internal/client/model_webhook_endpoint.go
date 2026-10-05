@@ -4,14 +4,14 @@ package client
 
 // WebhookEndpoint - A webhook endpoint.
 type WebhookEndpoint struct {
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Id string `json:"id,omitempty"`
-	Url string `json:"url,omitempty"`
-	Name string `json:"name,omitempty"`
-	Format string `json:"format,omitempty"`
-	Secret string `json:"secret,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	Events []WebhookEventType `json:"events,omitempty"`
-	Enabled *bool `json:"enabled,omitempty"`
+	CreatedAt      string   `json:"created_at,omitempty"`
+	ModifiedAt     string   `json:"modified_at,omitempty"`
+	Id             string   `json:"id,omitempty"`
+	Url            string   `json:"url,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	Format         string   `json:"format,omitempty"`
+	Secret         string   `json:"secret,omitempty"`
+	OrganizationId string   `json:"organization_id,omitempty"`
+	Events         []string `json:"events,omitempty"`
+	Enabled        *bool    `json:"enabled,omitempty"`
 }

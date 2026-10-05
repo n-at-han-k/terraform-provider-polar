@@ -2,46 +2,40 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // CheckoutLinkModel is the Terraform model for checkout_link.
 type CheckoutLinkModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
-	PaymentProcessor types.String `tfsdk:"payment_processor"`
-	Label types.String `tfsdk:"label"`
-	AllowDiscountCodes types.Bool `tfsdk:"allow_discount_codes"`
-	RequireBillingAddress types.Bool `tfsdk:"require_billing_address"`
-	DiscountId types.String `tfsdk:"discount_id"`
-	Seats types.Int64 `tfsdk:"seats"`
-	SuccessUrl types.String `tfsdk:"success_url"`
-	ReturnUrl types.String `tfsdk:"return_url"`
-	ProductPriceId types.String `tfsdk:"product_price_id"`
-	ProductId types.String `tfsdk:"product_id"`
-	Products jsontypes.Normalized `tfsdk:"products"`
+	Id                    types.String `tfsdk:"id"`
+	Url                   types.String `tfsdk:"url"`
+	ClientSecret          types.String `tfsdk:"client_secret"`
+	Metadata              types.Map    `tfsdk:"metadata"`
+	TrialInterval         types.String `tfsdk:"trial_interval"`
+	TrialIntervalCount    types.Int64  `tfsdk:"trial_interval_count"`
+	PaymentProcessor      types.String `tfsdk:"payment_processor"`
+	Label                 types.String `tfsdk:"label"`
+	AllowDiscountCodes    types.Bool   `tfsdk:"allow_discount_codes"`
+	RequireBillingAddress types.Bool   `tfsdk:"require_billing_address"`
+	DiscountId            types.String `tfsdk:"discount_id"`
+	Seats                 types.Int64  `tfsdk:"seats"`
+	SuccessUrl            types.String `tfsdk:"success_url"`
+	ReturnUrl             types.String `tfsdk:"return_url"`
+	ProductPriceId        types.String `tfsdk:"product_price_id"`
+	ProductId             types.String `tfsdk:"product_id"`
+	Products              types.Set    `tfsdk:"product_ids"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkCreate, error) {
 	out := &client.CheckoutLinkCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
@@ -86,12 +80,13 @@ func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkCreate, error) 
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
 		out.ProductId = m.ProductId.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
 	if !m.Products.IsNull() && !m.Products.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
-			return out, fmt.Errorf("products: %w", err)
+		out.Products = make([]string, 0, len(m.Products.Elements()))
+		for _, element := range m.Products.Elements() {
+			out.Products = append(out.Products, element.(types.String).ValueString())
 		}
 	}
 	return out, nil
@@ -108,8 +103,9 @@ func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkCreate, error) 
 func (m *CheckoutLinkModel) ToUpdateModel() (*client.CheckoutLinkUpdate, error) {
 	out := &client.CheckoutLinkUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
@@ -141,31 +137,62 @@ func (m *CheckoutLinkModel) ToUpdateModel() (*client.CheckoutLinkUpdate, error) 
 	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
 		out.ReturnUrl = m.ReturnUrl.ValueString()
 	}
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
 	if !m.Products.IsNull() && !m.Products.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
-			return out, fmt.Errorf("products: %w", err)
+		out.Products = make([]string, 0, len(m.Products.Elements()))
+		for _, element := range m.Products.Elements() {
+			out.Products = append(out.Products, element.(types.String).ValueString())
 		}
 	}
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *CheckoutLinkModel) FromClientModel(c *client.CheckoutLink) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *CheckoutLinkModel) FromAnswer(c *client.CheckoutLink) {
+	m.fromAnswer(c, true)
+}
+
+func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	m.Url = types.StringValue(c.Url)
+	m.ClientSecret = types.StringValue(c.ClientSecret)
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		m.TrialInterval = types.StringValue(c.TrialInterval)
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	}
 	m.PaymentProcessor = types.StringValue(c.PaymentProcessor)
-	m.Label = types.StringValue(c.Label)
+	if everything || !m.Label.IsNull() && !m.Label.IsUnknown() {
+		m.Label = types.StringValue(c.Label)
+	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -184,32 +211,16 @@ func (m *CheckoutLinkModel) FromClientModel(c *client.CheckoutLink) {
 	} else if m.RequireBillingAddress.IsUnknown() {
 		m.RequireBillingAddress = types.BoolNull()
 	}
-	m.DiscountId = types.StringValue(c.DiscountId)
-	m.Seats = types.Int64Value(int64(c.Seats))
-	m.SuccessUrl = types.StringValue(c.SuccessUrl)
-	m.ReturnUrl = types.StringValue(c.ReturnUrl)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.ProductPriceId.IsUnknown() {
-		m.ProductPriceId = types.StringNull()
+	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		m.DiscountId = types.StringValue(c.DiscountId)
 	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.ProductId.IsUnknown() {
-		m.ProductId = types.StringNull()
+	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		m.Seats = types.Int64Value(int64(c.Seats))
 	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Products.IsUnknown() {
-		m.Products = jsontypes.NewNormalizedNull()
+	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		m.SuccessUrl = types.StringValue(c.SuccessUrl)
+	}
+	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		m.ReturnUrl = types.StringValue(c.ReturnUrl)
 	}
 }

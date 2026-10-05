@@ -4,12 +4,12 @@ package client
 
 // MeterUpdate - MeterUpdate struct
 type MeterUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Name string `json:"name,omitempty"`
-	Unit string `json:"unit,omitempty"`
-	CustomLabel string `json:"custom_label,omitempty"`
-	CustomMultiplier int32 `json:"custom_multiplier,omitempty"`
-	Filter *Filter `json:"filter,omitempty"`
-	Aggregation *MeterUpdateAggregation `json:"aggregation,omitempty"`
-	IsArchived *bool `json:"is_archived,omitempty"`
+	Metadata         map[string]string       `json:"metadata,omitempty"`
+	Name             string                  `json:"name,omitempty"`
+	Unit             string                  `json:"unit,omitempty"`
+	CustomLabel      string                  `json:"custom_label,omitempty"`
+	CustomMultiplier int32                   `json:"custom_multiplier,omitempty"`
+	Filter           *Filter                 `json:"filter,omitempty"`
+	Aggregation      *MeterUpdateAggregation `json:"aggregation,omitempty"`
+	IsArchived       *bool                   `json:"is_archived,omitempty"`
 }

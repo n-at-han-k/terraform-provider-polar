@@ -2,48 +2,39 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // DiscountModel is the Terraform model for discount.
 type DiscountModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Name types.String `tfsdk:"name"`
-	Code types.String `tfsdk:"code"`
-	StartsAt types.String `tfsdk:"starts_at"`
-	EndsAt types.String `tfsdk:"ends_at"`
-	MaxRedemptions types.Int64 `tfsdk:"max_redemptions"`
-	MaxRedemptionsPerCustomer types.Int64 `tfsdk:"max_redemptions_per_customer"`
-	Products jsontypes.Normalized `tfsdk:"products"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Duration types.String `tfsdk:"duration"`
-	DurationInMonths types.Int64 `tfsdk:"duration_in_months"`
-	Amount types.Int64 `tfsdk:"amount"`
-	Currency types.String `tfsdk:"currency"`
-	Amounts map[string]int32 `tfsdk:"amounts"`
-	BasisPoints types.Int64 `tfsdk:"basis_points"`
-	Type types.String `tfsdk:"type"`
+	Id                        types.String `tfsdk:"id"`
+	Metadata                  types.Map    `tfsdk:"metadata"`
+	Name                      types.String `tfsdk:"name"`
+	Code                      types.String `tfsdk:"code"`
+	StartsAt                  types.String `tfsdk:"starts_at"`
+	EndsAt                    types.String `tfsdk:"ends_at"`
+	MaxRedemptions            types.Int64  `tfsdk:"max_redemptions"`
+	MaxRedemptionsPerCustomer types.Int64  `tfsdk:"max_redemptions_per_customer"`
+	Products                  types.List   `tfsdk:"products"`
+	Duration                  types.String `tfsdk:"duration"`
+	DurationInMonths          types.Int64  `tfsdk:"duration_in_months"`
+	Amount                    types.Int64  `tfsdk:"amount"`
+	Currency                  types.String `tfsdk:"currency"`
+	Amounts                   types.Map    `tfsdk:"amounts"`
+	BasisPoints               types.Int64  `tfsdk:"basis_points"`
+	Type                      types.String `tfsdk:"type"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 	out := &client.DiscountCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -64,16 +55,13 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
 		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
 	if !m.Products.IsNull() && !m.Products.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
-			return out, fmt.Errorf("products: %w", err)
+		out.Products = make([]string, 0, len(m.Products.Elements()))
+		for _, element := range m.Products.Elements() {
+			out.Products = append(out.Products, element.(types.String).ValueString())
 		}
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
 		out.Duration = m.Duration.ValueString()
@@ -87,7 +75,12 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
 		out.Currency = m.Currency.ValueString()
 	}
-	out.Amounts = m.Amounts
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		out.Amounts = make(map[string]int32, len(m.Amounts.Elements()))
+		for key, element := range m.Amounts.Elements() {
+			out.Amounts[key] = int32(element.(types.Int64).ValueInt64())
+		}
+	}
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
 		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
 	}
@@ -108,8 +101,9 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 	out := &client.DiscountUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -130,9 +124,12 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
 		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
 	}
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
 	if !m.Products.IsNull() && !m.Products.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
-			return out, fmt.Errorf("products: %w", err)
+		out.Products = make([]string, 0, len(m.Products.Elements()))
+		for _, element := range m.Products.Elements() {
+			out.Products = append(out.Products, element.(types.String).ValueString())
 		}
 	}
 	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
@@ -147,7 +144,12 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
 		out.Currency = m.Currency.ValueString()
 	}
-	out.Amounts = m.Amounts
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		out.Amounts = make(map[string]int32, len(m.Amounts.Elements()))
+		for key, element := range m.Amounts.Elements() {
+			out.Amounts[key] = int32(element.(types.Int64).ValueInt64())
+		}
+	}
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
 		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
 	}
@@ -157,39 +159,83 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *DiscountModel) FromClientModel(c *client.Discount) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *DiscountModel) FromAnswer(c *client.Discount) {
+	m.fromAnswer(c, true)
+}
+
+func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.Name = types.StringValue(c.Name)
-	m.Code = types.StringValue(c.Code)
-	m.StartsAt = types.StringValue(c.StartsAt)
-	m.EndsAt = types.StringValue(c.EndsAt)
-	m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
-	m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Products.IsUnknown() {
-		m.Products = jsontypes.NewNormalizedNull()
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
 	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.Duration = types.StringValue(c.Duration)
-	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
-	m.Amount = types.Int64Value(int64(c.Amount))
-	m.Currency = types.StringValue(c.Currency)
-	m.Amounts = c.Amounts
-	m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
-	m.Type = types.StringValue(c.Type)
+	if everything || !m.Code.IsNull() && !m.Code.IsUnknown() {
+		m.Code = types.StringValue(c.Code)
+	}
+	if everything || !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		m.StartsAt = types.StringValue(c.StartsAt)
+	}
+	if everything || !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		m.EndsAt = types.StringValue(c.EndsAt)
+	}
+	if everything || !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
+	}
+	if everything || !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
+	}
+	if everything || !m.Duration.IsNull() && !m.Duration.IsUnknown() {
+		m.Duration = types.StringValue(c.Duration)
+	}
+	if everything || !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
+		m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
+	}
+	if everything || !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		m.Amount = types.Int64Value(int64(c.Amount))
+	}
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		m.Currency = types.StringValue(c.Currency)
+	}
+	if everything || !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		if c.Amounts == nil {
+			m.Amounts = types.MapNull(types.Int64Type)
+		} else {
+			Amounts := make(map[string]attr.Value, len(c.Amounts))
+			for key, element := range c.Amounts {
+				Amounts[key] = types.Int64Value(int64(element))
+			}
+			m.Amounts = types.MapValueMust(types.Int64Type, Amounts)
+		}
+	}
+	if everything || !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
+		m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
+	}
+	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
+		m.Type = types.StringValue(c.Type)
+	}
 }

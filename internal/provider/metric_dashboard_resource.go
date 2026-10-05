@@ -3,12 +3,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
-
-
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -17,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -46,28 +42,14 @@ func (r *MetricDashboardResource) Schema(_ context.Context, _ resource.SchemaReq
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "Display name for the dashboard.",
 			},
 			"metrics": schema.ListAttribute{
-				Computed:    true,
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "List of metric slugs displayed in this dashboard.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the organization owning this dashboard.",
 			},
 		},
 	}

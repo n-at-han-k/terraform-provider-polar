@@ -3,29 +3,27 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 var _ resource.Resource = &CustomFieldResource{}
 var _ resource.ResourceWithImportState = &CustomFieldResource{}
+var _ resource.ResourceWithValidateConfig = &CustomFieldResource{}
 
 func NewCustomFieldResource() resource.Resource {
 	return &CustomFieldResource{}
@@ -47,18 +45,10 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"slug": schema.StringAttribute{
@@ -69,52 +59,137 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Required:    true,
 				Description: "Name of the custom field.",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the organization owning the custom field.",
-			},
 			"properties": schema.SingleNestedAttribute{
-				Required:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"form_label": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"form_help_text": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"form_placeholder": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"textarea": schema.BoolAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"min_length": schema.Int64Attribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"max_length": schema.Int64Attribute{
-						Computed:    true,
 						Optional:    true,
+						Description: "",
+					},
+					"ge": schema.Int64Attribute{
+						Optional:    true,
+						Description: "",
+					},
+					"le": schema.Int64Attribute{
+						Optional:    true,
+						Description: "",
+					},
+					"options": schema.ListNestedAttribute{
+						Optional: true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"value": schema.StringAttribute{
+									Required:    true,
+									Description: "",
+								},
+								"label": schema.StringAttribute{
+									Required:    true,
+									Description: "",
+								},
+							},
+						},
 						Description: "",
 					},
 				},
 				Description: "",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"checkbox",
+						"date",
+						"number",
+						"select",
+						"text",
+					),
+				},
 				Description: "Which variant this is. Selects which of the optional blocks above applies.",
 			},
 		},
+	}
+}
+
+// ValidateConfig refuses WHAT THE DISCRIMINATOR SAYS: a field that belongs to
+// another variant, and one the chosen variant demands and nobody set.
+//
+// textarea are the
+// fields a flattened union became, one set per variant, and nothing in the schema
+// stops a configuration from filling two of them -- or from filling the one
+// type did not ask for. Polar answers 422 for that, which arrives
+// after the plan as a refused request rather than as a message naming the two
+// attributes that disagreed.
+//
+// The plan is where it can be named.
+func (r *CustomFieldResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config CustomFieldModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// type may be unknown while a variable decides it, and there is
+	// nothing to check against until it is known.
+	if config.Type.IsUnknown() {
+		return
+	}
+
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if config.Properties != nil && !config.Properties.Textarea.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "text" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("textarea"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "textarea", "text"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if config.Properties != nil && !config.Properties.Ge.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "number" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("ge"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "ge", "number"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if config.Properties != nil && !config.Properties.Le.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "number" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("le"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "le", "number"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if config.Properties != nil && len(config.Properties.Options) > 0 && !config.Type.IsUnknown() && config.Type.ValueString() != "select" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("options"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "options", "select"),
+		)
 	}
 }
 

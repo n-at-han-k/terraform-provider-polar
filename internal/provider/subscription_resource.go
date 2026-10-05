@@ -3,12 +3,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
-
-
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,10 +14,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -47,18 +42,10 @@ func (r *SubscriptionResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"product_id": schema.StringAttribute{

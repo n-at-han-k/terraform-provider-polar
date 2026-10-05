@@ -2,6 +2,7 @@
 package provider
 
 import (
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -9,14 +10,10 @@ import (
 
 // MetricDashboardModel is the Terraform model for metric_dashboard.
 type MetricDashboardModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Name types.String `tfsdk:"name"`
-	Metrics []string `tfsdk:"metrics"`
-	OrganizationId types.String `tfsdk:"organization_id"`
+	Id      types.String `tfsdk:"id"`
+	Name    types.String `tfsdk:"name"`
+	Metrics types.List   `tfsdk:"metrics"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, error) {
@@ -24,9 +21,13 @@ func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, e
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	out.Metrics = m.Metrics
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
+	if !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
+		out.Metrics = make([]string, 0, len(m.Metrics.Elements()))
+		for _, element := range m.Metrics.Elements() {
+			out.Metrics = append(out.Metrics, element.(types.String).ValueString())
+		}
 	}
 	return out, nil
 }
@@ -44,16 +45,55 @@ func (m *MetricDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, e
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	out.Metrics = m.Metrics
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
+	if !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
+		out.Metrics = make([]string, 0, len(m.Metrics.Elements()))
+		for _, element := range m.Metrics.Elements() {
+			out.Metrics = append(out.Metrics, element.(types.String).ValueString())
+		}
+	}
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *MetricDashboardModel) FromClientModel(c *client.MetricDashboardSchema) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *MetricDashboardModel) FromAnswer(c *client.MetricDashboardSchema) {
+	m.fromAnswer(c, true)
+}
+
+func (m *MetricDashboardModel) fromAnswer(c *client.MetricDashboardSchema, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Name = types.StringValue(c.Name)
-	m.Metrics = c.Metrics
-	m.OrganizationId = types.StringValue(c.OrganizationId)
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
+	if everything || !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
+		// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know
+		// yet has to end up known either way -- "provider still indicated an unknown
+		// value ... all values must be known after apply".
+		if c.Metrics == nil {
+			m.Metrics = types.ListNull(types.StringType)
+		} else {
+			Metrics := make([]attr.Value, 0, len(c.Metrics))
+			for _, element := range c.Metrics {
+				Metrics = append(Metrics, types.StringValue(element))
+			}
+			m.Metrics = types.ListValueMust(types.StringType, Metrics)
+		}
+	}
 }

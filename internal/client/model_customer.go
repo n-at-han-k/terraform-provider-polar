@@ -4,23 +4,23 @@ package client
 
 // Customer - Customer struct
 type Customer struct {
-	Id string `json:"id,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
-	ExternalId string `json:"external_id,omitempty"`
-	IndividualEmail string `json:"individual_email,omitempty"`
-	TeamEmail string `json:"team_email,omitempty"`
-	EmailVerified *bool `json:"email_verified,omitempty"`
-	Name string `json:"name,omitempty"`
-	BillingName string `json:"billing_name,omitempty"`
-	BillingAddress *Address `json:"billing_address,omitempty"`
-	TaxId []interface{} `json:"tax_id,omitempty"`
-	Locale string `json:"locale,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	DefaultPaymentMethodId string `json:"default_payment_method_id,omitempty"`
-	DeletedAt string `json:"deleted_at,omitempty"`
-	FirstUserEventAt string `json:"first_user_event_at,omitempty"`
-	AvatarUrl string `json:"avatar_url,omitempty"`
-	Type string `json:"type,omitempty"`
+	Id                     string            `json:"id,omitempty"`
+	CreatedAt              string            `json:"created_at,omitempty"`
+	ModifiedAt             string            `json:"modified_at,omitempty"`
+	Metadata               map[string]string `json:"metadata,omitempty"`
+	ExternalId             string            `json:"external_id,omitempty"`
+	IndividualEmail        string            `json:"individual_email,omitempty"`
+	TeamEmail              string            `json:"team_email,omitempty"`
+	EmailVerified          *bool             `json:"email_verified,omitempty"`
+	Name                   string            `json:"name,omitempty"`
+	BillingName            string            `json:"billing_name,omitempty"`
+	BillingAddress         *Address          `json:"billing_address,omitempty"`
+	TaxId                  []interface{}     `json:"tax_id,omitempty"`
+	Locale                 string            `json:"locale,omitempty"`
+	OrganizationId         string            `json:"organization_id,omitempty"`
+	DefaultPaymentMethodId string            `json:"default_payment_method_id,omitempty"`
+	DeletedAt              string            `json:"deleted_at,omitempty"`
+	FirstUserEventAt       string            `json:"first_user_event_at,omitempty"`
+	AvatarUrl              string            `json:"avatar_url,omitempty"`
+	Type                   string            `json:"type,omitempty"`
 }

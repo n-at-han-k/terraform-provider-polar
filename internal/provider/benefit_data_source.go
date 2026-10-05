@@ -7,10 +7,9 @@ import (
 
 	"encoding/json"
 
-
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,33 +34,23 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 		Description: "Fetches a benefit data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the benefit.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"description": schema.StringAttribute{
-				Required:    true,
-				Description: "The description of the benefit.",
-			},
-			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the organization owning the benefit.",
+				Description: "The description of the benefit.",
 			},
 			"visibility": schema.StringAttribute{
 				Computed:    true,
-				Description: "The visibility of the benefit in the customer portal.",
+				Description: "",
 			},
 			"custom_properties": schema.StringAttribute{
 				Computed:    true,
@@ -97,7 +86,7 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Description: "",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Which variant this is. Selects which of the optional blocks above applies.",
 			},
 		},
@@ -141,7 +130,7 @@ func (d *BenefitDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read benefit data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

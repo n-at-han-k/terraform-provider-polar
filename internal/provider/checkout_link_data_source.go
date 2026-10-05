@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,33 +33,35 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 		Description: "Fetches a checkout_link data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
+			"url": schema.StringAttribute{
 				Computed:    true,
-				Description: "Creation timestamp of the object.",
+				Description: "",
 			},
-			"modified_at": schema.StringAttribute{
+			"client_secret": schema.StringAttribute{
 				Computed:    true,
-				Description: "Last modification timestamp of the object.",
+				Description: "Client secret used to access the checkout link.",
 			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"trial_interval": schema.StringAttribute{
 				Computed:    true,
-				Description: "The interval unit for the trial period.",
+				Description: "",
 			},
 			"trial_interval_count": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The number of interval units for the trial period.",
 			},
 			"payment_processor": schema.StringAttribute{
-				Required:    true,
-				Description: "Payment processor used.",
+				Computed:    true,
+				Description: "",
 			},
 			"label": schema.StringAttribute{
 				Computed:    true,
@@ -99,8 +99,7 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "",
 			},
-			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"product_ids": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},
@@ -145,7 +144,7 @@ func (d *CheckoutLinkDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read checkout_link data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

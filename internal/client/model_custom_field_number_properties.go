@@ -4,9 +4,9 @@ package client
 
 // CustomFieldNumberProperties - CustomFieldNumberProperties struct
 type CustomFieldNumberProperties struct {
-	FormLabel string `json:"form_label,omitempty"`
-	FormHelpText string `json:"form_help_text,omitempty"`
+	FormLabel       string `json:"form_label,omitempty"`
+	FormHelpText    string `json:"form_help_text,omitempty"`
 	FormPlaceholder string `json:"form_placeholder,omitempty"`
-	Ge int32 `json:"ge,omitempty"`
-	Le int32 `json:"le,omitempty"`
+	Ge              int32  `json:"ge,omitempty"`
+	Le              int32  `json:"le,omitempty"`
 }

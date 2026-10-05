@@ -2,28 +2,23 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // MeterModel is the Terraform model for meter.
 type MeterModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Name types.String `tfsdk:"name"`
-	Unit types.String `tfsdk:"unit"`
-	CustomLabel types.String `tfsdk:"custom_label"`
-	CustomMultiplier types.Int64 `tfsdk:"custom_multiplier"`
-	Filter *MeterFilterModel `tfsdk:"filter"`
-	Aggregation *MeterAggregationModel `tfsdk:"aggregation"`
-	OrganizationId types.String `tfsdk:"organization_id"`
+	Id               types.String           `tfsdk:"id"`
+	Metadata         types.Map              `tfsdk:"metadata"`
+	Name             types.String           `tfsdk:"name"`
+	Unit             types.String           `tfsdk:"unit"`
+	CustomLabel      types.String           `tfsdk:"custom_label"`
+	CustomMultiplier types.Int64            `tfsdk:"custom_multiplier"`
+	Filter           *MeterFilterModel      `tfsdk:"filter"`
+	Aggregation      *MeterAggregationModel `tfsdk:"aggregation"`
 }
 
 // MeterFilterModel is one `filter` block.
@@ -33,8 +28,8 @@ type MeterModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type MeterFilterModel struct {
-	Conjunction types.String `tfsdk:"conjunction"`
-	Clauses []MeterFilterModelClausesModel `tfsdk:"clauses"`
+	Conjunction types.String                   `tfsdk:"conjunction"`
+	Clauses     []MeterFilterModelClausesModel `tfsdk:"clauses"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -55,6 +50,7 @@ func (m *MeterFilterModel) ToClientModel() (*client.Filter, error) {
 func (m *MeterFilterModel) FromClientModel(c *client.Filter) {
 	m.Conjunction = types.StringValue(c.Conjunction)
 }
+
 // MeterFilterModelClausesModel is one `clauses` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -64,7 +60,7 @@ func (m *MeterFilterModel) FromClientModel(c *client.Filter) {
 type MeterFilterModelClausesModel struct {
 	Property types.String `tfsdk:"property"`
 	Operator types.String `tfsdk:"operator"`
-	Value types.String `tfsdk:"value"`
+	Value    types.String `tfsdk:"value"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -93,6 +89,7 @@ func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClauses) 
 	m.Operator = types.StringValue(c.Operator)
 	m.Value = types.StringValue(c.Value)
 }
+
 // MeterAggregationModel is one `aggregation` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -100,26 +97,18 @@ func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClauses) 
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type MeterAggregationModel struct {
-	CountFunc types.String `tfsdk:"count_func"`
-	AvgFunc types.String `tfsdk:"avg_func"`
-	UniqueFunc types.String `tfsdk:"unique_func"`
 	Property types.String `tfsdk:"property"`
+	Func     types.String `tfsdk:"func"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation, error) {
 	out := &client.MeterCreateAggregation{}
-	if !m.CountFunc.IsNull() && !m.CountFunc.IsUnknown() {
-		out.CountFunc = m.CountFunc.ValueString()
-	}
-	if !m.AvgFunc.IsNull() && !m.AvgFunc.IsUnknown() {
-		out.AvgFunc = m.AvgFunc.ValueString()
-	}
-	if !m.UniqueFunc.IsNull() && !m.UniqueFunc.IsUnknown() {
-		out.UniqueFunc = m.UniqueFunc.ValueString()
-	}
 	if !m.Property.IsNull() && !m.Property.IsUnknown() {
 		out.Property = m.Property.ValueString()
+	}
+	if !m.Func.IsNull() && !m.Func.IsUnknown() {
+		out.Func = m.Func.ValueString()
 	}
 	return out, nil
 }
@@ -131,21 +120,17 @@ func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterAggregationModel) FromClientModel(c *client.MeterCreateAggregation) {
-	m.CountFunc = types.StringValue(c.CountFunc)
-	m.AvgFunc = types.StringValue(c.AvgFunc)
-	m.UniqueFunc = types.StringValue(c.UniqueFunc)
 	m.Property = types.StringValue(c.Property)
+	m.Func = types.StringValue(c.Func)
 }
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
 	out := &client.MeterCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -174,9 +159,6 @@ func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
 		}
 		out.Aggregation = converted
 	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
-	}
 	return out, nil
 }
 
@@ -191,8 +173,9 @@ func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
 func (m *MeterModel) ToUpdateModel() (*client.MeterUpdate, error) {
 	out := &client.MeterUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
@@ -217,35 +200,63 @@ func (m *MeterModel) ToUpdateModel() (*client.MeterUpdate, error) {
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *MeterModel) FromClientModel(c *client.Meter) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *MeterModel) FromAnswer(c *client.Meter) {
+	m.fromAnswer(c, true)
+}
+
+func (m *MeterModel) fromAnswer(c *client.Meter, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
-	}
-	m.Name = types.StringValue(c.Name)
-	m.Unit = types.StringValue(c.Unit)
-	m.CustomLabel = types.StringValue(c.CustomLabel)
-	m.CustomMultiplier = types.Int64Value(int64(c.CustomMultiplier))
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.Filter != nil {
-		block := MeterFilterModel{}
-		if m.Filter != nil {
-			block = *m.Filter
-		}
-		block.FromClientModel(c.Filter)
-		m.Filter = &block
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
 	} else {
-		m.Filter = nil
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
+	if everything || !m.Unit.IsNull() && !m.Unit.IsUnknown() {
+		m.Unit = types.StringValue(c.Unit)
+	}
+	if everything || !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
+		m.CustomLabel = types.StringValue(c.CustomLabel)
+	}
+	if everything || !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
+		m.CustomMultiplier = types.Int64Value(int64(c.CustomMultiplier))
+	}
+	if everything || m.Filter != nil {
+		// A pointer the server left nil is a block that is not there. Writing an
+		// empty one instead would be a diff against a configuration that correctly
+		// omitted it.
+		if c.Filter != nil {
+			block := MeterFilterModel{}
+			if m.Filter != nil {
+				block = *m.Filter
+			}
+			block.FromClientModel(c.Filter)
+			m.Filter = &block
+		} else {
+			m.Filter = nil
+		}
+	}
 }

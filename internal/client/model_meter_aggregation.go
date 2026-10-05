@@ -2,10 +2,8 @@
 
 package client
 
-// MeterAggregation - MeterAggregation struct
+// MeterAggregation - The aggregation to apply on the filtered events to calculate the meter.
 type MeterAggregation struct {
-	CountFunc string `json:"count_func,omitempty"`
-	AvgFunc string `json:"avg_func,omitempty"`
-	UniqueFunc string `json:"unique_func,omitempty"`
 	Property string `json:"property,omitempty"`
+	Func     string `json:"func,omitempty"`
 }

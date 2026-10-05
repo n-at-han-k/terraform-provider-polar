@@ -7,10 +7,9 @@ import (
 
 	"encoding/json"
 
-
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,27 +34,21 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 		Description: "Fetches a checkout data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
-			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
 			},
 			"trial_interval": schema.StringAttribute{
 				Computed:    true,
-				Description: "The interval unit for the trial period.",
+				Description: "",
 			},
 			"trial_interval_count": schema.Int64Attribute{
 				Computed:    true,
 				Description: "The number of interval units for the trial period.",
 			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -133,7 +126,6 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "",
 			},
 			"customer_metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
@@ -162,8 +154,7 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "Currency code of the checkout session.",
 			},
 			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Required:    true,
+				Computed:    true,
 				Description: "List of products available to select.",
 			},
 			"prices": schema.StringAttribute{
@@ -212,7 +203,7 @@ func (d *CheckoutDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read checkout data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

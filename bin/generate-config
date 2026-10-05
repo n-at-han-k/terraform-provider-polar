@@ -22,6 +22,7 @@
 #
 # Do not edit what it writes; edit the rules below and run it again.
 require "json"
+require "set"
 
 ROOT = File.expand_path("..", __dir__)
 SOURCE = File.join(ROOT, "reference", "polar-openapi.json")
@@ -60,6 +61,219 @@ MERGE_CONFLICTS = %w[CustomFieldCreate CustomFieldUpdate].freeze
 
 SCALAR_TYPES = %w[string integer number boolean].freeze
 HTTP_METHODS = %w[get post put patch delete].freeze
+
+# -- what the provider block is -----------------------------------------------
+
+# WHICH SECURITY SCHEME THIS PROVIDER AUTHENTICATES WITH, and what a
+# configuration calls the credential.
+#
+# The document declares five of them and no response code says which one a
+# Terraform provider should hold: `pat` is a personal token, `customer_session`
+# and `member_session` are minted for one end user, and `oidc` is a browser. The
+# one that scopes to an organization is `oat`, which is the same reason the
+# customer portal's paths are excluded above. Which of them this provider holds,
+# and what the block calls it, is therefore a decision.
+TOKEN_SCHEME = "oat"
+TOKEN_ATTRIBUTE = "access_token"
+TOKEN_ENV = "POLAR_ACCESS_TOKEN"
+TOKEN_DESCRIPTION = "Polar organization access token. Can also be set with the " \
+                    "`#{TOKEN_ENV}` environment variable."
+
+# What a configuration calls the environment, and the variable it falls back to.
+# The environments THEMSELVES are the document's -- `servers` names each one and
+# says where it lives -- so only the attribute name and the variable are ours.
+ENVIRONMENT_ATTRIBUTE = "server"
+ENVIRONMENT_ENV = "POLAR_SERVER"
+ENVIRONMENT_DESCRIPTION = "The Polar environment to use. Can also be set with " \
+                          "the `#{ENVIRONMENT_ENV}` environment variable."
+
+# -- attributes the generator cannot decide -----------------------------------
+
+# WHAT THE SERVER OWNS AND NO CONFIGURATION MAY SET. The document marks nothing
+# readOnly, so every response-only field would otherwise reach the schema, and an
+# attribute nobody can write is noise in `tofu plan`.
+#
+#   created_at, modified_at  bookkeeping. They are what the read-after-write
+#                             poll compares against, which is a client concern
+#                             and not a state's.
+#   organization_id          which organization the thing belongs to. The
+#                             provider block already IS the organization: one
+#                             access token scopes to one, so the attribute could
+#                             only ever contradict the credential in use.
+DROP_EVERYWHERE = %w[created_at modified_at organization_id].freeze
+
+# OPTIONAL AND COMPUTED, EVERYWHERE IT APPEARS.
+#
+# An attribute is Optional and Computed when the server fills in a value the
+# configuration left out: `metadata` is stored and answered back even when a
+# configuration sends none, and Optional alone plans null and then the read
+# answers a value, which is "Provider produced inconsistent result after apply"
+# on every apply.
+#
+# Anything ELSE the create body takes without insisting is Optional alone. That
+# is the hand-written provider's rule and this generator's used to be the
+# opposite, which made half of every resource Optional-and-Computed for no reason
+# a configuration could observe.
+COMPUTED_EVERYWHERE = %w[metadata price_currency].freeze
+
+# NOTHING IN POLAR'S DESCRIPTION IS SECRET BY ITSELF, and the words in a name
+# are not evidence: `guild_token` is a Discord bot token and nothing else in the
+# document says so. Listed here because only a person knows.
+SENSITIVE_EVERYWHERE = %w[].freeze
+
+# WHAT EACH RESOURCE DOES WITH EACH ATTRIBUTE, keyed by the Terraform resource
+# name. This is the hand-written provider's schema, resource by resource, and it
+# is the longest part of this file because it is the most judgement there is:
+# nothing in the document says that a meter's `unit` is not worth exposing, or
+# that an organization's `slug` is the server's to derive.
+#
+# Each key says one thing, and every one of them is a name a configuration
+# spells:
+#
+#   drop        never exposed, at this level or inside a block
+#   include     positions the CREATE body does not take but the resource still
+#               offers -- taken from the update body where there is one and from
+#               the read answer where there is not
+#   required    Required, even where the document says otherwise
+#   optional    Optional, even where the document requires it
+#   computed    Computed alone, even where a configuration may write it
+#   optionalComputed  Optional AND Computed, which is the one combination the
+#               document never asks for and a server default does
+#   sensitive   Sensitive, whatever its name says
+#   set         a Set rather than a List, so a reordered answer is not a diff
+#   rename      the name a configuration spells
+#   unwrap      a wrapper object that exists only to carry a server default,
+#               named by the one property inside it worth having
+#   validators  constraints the document does not carry, keyed by attribute
+PER_RESOURCE = {
+  "polar_benefit" => {
+    # The document says `description` is a string. Polar's own application
+    # limits it to 42 characters and answers 422 past that, so the schema is
+    # where a person finds out first.
+    "validators" => { "description" => { "lengthAtMost" => 42 } },
+    # Nothing in the description says a Discord bot token is a secret.
+    "sensitive" => %w[guild_token],
+  },
+
+  "polar_product" => {
+    # Polar cannot archive or unarchive through the create body, and a product
+    # with no DELETE at all is archived through this -- so the update body's one
+    # field has to be reachable.
+    "include" => %w[is_archived],
+    "optionalComputed" => %w[medias is_archived],
+    # `seat_tiers` is a wrapper object whose only required field is `tiers`, and
+    # whose other field defaults to `volume`. As the wrapper it is a block
+    # holding a block; as the list it is what a configuration actually means.
+    "unwrap" => { "seat_tiers" => "tiers" },
+    # The document requires the tiers list because its own form does; the tier
+    # whose maximum is left out is how an unlimited one is spelled.
+    "optional" => %w[seat_tiers],
+  },
+
+  "polar_meter" => {
+  },
+
+  "polar_discount" => {
+    # A fixed discount with no amounts and a percentage one with no basis points
+    # are both refused by Polar's application, and neither is in the document's
+    # required list -- that list is the union of every variant's, and only `name`
+    # and `duration` are in all of them.
+    # `duration_in_months` belongs to a repeating discount and to no other, and
+    # every `type` arm carries it -- so the flattening cannot tell, and the
+    # OTHER discriminator is the one that decides. A dotted key names the
+    # discriminator it belongs to; a bare one means the resource's own.
+    "conflictWhen" => {
+      "duration.repeating" => %w[duration_in_months],
+    },
+    # And the other half: a repeating discount has to say for how long.
+    "requiredWhen" => {
+      "fixed" => %w[amounts],
+      "percentage" => %w[basis_points],
+      "duration.repeating" => %w[duration_in_months],
+    },
+  },
+
+  "polar_custom_field" => {
+    # Five kinds of custom field merged into one `properties` block, so which
+    # kind applies is not known until the discriminator is read -- and a schema
+    # cannot wait for that. Required in every variant is not the same as
+    # required by the configuration.
+    "optional" => %w[properties],
+    # WHICH FIELD BELONGS TO WHICH KIND, which the merge makes invisible: all five
+    # kinds share one block, so nothing in the schema says that `textarea` is a
+    # text field's and `options` a select one's.
+    "conflictWhen" => {
+      "text" => %w[textarea],
+      "number" => %w[ge le],
+      "select" => %w[options],
+    },
+  },
+
+  "polar_organization" => {
+    # Polar creates the organization itself from the access token and derives
+    # the slug; the document marks both required because its own form does, not
+    # because the API insists.
+    "optional" => %w[name socials feature_settings customer_email_settings
+                       subscription_settings],
+    # Every one of these toggles is filled in by Polar when a configuration
+    # leaves it out, and the document requires all of them because its own form
+    # submits all of them. Optional AND Computed says both: a configuration may
+    # name one, and the server will fill in the other thirteen.
+    "optionalComputed" => %w[
+                       order_confirmation subscription_cancellation
+                       subscription_confirmation subscription_cycled
+                       subscription_cycled_after_trial subscription_past_due
+                       subscription_revoked subscription_uncanceled
+                       subscription_updated
+                       allow_customer_updates allow_multiple_subscriptions
+                       benefit_revocation_grace_period prevent_trial_abuse
+                       proration_behavior
+                       issue_funding_enabled revops_enabled wallets_enabled
+                       member_model_enabled seat_based_pricing_enabled],
+    "computed" => %w[slug],
+    # A block whose children describe what the SERVER ANSWERS rather than what
+    # the request carries. Polar's own document has two schemas for these
+    # settings -- an Update to send and a Settings to read back -- and they are
+    # not the same fields; typed from the request, `feature_settings` would
+    # offer `checkout_localization_enabled` and hide `wallets_enabled`.
+    "responseBlocks" => %w[feature_settings],
+  },
+
+  "polar_checkout_link" => {
+    # The create body is a union of "one product", "one product price" and
+    # "these products". A configuration says which by spelling `product_ids`,
+    # and the answer carries the URL to send the customer to and the secret the
+    # public checkout is addressed by.
+    "include" => %w[products url client_secret],
+    "rename" => { "products" => "product_ids" },
+    "set" => %w[product_ids],
+    "sensitive" => %w[client_secret],
+    "computed" => %w[url client_secret payment_processor],
+    "optionalComputed" => %w[allow_discount_codes require_billing_address],
+  },
+
+  "polar_webhook_endpoint" => {
+
+    # `enabled` is only ever changed through the update body, and the secret
+    # only ever read -- there is no endpoint that hands one out at create, so it
+    # is computed and sensitive, and it is in the read answer.
+    "include" => %w[enabled secret],
+    "computed" => %w[secret],
+    # Polar generates the name when a configuration omits it.
+    "optionalComputed" => %w[enabled name],
+    "sensitive" => %w[secret],
+    # Which ones matter, not what order: a set of event types.
+    "set" => %w[events],
+    # `format: uri` says nothing Polar will not answer: it will not deliver to
+    # an http:// endpoint, and only Polar knows that.
+    "validators" => {
+      "url" => {
+        "pattern" => "^https://",
+        "message" => "webhook URL must use HTTPS",
+      },
+    },
+  },
+}.freeze
 
 # -- the document, read and never written ------------------------------------
 
@@ -174,15 +388,21 @@ end
 
 # A union whose branches are all scalars has no shape to flatten -- it needs one
 # type that can carry any of them. Numeric kinds widen to a number; differing
-# kinds have only a string in common. A `null` branch is nullability rather than
-# a branch, and a union that reduces to one type is left alone.
+# kinds have only a string in common.
+#
+# A `null` branch is nullability rather than a branch, and a union with ONE
+# branch left is that branch -- nothing to decide, and the generator collapses it
+# structurally. Several branches of the SAME kind do need saying: a
+# subscription's `trial_end` is `anyOf: [date-time, const "now", null]`, two
+# spellings of a string, and without an entry it stayed a composition and came
+# out `type SubscriptionUpdateTrialEnd struct{}`.
 def widening(members)
   typed = members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }
-  return nil if typed.empty?
+  return nil if typed.size < 2
   return nil unless typed.all? { |m| m.is_a?(Hash) && SCALAR_TYPES.include?(m["type"]) }
 
   kinds = typed.map { |m| m["type"] }.uniq
-  return nil if kinds.size < 2
+  return kinds.first if kinds.size == 1
 
   (kinds - %w[integer number]).empty? ? "number" : "string"
 end
@@ -214,8 +434,9 @@ def labels_for(node, variants)
 end
 
 # One entry per union position, keyed by where it sits: the schema name for a
-# named union, `<Schema>.<property>` for one declared inline, and
-# `<Schema>.<property>.items` for one inside an array.
+# named union, `<Schema>.<property>` for one declared inline,
+# `<Schema>.<property>.items` for one inside an array and
+# `<Schema>.<property>.values` for one behind `additionalProperties`.
 #
 # DESCENDS ONLY THROUGH `properties` AND `items`. A generic walk over every value
 # re-entered the `properties` map under the same key and never terminated; and a
@@ -272,10 +493,56 @@ def union_entries
       walk.call(schema, "#{key}.#{property}")
     end
     walk.call(node["items"], "#{key}.items") if node["items"]
+
+    # AND THROUGH A LONE SURVIVING BRANCH, under the same key, because that is
+    # what the position becomes: `CheckoutUpdate.customer_metadata` is
+    # `anyOf: [<a map>, null]`, so the map -- and the union inside it -- sits one
+    # level further down than the key the generator will look for.
+    if members && members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }.size == 1
+      walk.call(members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }.first, key)
+    end
+
+    # AND INTO A MAP'S VALUE TYPE. `metadata` is `additionalProperties: anyOf
+    # [string, integer, number, boolean]` -- a union in the one position the walk
+    # did not look, so nothing was said about it and openapi-generator lifted it
+    # into a model with no properties.
+    walk.call(node["additionalProperties"], "#{key}.values") if node["additionalProperties"].is_a?(Hash)
   end
 
   SCHEMAS.each { |name, schema| walk.call(schema, name) }
   entries
+end
+
+# -- named schemas that are not objects --------------------------------------
+
+# A NAMED SCHEMA WITH A SCALAR TYPE IS THAT SCALAR, however many enum values it
+# carries. openapi-generator gives each one a model and the templates render a
+# model as a struct, so without this the generator has to work out that
+# `WebhookEventType` is a string -- and where it cannot, it falls back to
+# `interface{}` and the attribute becomes a string holding JSON.
+#
+# Computed from the document rather than guessed at: `type` is right there.
+def scalar_schemas
+  SCHEMAS.each_with_object({}) do |(name, schema), found|
+    next unless schema.is_a?(Hash)
+    next unless SCALAR_TYPES.include?(schema["type"])
+
+    found[name] = schema["type"]
+  end
+end
+
+# -- named schemas that are only another name --------------------------------
+
+# A SCHEMA WHOSE WHOLE BODY IS A `$ref` IS THE THING IT POINTS AT.
+# `CheckoutCreate` is one of these, and openapi-generator mints a model for it
+# carrying none of the target's properties -- an empty struct where the checkout
+# resource's create body should be.
+def alias_schemas
+  SCHEMAS.each_with_object({}) do |(name, schema), found|
+    next unless schema.is_a?(Hash) && schema.keys == ["$ref"]
+
+    found[name] = schema["$ref"].split("/").last
+  end
 end
 
 # -- freeform positions ------------------------------------------------------
@@ -316,6 +583,38 @@ def json_properties
   names.uniq.sort
 end
 
+# -- the environments the document declares -----------------------------------
+
+# WHERE THIS PROVIDER CAN POINT, from the document's own `servers`.
+#
+# Every one of them carries an id, which is what a configuration spells --
+# `production`, `sandbox` -- rather than the URL, which is the server's answer to
+# being told. The version prefix is lifted on, because that is where the
+# generator puts it too: the whole API is at `/v1`, not one route of it.
+def environments
+  Array(SPEC["servers"]).each_with_object([]) do |server, found|
+    name = server.is_a?(Hash) ? server["x-speakeasy-server-id"] : nil
+    url = server.is_a?(Hash) ? server["url"] : nil
+    next unless name.is_a?(String) && url.is_a?(String)
+
+    found << { "name" => name, "url" => url.sub(%r{/\z}, "") + VERSION_PREFIX }
+  end
+end
+
+# -- the resource a collection is called ---------------------------------------
+
+# The Terraform name, from the collection path: every literal segment,
+# dash-to-underscore, plural stripped. The generator works this out the same way
+# (TerraformCodegen.toApiName) and the two have to agree, because the
+# per-resource answers above are keyed by the name a configuration spells.
+def terraform_name(collection)
+  segments = collection.delete_prefix(VERSION_PREFIX).split("/").reject { |s| s.empty? || s.start_with?("{") }
+  segments = segments.map { |s| s.tr("-", "_").sub(/s\z/, "") }
+  segments = segments.map { |s| s.sub(/_ss\z|_us\z|_sts\z/, "") }
+
+  "#{PROVIDER_NAME}_#{segments.join('_')}"
+end
+
 # -- validate against the contract, then write -------------------------------
 
 config = {
@@ -324,6 +623,18 @@ config = {
     "name" => PROVIDER_NAME,
     "address" => PROVIDER_ADDRESS,
     "version" => PROVIDER_VERSION,
+    "token" => {
+      "attribute" => TOKEN_ATTRIBUTE,
+      "scheme" => TOKEN_SCHEME,
+      "env" => TOKEN_ENV,
+      "description" => TOKEN_DESCRIPTION,
+    },
+    "environment" => {
+      "attribute" => ENVIRONMENT_ATTRIBUTE,
+      "env" => ENVIRONMENT_ENV,
+      "description" => ENVIRONMENT_DESCRIPTION,
+      "values" => environments,
+    },
   },
   "document" => {
     "versionPrefix" => VERSION_PREFIX,
@@ -333,8 +644,14 @@ config = {
   "attributes" => {
     "nestedMaxDepth" => NESTED_MAX_DEPTH,
     "json" => json_properties,
+    "drop" => DROP_EVERYWHERE,
+    "computed" => COMPUTED_EVERYWHERE,
+    "sensitive" => SENSITIVE_EVERYWHERE,
+    "byResource" => PER_RESOURCE,
   },
   "unions" => union_entries,
+  "scalars" => scalar_schemas,
+  "aliases" => alias_schemas,
 }
 
 # A hand-rolled check of the few things the schema insists on, because a JSON
@@ -353,6 +670,19 @@ config["unions"].each do |key, entry|
     abort("union #{key}: label #{label.inspect} is not snake_case") unless label.match?(/\A[a-z][a-z0-9_]*\z/)
   end
 end
+
+# The per-resource answers are keyed by the name a configuration spells, and a
+# typo in one is an attribute the generator will never look for -- so a key that
+# names no resource this provider generates fails here rather than silently
+# doing nothing.
+known = kept.map { |collection, _| terraform_name(collection) }.to_set
+PER_RESOURCE.each_key do |resource|
+  abort("byResource has #{resource.inspect}, which is not a resource: #{known.to_a.sort.join(', ')}") unless known.include?(resource)
+end
+
+# The document's own environments, or there is nothing for the `server` attribute
+# to be one of.
+abort("the document declares no named server to choose between") if environments.empty?
 
 File.write(CONFIG, "#{JSON.pretty_generate(config)}\n")
 
@@ -373,8 +703,7 @@ File.open(MANIFEST, "w") do |io|
   io.puts "|---|---|---|---|"
 
   kept.sort_by(&:first).each do |collection, group|
-    segments = collection.delete_prefix(VERSION_PREFIX).split("/").reject { |s| s.empty? || s.start_with?("{") }
-    name = "polar_#{segments.map { |s| s.tr('-', '_').sub(/s\z/, '') }.join('_')}"
+    name = terraform_name(collection)
     verbs = group[:paths].values.flatten.uniq.sort
     note = verbs.include?("DELETE") ? "" : "**no DELETE** -- cannot be destroyed or replaced"
 
@@ -397,6 +726,31 @@ File.open(MANIFEST, "w") do |io|
 
     io.puts "| `#{collection}` | #{why} |"
   end
+
+  io.puts
+  io.puts "## Per-resource attributes"
+  io.puts
+  io.puts "The document marks nothing readOnly, so every response-only field would reach"
+  io.puts "the schema, and every optional field the server fills in would be Optional AND"
+  io.puts "Computed. Both are decisions rather than consequences, and they are recorded in"
+  io.puts "this table -- which is what `attributes.drop` and `attributes.byResource` in the"
+  io.puts "generator configuration say."
+  io.puts
+  io.puts "| resource | dropped everywhere | not exposed | only the update/read body has it | optional AND computed | sensitive |"
+  io.puts "|---|---|---|---|---|---|"
+
+  kept.sort_by(&:first).each do |collection, _|
+    name = terraform_name(collection)
+    per = PER_RESOURCE[name] || {}
+
+    say = lambda do |key|
+      values = Array(per[key])
+      values.empty? ? "" : "`#{values.join('`, `')}`"
+    end
+
+    io.puts "| `#{name}` | `#{DROP_EVERYWHERE.join('`, `')}` | #{say.call('drop')} | " \
+             "#{say.call('include')} | #{say.call('optionalComputed')} | #{say.call('sensitive')} |"
+  end
 end
 
 widened = config["unions"].count { |_, e| e.key?("widen") }
@@ -404,4 +758,7 @@ warn("resources: #{kept.size} kept, #{dropped.size} dropped")
 warn("unions: #{config['unions'].size} (#{widened} widened to a scalar, " \
      "#{config['unions'].size - widened} flattened)")
 warn("json-only properties: #{config['attributes']['json'].size}")
+warn("environments: #{config['provider']['environment']['values'].map { |e| e['name'] }.join(', ')}")
+warn("per-resource attribute decisions: #{PER_RESOURCE.size}")
+warn("named scalar schemas: #{config['scalars'].size}, aliases: #{config['aliases'].size}")
 warn("wrote #{CONFIG.sub("#{ROOT}/", '')} and #{MANIFEST.sub("#{ROOT}/", '')}")

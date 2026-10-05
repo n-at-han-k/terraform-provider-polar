@@ -3,24 +3,22 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
-
 
 	"strings"
 
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -48,32 +46,27 @@ func (r *CustomerMemberResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Computed:    true,
 				Description: "The ID of the member.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"email": schema.StringAttribute{
 				Required:    true,
 				Description: "The email address of the member.",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The name of the member.",
 			},
 			"external_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The ID of the member in your system. This must be unique within the customer. ",
 			},
 			"role": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The role of the member within the customer.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"member",
+						"billing_manager",
+					),
+				},
+				Description: "",
 			},
 		},
 	}

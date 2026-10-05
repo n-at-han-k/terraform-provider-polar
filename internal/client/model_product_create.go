@@ -4,18 +4,18 @@ package client
 
 // ProductCreate - ProductCreate struct
 type ProductCreate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Name string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Visibility string `json:"visibility,omitempty"`
-	Prices []ProductCreateRecurringPrices `json:"prices,omitempty"`
-	Medias []string `json:"medias,omitempty"`
-	AttachedCustomFields []AttachedCustomFieldCreate `json:"attached_custom_fields,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	TrialInterval string `json:"trial_interval,omitempty"`
-	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	RecurringInterval string `json:"recurring_interval,omitempty"`
-	RecurringIntervalCount int32 `json:"recurring_interval_count,omitempty"`
-	MeterInterval string `json:"meter_interval,omitempty"`
-	MeterIntervalCount int32 `json:"meter_interval_count,omitempty"`
+	Metadata               map[string]string              `json:"metadata,omitempty"`
+	Name                   string                         `json:"name,omitempty"`
+	Description            string                         `json:"description,omitempty"`
+	Visibility             string                         `json:"visibility,omitempty"`
+	Prices                 []ProductCreateRecurringPrices `json:"prices,omitempty"`
+	Medias                 []string                       `json:"medias,omitempty"`
+	AttachedCustomFields   []AttachedCustomFieldCreate    `json:"attached_custom_fields,omitempty"`
+	OrganizationId         string                         `json:"organization_id,omitempty"`
+	TrialInterval          string                         `json:"trial_interval,omitempty"`
+	TrialIntervalCount     int32                          `json:"trial_interval_count,omitempty"`
+	RecurringInterval      string                         `json:"recurring_interval,omitempty"`
+	RecurringIntervalCount int32                          `json:"recurring_interval_count,omitempty"`
+	MeterInterval          string                         `json:"meter_interval,omitempty"`
+	MeterIntervalCount     int32                          `json:"meter_interval_count,omitempty"`
 }

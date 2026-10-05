@@ -4,7 +4,7 @@ package client
 
 // OrganizationCustomerPortalSettings - OrganizationCustomerPortalSettings struct
 type OrganizationCustomerPortalSettings struct {
-	Usage *CustomerPortalUsageSettings `json:"usage,omitempty"`
+	Usage        *CustomerPortalUsageSettings        `json:"usage,omitempty"`
 	Subscription *CustomerPortalSubscriptionSettings `json:"subscription,omitempty"`
-	Customer *CustomerPortalCustomerSettings `json:"customer,omitempty"`
+	Customer     *CustomerPortalCustomerSettings     `json:"customer,omitempty"`
 }

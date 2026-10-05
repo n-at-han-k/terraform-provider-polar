@@ -3,23 +3,20 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -47,18 +44,10 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
@@ -66,80 +55,95 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "The name of the meter. Will be shown on customer's invoices and usage.",
 			},
 			"unit": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The unit of the meter.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"scalar",
+						"token",
+						"custom",
+					),
+				},
+				Description: "",
 			},
 			"custom_label": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The label for the custom unit.",
 			},
 			"custom_multiplier": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
 			"filter": schema.SingleNestedAttribute{
-				Required:    true,
+				Required: true,
 				Attributes: map[string]schema.Attribute{
 					"conjunction": schema.StringAttribute{
-						Required:    true,
+						Required: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								"and",
+								"or",
+							),
+						},
 						Description: "",
 					},
 					"clauses": schema.ListNestedAttribute{
-						Required:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"property": schema.StringAttribute{
-							Required:    true,
-							Description: "",
+						Required: true,
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"property": schema.StringAttribute{
+									Required:    true,
+									Description: "",
+								},
+								"operator": schema.StringAttribute{
+									Required: true,
+									Validators: []validator.String{
+										stringvalidator.OneOf(
+											"eq",
+											"ne",
+											"gt",
+											"gte",
+											"lt",
+											"lte",
+											"like",
+											"not_like",
+										),
+									},
+									Description: "",
+								},
+								"value": schema.StringAttribute{
+									Required:    true,
+									Description: "",
+								},
+							},
 						},
-						"operator": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
-						"value": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
-					},
-				},
 						Description: "",
 					},
 				},
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
 			"aggregation": schema.SingleNestedAttribute{
-				Required:    true,
+				Required: true,
 				Attributes: map[string]schema.Attribute{
-					"count_func": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"avg_func": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"unique_func": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
 					"property": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
+					},
+					"func": schema.StringAttribute{
+						Required: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								"avg",
+								"count",
+								"max",
+								"min",
+								"sum",
+								"unique",
+							),
+						},
+						Description: "Which variant this is. Selects which of the optional blocks above applies.",
 					},
 				},
-				Description: "",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the organization owning the meter.",
+				Description: "The aggregation to apply on the filtered events to calculate the meter.",
 			},
 		},
 	}

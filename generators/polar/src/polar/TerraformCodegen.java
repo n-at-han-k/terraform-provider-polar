@@ -78,12 +78,64 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      *                    refused to flatten because they are recursive (a
      *                    meter's `filter`, whose clauses contain filters).
      */
+    /** Named schema -> the scalar it is, from the config's `scalars`. */
+    private final Map<String, String> namedScalars = new LinkedHashMap<>();
+
+    /** Named schema -> the schema it is only another name for. */
+    private final Map<String, String> aliases = new LinkedHashMap<>();
+
     private boolean nestedAttributes = true;
     private int nestedMaxDepth = 3;
     private final Set<String> jsonAttributes = new HashSet<>();
 
+    /**
+     * Property names no resource exposes, at the top level or inside a block.
+     *
+     * The document marks nothing readOnly, so every response-only field would
+     * otherwise reach the schema -- and an attribute nobody can write is noise in
+     * `tofu plan`, not a fact about the resource.
+     */
+    private final Set<String> droppedAttributes = new HashSet<>();
+
+    /**
+     * Property names that are Optional AND Computed wherever they appear.
+     *
+     * The one combination the document never asks for and a server default does:
+     * a configuration may leave it out, and the server then fills it in. Optional
+     * alone plans null and the read answers a value, which is "Provider produced
+     * inconsistent result after apply" on every apply.
+     */
+    private final Set<String> computedAttributes = new HashSet<>();
+
+    /** Property names that are Sensitive wherever they appear. */
+    private final Set<String> sensitiveAttributes = new HashSet<>();
+
+    /**
+     * Terraform resource name -> what this one does with each of its attributes.
+     *
+     * The hand-written provider's schema, resource by resource. Everything here
+     * is a judgement the document cannot settle: which attribute a resource does
+     * not expose, which one it derives, which one is only its update body that
+     * can write, and what a configuration is to call it.
+     */
+    private final Map<String, Map<String, Object>> byResource = new LinkedHashMap<>();
+
+    private static final String REF_PREFIX = "#/components/schemas/";
+
     public TerraformCodegen() {
         super();
+    }
+
+    /**
+     * NOT BEFORE THE CONFIG IS APPLIED. DefaultGenerator lifts inline schemas
+     * into components before it calls preprocessOpenAPI, which left every pass
+     * here looking at `$ref: Value` where the config -- and Polar's document --
+     * say `CustomFieldSelectOption.value`. The generator runs the same pass
+     * itself, at the end of preprocessOpenAPI.
+     */
+    @Override
+    public boolean getUseInlineModelResolver() {
+        return false;
     }
 
     @Override
@@ -175,9 +227,17 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         liftVersionPrefix(openAPI);
         dropPathsNotConfigured(openAPI);
+        dropOperationsNoResourceCalls(openAPI);
         dropNullTypedProperties(openAPI);
+        collapseNullableUnions(openAPI);
         applyUnions(openAPI);
+        inlineAliases(openAPI);
+        inlineNamedScalars(openAPI);
         pruneUnreachableSchemas(openAPI);
+
+        // AND NOW UPSTREAM'S LIFTING, with the document saying what the config
+        // says it says. See InlineModels.
+        org.openapitools.codegen.InlineModels.flatten(openAPI);
     }
 
     /**
@@ -209,17 +269,66 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         // The provider's own identity comes from the config too, so there is one
         // place that says what this provider is called and where it is served.
+        // `token` and `environment` are objects and are flattened below, one
+        // key at a time -- stringifying them here would leave a `providerToken`
+        // behind holding a Java map's toString.
         Map<String, Object> provider = section("provider");
-        provider.forEach((key, value) -> additionalProperties().put(
-                "provider" + key.substring(0, 1).toUpperCase(Locale.ROOT) + key.substring(1),
-                String.valueOf(value)));
+        provider.forEach((key, value) -> {
+            if ("token".equals(key) || "environment".equals(key)) {
+                return;
+            }
+            additionalProperties().put(
+                    "provider" + key.substring(0, 1).toUpperCase(Locale.ROOT) + key.substring(1),
+                    String.valueOf(value));
+        });
         additionalProperties().put("providerName", String.valueOf(provider.get("name")));
+
+        // NAMED SCHEMAS THAT ARE NOT OBJECTS, stated rather than worked out. Where
+        // the generator had to guess this it fell back to interface{}, which is
+        // how a list of a string enum became a string holding JSON.
+        section("scalars").forEach((name, type) -> namedScalars.put(name, String.valueOf(type)));
+        section("aliases").forEach((name, target) -> aliases.put(name, String.valueOf(target)));
 
         Map<String, Object> attributes = section("attributes");
         if (attributes.get("nestedMaxDepth") != null) {
             nestedMaxDepth = Integer.parseInt(String.valueOf(attributes.get("nestedMaxDepth")));
         }
         jsonAttributes.addAll(strings(attributes, "json"));
+        droppedAttributes.addAll(strings(attributes, "drop"));
+        computedAttributes.addAll(strings(attributes, "computed"));
+        sensitiveAttributes.addAll(strings(attributes, "sensitive"));
+
+        // The provider's CREDENTIAL and the ENVIRONMENTS it can point at, which
+        // the templates render rather than the templates deciding. The
+        // environments are the document's own servers, each carrying the id a
+        // configuration spells; the attribute name and the variable are ours.
+        for (String key : new String[] {"token", "environment"}) {
+            Map<String, Object> part = map(provider.get(key));
+            part.forEach((name, value) -> additionalProperties().put(
+                    "provider" + key.substring(0, 1).toUpperCase(Locale.ROOT) + key.substring(1)
+                            + name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1),
+                    value));
+            // AND THE GO FIELD NAME. terraform-plugin-framework reflects over the
+            // provider model, and an unexported field is not a field it can see:
+            // "Object defines fields not found in struct".
+            additionalProperties().put(
+                    "provider" + key.substring(0, 1).toUpperCase(Locale.ROOT) + key.substring(1)
+                            + "Go",
+                    camelize(underscore(String.valueOf(part.get("attribute")))
+                            .toLowerCase(Locale.ROOT)));
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> perResource = (Map<String, Object>) attributes.get("byResource");
+        if (perResource != null) {
+            perResource.forEach((resource, value) ->
+                    byResource.put(resource, map(value)));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> map(Object value) {
+        return value instanceof Map ? (Map<String, Object>) value : new LinkedHashMap<>();
     }
 
     /**
@@ -282,6 +391,51 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     }
 
     /**
+     * AN OPERATION NO RESOURCE CALLS IS NOT IN THE DOCUMENT, so nothing is built
+     * for it.
+     *
+     * The same rule {@link #addOperationToGroup} applies, applied to the document
+     * instead of to the grouping: a list and an action endpoint were dropped from
+     * the resource but their schemas were still here, and a list's QUERY
+     * PARAMETERS are where `anyOf` filters live -- `status`, `organization_id`,
+     * `exclude_ids`. Each is a titled inline union, so each got a model of its
+     * own, {@code type StatusFilter struct{}}, for an operation the provider
+     * never calls.
+     */
+    private void dropOperationsNoResourceCalls(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null) {
+            return;
+        }
+
+        io.swagger.v3.oas.models.Paths kept = new io.swagger.v3.oas.models.Paths();
+
+        openAPI.getPaths().forEach((path, item) -> {
+            item.readOperationsMap().forEach((method, operation) -> {
+                if (!calls(path, method.name(), operation)) {
+                    item.operation(method, null);
+                }
+            });
+
+            if (!item.readOperations().isEmpty()) {
+                kept.addPathItem(path, item);
+            }
+        });
+
+        openAPI.setPaths(kept);
+    }
+
+    /** Whether a resource calls this operation at all. */
+    private boolean calls(String path, String method, Operation operation) {
+        boolean member = isMember(collectionOf(path), path);
+
+        return member
+                || "PUT".equals(method)
+                || "PATCH".equals(method)
+                || "DELETE".equals(method)
+                || ("POST".equals(method) && answers(operation, "201"));
+    }
+
+    /**
      * OpenAPI 3.1 lets a property be pinned to {@code null}, and Go has no such
      * type. Polar says "this variant has no such field" that way: a one-time
      * product's `recurring_interval` is `{"type": "null"}`, and the generated
@@ -334,42 +488,221 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         return types != null && types.size() == 1 && types.contains("null");
     }
 
-    /** Every schema in the document, components and inline alike. */
-    private void eachSchema(OpenAPI openAPI, java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema> visit) {
-        Set<io.swagger.v3.oas.models.media.Schema> seen =
-                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    /**
+     * A UNION WITH ONE BRANCH LEFT IS THAT BRANCH.
+     *
+     * Polar spells "optional" as a union with null: a subscription's `trial_end`
+     * is {@code anyOf: [date-time, "now", null]}. Null is nullability rather than
+     * a branch, so where one branch survives there is nothing for the config to
+     * decide -- but it is still a composition, and openapi-generator lifts a
+     * composition into a model of its own, which came out {@code type
+     * SubscriptionUpdateTrialEnd struct{}}. Nullability is carried by the pointer
+     * the field already is.
+     *
+     * Only where ONE branch survives. A union of several scalars is a judgement
+     * -- string or number -- and that is the config's `unions`.
+     */
+    private void collapseNullableUnions(OpenAPI openAPI) {
+        eachSchema(openAPI, schema -> {
+            List<io.swagger.v3.oas.models.media.Schema> branches = schema.getAnyOf() != null
+                    ? schema.getAnyOf()
+                    : schema.getOneOf();
 
-        java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema>[] walk =
-                new java.util.function.Consumer[1];
-
-        walk[0] = schema -> {
-            if (schema == null || !seen.add(schema)) {
+            if (branches == null) {
                 return;
             }
 
+            List<io.swagger.v3.oas.models.media.Schema> typed = new ArrayList<>();
+            for (io.swagger.v3.oas.models.media.Schema branch : branches) {
+                if (!pinnedToNull(branch)) {
+                    typed.add(branch);
+                }
+            }
+
+            if (typed.size() != 1) {
+                return;
+            }
+
+            io.swagger.v3.oas.models.media.Schema only = typed.get(0);
+
+            schema.setAnyOf(null);
+            schema.setOneOf(null);
+
+            if (only.get$ref() != null) {
+                schema.set$ref(only.get$ref());
+                return;
+            }
+
+            schema.setType(only.getType());
+            schema.setTypes(only.getTypes());
+            schema.setFormat(only.getFormat());
+            schema.setEnum(only.getEnum());
+            schema.setItems(only.getItems());
+            schema.setProperties(only.getProperties());
+            schema.setAdditionalProperties(only.getAdditionalProperties());
+        });
+    }
+
+    /**
+     * A NAMED SCHEMA THAT IS ONLY ANOTHER NAME IS NOT A SCHEMA.
+     *
+     * {@code CheckoutCreate} is {@code {"$ref": "CheckoutProductsCreate"}} and
+     * nothing else. openapi-generator mints a model for it all the same, with
+     * none of the target's properties -- {@code type CheckoutCreate struct{}},
+     * the create body of the checkout resource. The config says what each one
+     * stands for; every reference goes to the thing itself.
+     */
+    private void inlineAliases(OpenAPI openAPI) {
+        if (aliases.isEmpty()) {
+            return;
+        }
+
+        eachSchema(openAPI, schema -> {
+            String ref = schema.get$ref();
+            if (ref == null || !ref.startsWith(REF_PREFIX)) {
+                return;
+            }
+
+            String target = aliases.get(ref.substring(REF_PREFIX.length()));
+            if (target != null) {
+                schema.set$ref(REF_PREFIX + target);
+            }
+        });
+    }
+
+    /**
+     * A NAMED SCALAR IS WRITTEN WHERE IT IS USED, so no model is ever minted for
+     * it.
+     *
+     * `WebhookEventType` is `type: string` with forty enum values, and
+     * openapi-generator mints a model for every named schema while the templates
+     * render a model as a struct -- `type WebhookEventType struct{}`. A webhook
+     * endpoint's `events` was then a list of that, which no attribute type
+     * matches, and the position fell back to a string holding JSON: "attribute
+     * events: string required, but have tuple".
+     *
+     * Patching the Go afterwards cannot win, because the element's own model file
+     * is written too and then the collection and the element disagree. Replacing
+     * the reference with the scalar the config states leaves nothing to patch:
+     * `events` is `[]string` because the document says so.
+     *
+     * The config says which schemas these are -- bin/generate-config reads
+     * `type` off each one -- so there is nothing here to work out.
+     */
+    private void inlineNamedScalars(OpenAPI openAPI) {
+        if (namedScalars.isEmpty() || openAPI.getComponents() == null
+                || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        Map<String, io.swagger.v3.oas.models.media.Schema> schemas =
+                openAPI.getComponents().getSchemas();
+
+        eachSchema(openAPI, schema -> {
+            String ref = schema.get$ref();
+            if (ref == null || !ref.startsWith(REF_PREFIX)) {
+                return;
+            }
+
+            String name = ref.substring(REF_PREFIX.length());
+            String type = namedScalars.get(name);
+            if (type == null) {
+                return;
+            }
+
+            io.swagger.v3.oas.models.media.Schema target = schemas.get(name);
+
+            schema.set$ref(null);
+            schema.setType(type);
+            // OPENAPI 3.1 CARRIES TYPE AS A SET and this generator reads the set
+            // first, so setting only the singular leaves the position typeless.
+            schema.setTypes(new LinkedHashSet<>(java.util.List.of(type)));
+
+            if (target != null) {
+                // The enum comes along: a configuration naming a value Polar does
+                // not have is then refused by the schema rather than by the API.
+                schema.setEnum(target.getEnum());
+                schema.setFormat(target.getFormat());
+            }
+        });
+    }
+
+    /**
+     * Every schema in the document: components, request bodies, responses and
+     * parameters alike.
+     *
+     * COMPONENTS ALONE IS NOT THE DOCUMENT. A named scalar reached only from a
+     * query parameter -- `BenefitSortProperty`, off `sorting` -- kept its
+     * reference, stayed reachable, and got a model of its own: `type
+     * BenefitSortProperty struct{}` again.
+     */
+    private void eachSchema(OpenAPI openAPI, java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema> visit) {
+        Set<Object> seen = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+        if (openAPI.getComponents() != null) {
+            walk(openAPI.getComponents().getSchemas(), visit, seen);
+        }
+        walk(openAPI.getPaths(), visit, seen);
+    }
+
+    /** Every schema under any node of the document, visited once. */
+    private void walk(Object node, java.util.function.Consumer<io.swagger.v3.oas.models.media.Schema> visit,
+                      Set<Object> seen) {
+        if (node == null || !seen.add(node)) {
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.media.Schema) {
+            io.swagger.v3.oas.models.media.Schema schema = (io.swagger.v3.oas.models.media.Schema) node;
+
             visit.accept(schema);
 
-            if (schema.getProperties() != null) {
-                new ArrayList<Object>(schema.getProperties().values())
-                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
-            }
-            walk[0].accept(schema.getItems());
-            if (schema.getOneOf() != null) {
-                new ArrayList<Object>(schema.getOneOf())
-                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
-            }
-            if (schema.getAnyOf() != null) {
-                new ArrayList<Object>(schema.getAnyOf())
-                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
-            }
-            if (schema.getAllOf() != null) {
-                new ArrayList<Object>(schema.getAllOf())
-                        .forEach(child -> walk[0].accept((io.swagger.v3.oas.models.media.Schema) child));
-            }
-        };
+            walk(schema.getProperties(), visit, seen);
+            walk(schema.getItems(), visit, seen);
+            walk(schema.getOneOf(), visit, seen);
+            walk(schema.getAnyOf(), visit, seen);
+            walk(schema.getAllOf(), visit, seen);
+            // A map's VALUE TYPE hangs off additionalProperties and nowhere else,
+            // which is where a product's `metadata` keeps its named scalar.
+            walk(schema.getAdditionalProperties(), visit, seen);
+            return;
+        }
 
-        if (openAPI.getComponents() != null && openAPI.getComponents().getSchemas() != null) {
-            new ArrayList<>(openAPI.getComponents().getSchemas().values()).forEach(walk[0]);
+        if (node instanceof Map) {
+            // A COPY: a visit may remove what it was shown -- a property pinned
+            // to null goes out of the map it was found in.
+            new ArrayList<>(((Map<?, ?>) node).values()).forEach(value -> walk(value, visit, seen));
+            return;
+        }
+
+        if (node instanceof Iterable) {
+            new ArrayList<>((java.util.Collection<?>) node).forEach(value -> walk(value, visit, seen));
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.PathItem) {
+            ((io.swagger.v3.oas.models.PathItem) node).readOperations()
+                    .forEach(operation -> walk(operation, visit, seen));
+            return;
+        }
+
+        if (node instanceof io.swagger.v3.oas.models.Operation) {
+            io.swagger.v3.oas.models.Operation operation = (io.swagger.v3.oas.models.Operation) node;
+
+            if (operation.getRequestBody() != null && operation.getRequestBody().getContent() != null) {
+                operation.getRequestBody().getContent().values()
+                        .forEach(media -> walk(media.getSchema(), visit, seen));
+            }
+            if (operation.getResponses() != null) {
+                operation.getResponses().values().forEach(response -> {
+                    if (response.getContent() != null) {
+                        response.getContent().values().forEach(media -> walk(media.getSchema(), visit, seen));
+                    }
+                });
+            }
+            if (operation.getParameters() != null) {
+                operation.getParameters().forEach(parameter -> walk(parameter.getSchema(), visit, seen));
+            }
         }
     }
 
@@ -439,13 +772,6 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                     // -- `Value interface{}` in the client and a JSON attribute in
                     // the schema, exactly as before the widening.
                     node.setTypes(new LinkedHashSet<>(java.util.List.of(widen)));
-                    // AND THE TITLE HAS TO GO. openapi-generator mints a MODEL for
-                    // any inline schema carrying a title, so a widened
-                    // `title: "Value"` came back as `dataType=Value`, a named
-                    // model of a scalar -- which the client then rendered
-                    // `Value interface{}`, exactly the JSON blob the widening
-                    // existed to remove.
-                    node.setTitle(null);
                     continue;
                 }
 
@@ -474,6 +800,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         for (int i = 1; i < parts.length && node != null; i++) {
             if ("items".equals(parts[i])) {
                 node = node.getItems();
+            } else if ("values".equals(parts[i])) {
+                // A MAP'S VALUE TYPE: `metadata.values` is the anyOf behind
+                // `additionalProperties`, which is a union like any other.
+                node = node.getAdditionalProperties() instanceof io.swagger.v3.oas.models.media.Schema
+                        ? (io.swagger.v3.oas.models.media.Schema) node.getAdditionalProperties()
+                        : null;
             } else if (node.getProperties() != null) {
                 node = (io.swagger.v3.oas.models.media.Schema) node.getProperties().get(parts[i]);
             } else {
@@ -482,6 +814,38 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         }
 
         return node;
+    }
+
+    /** The schema a `$ref` names, or the schema itself when it is not one. */
+    private io.swagger.v3.oas.models.media.Schema deref(
+            io.swagger.v3.oas.models.media.Schema schema,
+            Map<String, io.swagger.v3.oas.models.media.Schema> schemas) {
+        if (schema == null || schema.get$ref() == null || !schema.get$ref().startsWith(REF_PREFIX)) {
+            return schema;
+        }
+
+        return schemas.get(schema.get$ref().substring(REF_PREFIX.length()));
+    }
+
+    /**
+     * `type: null` AND NOTHING ELSE, which is how one arm of a union says that
+     * the position is the thing it does NOT have. Written two ways: a 3.0
+     * document carries one `type`, and a 3.1 one carries a set of them.
+     */
+    private boolean nullOnly(io.swagger.v3.oas.models.media.Schema schema) {
+        if ("null".equals(schema.getType())) {
+            return true;
+        }
+        return schema.getTypes() != null && schema.getTypes().size() == 1
+                && schema.getTypes().contains("null");
+    }
+
+    /** One property against one label, once. */
+    private void own(Map<String, List<String>> owned, String label, String property) {
+        List<String> theirs = owned.computeIfAbsent(label, ignored -> new ArrayList<>());
+        if (!theirs.contains(property)) {
+            theirs.add(property);
+        }
     }
 
     private void clearComposition(io.swagger.v3.oas.models.media.Schema node) {
@@ -505,6 +869,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // property name -> variant -> that variant's schema for it
         Map<String, Map<String, io.swagger.v3.oas.models.media.Schema>> owners = new LinkedHashMap<>();
         List<List<String>> requiredPerVariant = new ArrayList<>();
+        Map<String, List<String>> requiredPerLabel = new LinkedHashMap<>();
 
         for (String variant : labels.keySet()) {
             io.swagger.v3.oas.models.media.Schema schema = schemas.get(variant);
@@ -513,6 +878,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             }
 
             requiredPerVariant.add(schema.getRequired() == null
+                    ? new ArrayList<>() : new ArrayList<>(schema.getRequired()));
+            requiredPerLabel.put(labels.get(variant), schema.getRequired() == null
                     ? new ArrayList<>() : new ArrayList<>(schema.getRequired()));
 
             schema.getProperties().forEach((name, property) -> {
@@ -526,16 +893,61 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         Map<String, io.swagger.v3.oas.models.media.Schema> merged = new LinkedHashMap<>();
 
+        // WHICH ATTRIBUTES BELONG TO WHICH VARIANT, for the plan-time rules that
+        // refuse one a discriminator did not ask for and one it does ask for and
+        // is missing. Recorded here, where the answer is, rather than worked out
+        // again later from names that have been through two renames by then.
+        Map<String, List<String>> owned = new LinkedHashMap<>();
+
+        // WHICH FIELDS A MERGED BLOCK CARRIES FOR WHICH VARIANT. Separate from
+        // the renamed attributes above because the two answer different
+        // questions: a renamed attribute is a block the configuration picks one
+        // of, and a merged field is a field inside the one block every variant
+        // shares.
+        Map<String, List<String>> inside = new LinkedHashMap<>();
+
+        // WHICH PROPERTY BELONGS TO EXACTLY ONE VARIANT. A property only one
+        // variant declares trivially "agrees" with itself, so it merges straight
+        // through -- and nothing downstream knew it was the thing that PICKS that
+        // variant. A union with no discriminator has nothing else to go on: the
+        // arms of a checkout link's create body are told apart by `product_id`
+        // against `product_price_id` against `products`, and exactly one of them
+        // belongs in a configuration.
+        Map<String, List<String>> exclusive = new LinkedHashMap<>();
+
         owners.forEach((property, byVariant) -> {
             boolean agreed = new HashSet<>(byVariant.values()).size() == 1;
 
+            if (byVariant.size() == 1) {
+                exclusive.computeIfAbsent(labels.get(byVariant.keySet().iterator().next()),
+                        ignored -> new ArrayList<>()).add(property);
+            }
+
             if (agreed) {
                 merged.put(property, byVariant.values().iterator().next());
+                // AGREED IS NOT THE SAME AS SHARED. A property every arm spells
+                // the same way needs no rule; one that only SOME arms declare
+                // agrees with itself trivially, and it is still a field the
+                // others must not carry -- a fixed discount's `amount` and
+                // `currency` against a percentage one.
+                if (byVariant.size() < labels.size()) {
+                    byVariant.forEach((variant, schema) -> own(inside, labels.get(variant), property));
+                }
             } else if (mergeConflicts) {
-                merged.put(property, mergeObjects(byVariant.values()));
+                merged.put(property, mergeObjects(byVariant.values(), schemas));
+                // ONLY WHERE SOME VARIANT LACKS IT. A property every variant
+                // carries is shared, so there is nothing for the plan to refuse
+                // -- and the block itself is not a field of itself.
+                if (byVariant.size() < labels.size()) {
+                    byVariant.forEach((variant, schema) -> own(inside, labels.get(variant), property));
+                }
             } else {
-                byVariant.forEach((variant, schema) ->
-                        merged.put(labels.get(variant) + "_" + property, schema));
+                byVariant.forEach((variant, schema) -> {
+                    String attribute = labels.get(variant) + "_" + property;
+                    merged.put(attribute, schema);
+                    owned.computeIfAbsent(labels.get(variant), ignored -> new ArrayList<>())
+                            .add(attribute);
+                });
             }
         });
 
@@ -567,6 +979,72 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         node.setProperties(merged);
         node.setRequired(required.isEmpty() ? null : required);
 
+        // THE DISCRIMINATOR'S OWN RULES, carried on the schema so that the model
+        // built from it can refuse a block that contradicts it and ask for the
+        // one its own variant demands. openapi-generator keeps a schema's
+        // extensions, so this survives into CodegenModel.
+        // THE ARM THAT IS THE ABSENCE OF THE OTHER. A product is recurring or
+        // one-time, and the one-time arm declares nothing of its own: it IS not
+        // having `recurring_interval`. So there is no "exactly one of" to write
+        // -- the rule is that the recurring arm's own fields may only be set
+        // when the field that arm REQUIRES is, and that required field is the
+        // only thing naming the arm.
+        //
+        // The document says it with `type: null` on the other arm, which is
+        // pruned long before this runs. Required-and-exclusive is the same fact,
+        // and it survives.
+        if (discriminator == null && exclusive.size() == 1
+                && exclusive.size() < labels.values().stream().distinct().count()) {
+            String label = exclusive.keySet().iterator().next();
+            List<String> owns = exclusive.get(label);
+            List<String> marks = new ArrayList<>(owns);
+            marks.retainAll(requiredPerLabel.getOrDefault(label, new ArrayList<>()));
+
+            if (marks.size() == 1) {
+                List<String> needs = new ArrayList<>(owns);
+                needs.remove(marks.get(0));
+
+                if (!needs.isEmpty()) {
+                    if (node.getExtensions() == null) {
+                        node.setExtensions(new LinkedHashMap<>());
+                    }
+                    Map<String, Object> rules = new LinkedHashMap<>();
+                    rules.put("x-terraform-marker", marks.get(0));
+                    rules.put("x-terraform-needs", needs);
+                    node.getExtensions().put("x-terraform-also-requires", rules);
+                }
+            }
+        }
+
+        // NO DISCRIMINATOR TO READ, so the rule is "exactly one of these", one
+        // representative per variant. Only where every variant has one: a variant
+        // that declares nothing of its own cannot be picked, and an
+        // ExactlyOneOf missing an arm would refuse a configuration that is fine.
+        if (discriminator == null && !exclusive.isEmpty()
+                && exclusive.size() == labels.size()) {
+            if (node.getExtensions() == null) {
+                node.setExtensions(new LinkedHashMap<>());
+            }
+            List<String> picks = new ArrayList<>();
+            exclusive.values().forEach(theirs -> picks.add(theirs.get(0)));
+            node.getExtensions().put("x-terraform-exclusive", picks);
+        }
+
+        if (discriminator != null) {
+            if (node.getExtensions() == null) {
+                node.setExtensions(new LinkedHashMap<>());
+            }
+
+            Map<String, Object> rules = new LinkedHashMap<>();
+            rules.put("x-terraform-discriminator", discriminator);
+            owned.forEach((label, attributes) -> rules.put(label, attributes));
+            node.getExtensions().put("x-terraform-variants", rules);
+
+            if (!inside.isEmpty()) {
+                node.getExtensions().put("x-terraform-merged", new LinkedHashMap<>(inside));
+            }
+        }
+
         // AN INLINE UNION NEEDS A NAME. openapi-generator names an inline schema
         // after the position it first met that shape in and reuses one model for
         // every position that matches -- so two unrelated flattened unions became
@@ -592,7 +1070,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 node.setProperties(null);
                 node.setRequired(null);
                 node.setType(null);
-                node.set$ref("#/components/schemas/" + name);
+                node.set$ref(REF_PREFIX + name);
             }
         }
     }
@@ -606,16 +1084,25 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * Where the versions are not all objects there is nothing to merge, and the
      * first wins -- the alternative is inventing a type the document does not
      * describe.
+     *
+     * A VERSION IS USUALLY A `$ref`, and a reference has no properties of its
+     * own: asking it for them found none, so the merge bailed on the first
+     * variant and kept only ITS fields. A custom field's `properties` came out
+     * with the text variant's six and without `ge`, `le` or `options` -- a select
+     * field with no options.
      */
     @SuppressWarnings("unchecked")
     private io.swagger.v3.oas.models.media.Schema mergeObjects(
-            java.util.Collection<io.swagger.v3.oas.models.media.Schema> versions) {
+            java.util.Collection<io.swagger.v3.oas.models.media.Schema> versions,
+            Map<String, io.swagger.v3.oas.models.media.Schema> schemas) {
         io.swagger.v3.oas.models.media.ObjectSchema merged =
                 new io.swagger.v3.oas.models.media.ObjectSchema();
         Map<String, io.swagger.v3.oas.models.media.Schema> properties = new LinkedHashMap<>();
         List<String> required = null;
 
-        for (io.swagger.v3.oas.models.media.Schema version : versions) {
+        for (io.swagger.v3.oas.models.media.Schema named : versions) {
+            io.swagger.v3.oas.models.media.Schema version = deref(named, schemas);
+
             if (version == null || version.getProperties() == null) {
                 return versions.iterator().next();
             }
@@ -670,63 +1157,14 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /** Every component schema name a node references, at any depth. */
     private List<String> refsUnder(Object node) {
         List<String> found = new ArrayList<>();
-        collectRefs(node, found, java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+
+        walk(node, schema -> {
+            if (schema.get$ref() != null && schema.get$ref().startsWith(REF_PREFIX)) {
+                found.add(schema.get$ref().substring(REF_PREFIX.length()));
+            }
+        }, java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+
         return found;
-    }
-
-    private void collectRefs(Object node, List<String> found, Set<Object> seen) {
-        if (node == null || !seen.add(node)) {
-            return;
-        }
-
-        if (node instanceof io.swagger.v3.oas.models.media.Schema) {
-            io.swagger.v3.oas.models.media.Schema schema = (io.swagger.v3.oas.models.media.Schema) node;
-            if (schema.get$ref() != null && schema.get$ref().startsWith("#/components/schemas/")) {
-                found.add(schema.get$ref().substring("#/components/schemas/".length()));
-            }
-            collectRefs(schema.getProperties(), found, seen);
-            collectRefs(schema.getItems(), found, seen);
-            collectRefs(schema.getOneOf(), found, seen);
-            collectRefs(schema.getAnyOf(), found, seen);
-            collectRefs(schema.getAllOf(), found, seen);
-            collectRefs(schema.getAdditionalProperties(), found, seen);
-            return;
-        }
-
-        if (node instanceof Map) {
-            ((Map<?, ?>) node).values().forEach(value -> collectRefs(value, found, seen));
-            return;
-        }
-
-        if (node instanceof Iterable) {
-            ((Iterable<?>) node).forEach(value -> collectRefs(value, found, seen));
-            return;
-        }
-
-        if (node instanceof io.swagger.v3.oas.models.PathItem) {
-            ((io.swagger.v3.oas.models.PathItem) node).readOperations()
-                    .forEach(operation -> collectRefs(operation, found, seen));
-            return;
-        }
-
-        if (node instanceof io.swagger.v3.oas.models.Operation) {
-            io.swagger.v3.oas.models.Operation operation = (io.swagger.v3.oas.models.Operation) node;
-            if (operation.getRequestBody() != null && operation.getRequestBody().getContent() != null) {
-                operation.getRequestBody().getContent().values()
-                        .forEach(media -> collectRefs(media.getSchema(), found, seen));
-            }
-            if (operation.getResponses() != null) {
-                operation.getResponses().values().forEach(response -> {
-                    if (response.getContent() != null) {
-                        response.getContent().values()
-                                .forEach(media -> collectRefs(media.getSchema(), found, seen));
-                    }
-                });
-            }
-            if (operation.getParameters() != null) {
-                operation.getParameters().forEach(parameter -> collectRefs(parameter.getSchema(), found, seen));
-            }
-        }
     }
 
     /**
@@ -1042,6 +1480,15 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         processed.getOperations().put("hasIdAttribute", tf != null
                 && tf.stream().anyMatch(a -> String.valueOf(idName).equals(a.get("goName"))));
 
+        // WHICH ATTRIBUTE ADDRESSES THE RESOURCE, which is what a DATA SOURCE is
+        // given rather than what it answers: `data "polar_meter" "test" { id =
+        // ... }`, and everything else Computed. The resource reads the same list
+        // and does not look at this.
+        if (tf != null) {
+            tf.forEach(a -> a.put("isSelector",
+                    String.valueOf(idName).equals(a.get("goName"))));
+        }
+
         // Exactly which imports the model file needs. Upstream puts its import
         // block inside {{#responseModel}}, so a resource with no response
         // model got a struct and no imports at all -- and an import Go does
@@ -1076,6 +1523,13 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         boolean fromJson = response && tf != null && tf.stream().anyMatch(a ->
                 Boolean.TRUE.equals(a.get("isJson")) && Boolean.TRUE.equals(a.get("readBack")));
 
+        // attr, for the []attr.Value a types.List is built from. Only where one
+        // is actually built -- an import Go does not need is as fatal as one it
+        // does.
+        boolean usesAttr = tf != null && tf.stream().anyMatch(a ->
+                Boolean.TRUE.equals(a.get("isScalarList")) || Boolean.TRUE.equals(a.get("isScalarMap")));
+
+        processed.getOperations().put("usesAttr", usesAttr);
         processed.getOperations().put("usesTypes", usesTypes || anyNested);
         processed.getOperations().put("usesJsontypes", usesJson);
         processed.getOperations().put("usesEncodingJson", toJson || fromJson || usesJson);
@@ -1152,6 +1606,14 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             operations.put("tfAttributes", attributes);
         }
 
+        // WHAT THIS ONE RESOURCE DOES WITH EACH OF ITS ATTRIBUTES. Keyed by the
+        // name a configuration spells, which is the only name both sides agree
+        // on -- the collection path is this generator's business, and a resource
+        // it renamed would silently stop finding its own answers.
+        String resourceKey = String.valueOf(additionalProperties().get("providerName"))
+                + "_" + operations.get("resourceName");
+        Map<String, Object> per = byResource.getOrDefault(resourceKey, new LinkedHashMap<>());
+
         CodegenModel request = modelNamed(allModels, (String) operations.get("requestModel"));
         Map<String, CodegenProperty> writable = new LinkedHashMap<>();
 
@@ -1171,6 +1633,17 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         if (updateRequest != null) {
             for (CodegenProperty property : updateRequest.vars) {
                 patchable.put(property.baseName.toLowerCase(Locale.ROOT), property);
+            }
+        }
+
+        // What the read answer carries, for the positions this resource offers
+        // that the create body does not take.
+        CodegenModel response = modelNamed(allModels, (String) operations.get("responseModel"));
+        Map<String, CodegenProperty> answerable = new LinkedHashMap<>();
+
+        if (response != null) {
+            for (CodegenProperty property : response.vars) {
+                answerable.put(property.baseName.toLowerCase(Locale.ROOT), property);
             }
         }
 
@@ -1206,6 +1679,28 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 }
             }
 
+            // POSITIONS THE CREATE BODY DOES NOT TAKE, WHICH THE RESOURCE STILL
+            // OFFERS. Taken from the update body where there is one -- Polar
+            // archives a product through `is_archived` and has no DELETE for it
+            // at all, so a field only the patch declares still has to be
+            // reachable -- and from the read answer where there is not, which is
+            // the only way a webhook endpoint's secret can be offered: no
+            // endpoint hands one out at create.
+            for (String name : strings(per, "include")) {
+                if (writable.containsKey(name)) {
+                    continue;
+                }
+                CodegenProperty patch = patchable.get(name);
+                CodegenProperty answer = answerable.get(name);
+                if (patch == null && answer == null) {
+                    System.err.println("[polar] " + resourceKey + ": include '" + name
+                            + "' is in neither the update body nor the read answer -- ignored");
+                    continue;
+                }
+                rebuilt.add(includedAttribute(
+                        patch != null ? patch : answer, patch != null));
+            }
+
             for (Map.Entry<String, CodegenProperty> entry : writable.entrySet()) {
                 Map<String, Object> attribute = answeredBy.get(entry.getKey());
                 rebuilt.add(attribute != null ? attribute : writeOnlyAttribute(entry.getValue()));
@@ -1214,6 +1709,11 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             attributes.clear();
             attributes.addAll(rebuilt);
         }
+
+        // THE NAME A CONFIGURATION SPELLS, moved before anything that matches on
+        // it: an attribute is a Set, is dropped, or is required under the name a
+        // person writes, not the one the document happened to use.
+        rename(attributes, map(per.get("rename")));
 
         Set<String> answered = new HashSet<>();
 
@@ -1225,14 +1725,26 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // With no create operation there is nothing to infer from, and
             // upstream's answer stands.
             if (request != null) {
-                // Optional AND Computed where the create body takes it without
-                // insisting and the server answers it anyway -- a tenant's
-                // `name` is not required and comes back as the domain. Optional
-                // alone plans null and then the read answers a value, which is
-                // "Provider produced inconsistent result after apply".
-                attribute.put("isRequired", writes != null && writes.required);
-                attribute.put("isOptional", writes != null && !writes.required);
-                attribute.put("isComputed", writes == null || !writes.required);
+                // THE CREATE BODY DECIDES, AND A SERVER DEFAULT ALONE DOES NOT
+                // MAKE IT COMPUTED.
+                //
+                // This used to read "Optional AND Computed wherever the create
+                // body takes it without insisting", which made half of every
+                // resource Optional-and-Computed for a reason no configuration
+                // could observe. Optional alone is what the hand-written
+                // provider does and on the same grounds: a value the
+                // configuration set is read back to check it has not changed,
+                // and a value it did not set is not this provider's to fill in.
+                //
+                // Only the positions the config names are Optional AND
+                // Computed, because that pair says two different things at once
+                // -- a configuration MAY leave it out and the server MAY fill it
+                // in -- and no document ever asks for it.
+                boolean written = writes != null;
+                boolean required = written && writes.required;
+                attribute.put("isRequired", required);
+                attribute.put("isOptional", written && !required);
+                attribute.put("isComputed", !written || computedAttributes.contains(name));
             }
 
             // The server answers this one, so state can be refreshed from it --
@@ -1251,8 +1763,30 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // says so; this loop was overwriting it.
             attribute.put("readBack", sameShape && !Boolean.TRUE.equals(attribute.get("isWriteOnly")));
 
+            // A POSITION WHOSE TWO SPELLINGS DIFFER IS TYPED BY THE REQUEST, since
+            // the request is what a configuration writes. A product's `medias`
+            // goes out as a list of file ids and comes back as a list of file
+            // objects; taken from the answer it is a string holding JSON, and the
+            // schema refuses `medias = ["..."]` with "string required, but have
+            // tuple". A checkout link's `products` is the same: ids out, objects
+            // back.
+            if (writes != null && !sameShape) {
+                // The RESPONSE's own type is kept, because there are two answers
+                // to give for this position and they are not the same one: the
+                // one a configuration writes, and the one a block typed from the
+                // answer would be built out of.
+                attribute.put("responseGoType", attribute.get("goType"));
+                attribute.put("goType", writes.dataType);
+            }
+
             unpoint(attribute);
             retype(attribute);
+
+            // The document's own enum is a constraint the schema can check: a
+            // `recurring_interval` may only be one of four, and leaving that as
+            // documentation meant `recurring_interval = "fortnightly"` planned
+            // cleanly and was refused by the API.
+            applyValidators(attribute, new LinkedHashMap<>(), writes);
         }
 
         // Only reachable when there is no create body to rebuild from; the
@@ -1266,7 +1800,23 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             }
         }
 
-        nest(attributes, allModels, writable, patchable, String.valueOf(operations.get("resourceClassName")));
+        nest(attributes, allModels, writable, patchable,
+                String.valueOf(operations.get("resourceClassName")), map(per.get("unwrap")),
+                strings(per, "responseBlocks"));
+
+        // WHAT THIS RESOURCE DOES NOT EXPOSE, applied to the whole tree: a
+        // product's `tax_behavior` lives inside its prices, and the document
+        // declares it on every price variant.
+        drop(attributes, droppedAttributes);
+        drop(attributes, strings(per, "drop"));
+
+        // AND WHAT IT SAYS ABOUT WHAT IS LEFT, over and above the create body.
+        // Also the whole tree: a Discord bot token is a child of
+        // `discord_properties`, and so is every one of an organization's
+        // notification toggles.
+        declare(attributes, per);
+
+        applyUnionRules(operations, attributes, request, per);
 
         // EVERY ATTRIBUTE SAYS WHETHER IT IS NESTED, even the ones that plainly
         // are not. Mustache resolves a missing key by walking UP the context
@@ -1296,12 +1846,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             }
         }
 
-        boolean anyJson = attributes.stream()
-                .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isJson")))
-                || attributes.stream()
-                        .filter(attribute -> attribute.get("nested") != null)
-                        .flatMap(attribute -> nestedOf(attribute).stream())
-                        .anyMatch(child -> Boolean.TRUE.equals(child.get("isJson")));
+        boolean anyJson = anyJsonAttribute(attributes);
 
         // The nested blocks, collected so the model file can declare a struct
         // for each one. Mustache cannot gather them itself.
@@ -1321,8 +1866,550 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // Go does not need is as fatal as one it does.
         operations.put("hasFlatJsonAttributes", attributes.stream()
                 .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isJson"))));
+
+        operations.put("hasStringValidators", anyStringValidator(attributes));
+        operations.put("hasPatternValidators", anyPatternValidator(attributes));
+        operations.put("hasNestedStringValidators", anyStringValidator(
+                nestedModels.stream()
+                        .flatMap(model -> nestedOf(model).stream())
+                        .collect(java.util.stream.Collectors.toList())));
     }
 
+    /**
+     * WHAT THIS RESOURCE SAYS ABOUT WHAT IS LEFT, over and above the create body.
+     *
+     * Each of the lists is one decision, and the config is where the decisions
+     * that are decisions live. The order matters and is the order the config
+     * states them in: the first list that names an attribute wins, so `required`
+     * beats `optional` beats `computed`.
+     *
+     * RECURSIVE, because a block's children are attributes too. A Discord bot
+     * token is a child of `discord_properties`; every one of an organization's
+     * customer-email toggles is a child of `customer_email_settings`; and
+     * `seat_tiers` is a child of a price, three levels down.
+     */
+    private void declare(List<Map<String, Object>> attributes, Map<String, Object> per) {
+        List<String> asRequired = strings(per, "required");
+        List<String> asOptional = strings(per, "optional");
+        List<String> asComputed = strings(per, "computed");
+        List<String> asBoth = strings(per, "optionalComputed");
+        List<String> asSensitive = strings(per, "sensitive");
+        List<String> asSet = strings(per, "set");
+        Map<String, Object> validators = map(per.get("validators"));
+
+        for (Map<String, Object> attribute : attributes) {
+            String spelled = String.valueOf(attribute.get("terraformName"));
+
+            if (asRequired.contains(spelled)) {
+                attribute.put("isRequired", true);
+                attribute.put("isOptional", false);
+                attribute.put("isComputed", false);
+            } else if (asOptional.contains(spelled)) {
+                attribute.put("isRequired", false);
+                attribute.put("isOptional", true);
+                attribute.put("isComputed", false);
+            } else if (asBoth.contains(spelled)) {
+                attribute.put("isRequired", false);
+                attribute.put("isOptional", true);
+                attribute.put("isComputed", true);
+            } else if (asComputed.contains(spelled)) {
+                attribute.put("isRequired", false);
+                attribute.put("isOptional", false);
+                attribute.put("isComputed", true);
+            }
+
+            if (asSensitive.contains(spelled) || sensitiveAttributes.contains(spelled)) {
+                attribute.put("isSensitive", true);
+            }
+
+            // WHICH ONES MATTER, NOT WHAT ORDER. A webhook endpoint's `events`
+            // is a set of event types, and a server that answers them in another
+            // order has not done anything a configuration could tell -- but a
+            // List compares element by element, so it is a permanent diff.
+            if (Boolean.TRUE.equals(attribute.get("isScalarList")) && asSet.contains(spelled)) {
+                attribute.put("isScalarSet", true);
+                attribute.put("terraformType", "types.Set");
+                attribute.put("terraformAttrType", "schema.SetAttribute");
+            }
+
+            Object forThis = validators.get(spelled);
+            if (forThis != null) {
+                applyValidators(attribute, map(forThis), null);
+            }
+
+            declare(nestedOf(attribute), per);
+        }
+    }
+
+    /**
+     * WHETHER ANY ATTRIBUTE IN THE TREE CARRIES A PATTERN VALIDATOR, which is
+     * what decides whether the resource file imports `regexp` at all. An import
+     * Go does not need is as fatal as one it does.
+     */
+    private boolean anyPatternValidator(List<Map<String, Object>> attributes) {
+        return attributes.stream().anyMatch(attribute ->
+                attribute.get("validatorPattern") != null
+                        || anyPatternValidator(nestedOf(attribute)));
+    }
+
+    /**
+     * WHETHER ANY ATTRIBUTE IN THE TREE STILL CARRIES JSON.
+     *
+     * RECURSIVELY, NOT ONE LEVEL. A price's seat_tiers holds a `tiers` that is
+     * JSON because it is deeper than nestedMaxDepth, and that is three levels
+     * down; one level is what this used to look at, so the file imported no
+     * jsontypes and the schema declared one -- "undefined: jsontypes".
+     */
+    private boolean anyJsonAttribute(List<Map<String, Object>> attributes) {
+        return attributes.stream().anyMatch(attribute ->
+                Boolean.TRUE.equals(attribute.get("isJson"))
+                        || anyJsonAttribute(nestedOf(attribute)));
+    }
+
+    /**
+     * WHETHER ANY ATTRIBUTE IN THE TREE CARRIES A STRING VALIDATOR, which is what
+     * decides whether the resource file imports the validators packages at all.
+     * An import Go does not need is as fatal as one it does.
+     */
+    private boolean anyStringValidator(List<Map<String, Object>> attributes) {
+        return attributes.stream().anyMatch(attribute ->
+                Boolean.TRUE.equals(attribute.get("hasStringValidator"))
+                        || anyStringValidator(nestedOf(attribute)));
+    }
+
+    /**
+     * THE NAME A CONFIGURATION SPELLS, moved off the document's own.
+     *
+     * The Go field and the JSON key are untouched -- only the tfsdk tag and the
+     * attribute in the schema. A checkout link's create body is a union of "one
+     * product", "one product price" and "these products", and a configuration
+     * says which by spelling one attribute, so all three spellings become
+     * `product_ids`.
+     */
+    private void rename(List<Map<String, Object>> attributes, Map<String, Object> renames) {
+        if (renames.isEmpty()) {
+            return;
+        }
+
+        for (Map<String, Object> attribute : attributes) {
+            String from = String.valueOf(attribute.get("terraformName"));
+            Object to = renames.get(from);
+
+            if (to != null) {
+                attribute.put("terraformName", String.valueOf(to));
+            }
+        }
+    }
+
+    /**
+     * WHAT A RESOURCE DOES NOT EXPOSE, applied to the whole tree.
+     *
+     * THE TREE, NOT THE TOP LEVEL: a price's `tax_behavior` is declared on every
+     * one of Polar's four price variants and is not exposed inside any of them,
+     * and there is no way to say that with a top-level name.
+     */
+    private void drop(List<Map<String, Object>> attributes, java.util.Collection<String> names) {
+        if (names.isEmpty()) {
+            return;
+        }
+
+        attributes.removeIf(attribute ->
+                names.contains(String.valueOf(attribute.get("terraformName"))));
+
+        for (Map<String, Object> attribute : attributes) {
+            drop(nestedOf(attribute), names);
+        }
+    }
+
+    /**
+     * THE CONSTRAINTS A SCHEMA CHECKS, from the document's own enum where there is
+     * one and from the config where there is not.
+     *
+     * The document's enum is the honest answer for a string that may only be one
+     * of a set -- `recurring_interval`, a permission, a discount duration -- and
+     * leaving it as documentation meant `recurring_interval = "fortnightly"`
+     * planned cleanly and was refused by the API. The config's `oneOf` is for the
+     * cases the document cannot answer: a benefit kind Polar has shipped since
+     * this was written, or one it has retired.
+     *
+     * `lengthAtMost` and `lengthAtLeast` are only ever the config's. Polar's own
+     * application limits a benefit's description to 42 characters while its
+     * description says `type: string`, and there is no reading of the document
+     * that finds that.
+     */
+    private void applyValidators(Map<String, Object> attribute, Map<String, Object> validators,
+                                 CodegenProperty writes) {
+        List<String> allowed = new ArrayList<>();
+
+        if (validators.get("oneOf") instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> configured = (List<String>) validators.get("oneOf");
+            allowed.addAll(configured);
+        } else if (writes != null && writes.isString && writes._enum != null) {
+            for (Object value : writes._enum) {
+                // An enum the document spells as a number is not a string a
+                // configuration writes, and the validator would refuse it.
+                if (value != null) {
+                    allowed.add(String.valueOf(value));
+                }
+            }
+        }
+
+        if (validators.get("lengthAtMost") != null) {
+            attribute.put("validatorLengthAtMost",
+                    Integer.parseInt(String.valueOf(validators.get("lengthAtMost"))));
+        }
+        if (validators.get("lengthAtLeast") != null) {
+            attribute.put("validatorLengthAtLeast",
+                    Integer.parseInt(String.valueOf(validators.get("lengthAtLeast"))));
+        }
+        if (validators.get("pattern") != null) {
+            attribute.put("validatorPattern", String.valueOf(validators.get("pattern")));
+            attribute.put("validatorMessage", validators.get("message") != null
+                    ? String.valueOf(validators.get("message"))
+                    : String.valueOf(validators.get("pattern")));
+        }
+        if (!allowed.isEmpty()) {
+            attribute.put("validatorOneOf", allowed);
+            attribute.put("hasOneOf", true);
+        }
+
+        attribute.put("hasStringValidator", attribute.containsKey("validatorLengthAtMost")
+                || attribute.containsKey("validatorLengthAtLeast")
+                || attribute.containsKey("validatorPattern")
+                || attribute.containsKey("validatorOneOf"));
+    }
+
+    /**
+     * ONE POSITION THE CREATE BODY DOES NOT TAKE, offered anyway.
+     *
+     * Typed by whichever body declared it -- the update body's, because that is
+     * what a configuration writing it sends -- and refreshed only where it came
+     * from the read answer, because a position the update body alone has has
+     * nothing to convert one into.
+     */
+    private Map<String, Object> includedAttribute(CodegenProperty property, boolean fromPatch) {
+        Map<String, Object> attribute = writeOnlyAttribute(property);
+
+        attribute.put("isRequired", false);
+        attribute.put("isOptional", true);
+        attribute.put("isComputed", false);
+        attribute.put("isWriteOnly", false);
+        attribute.put("inRequest", false);
+        attribute.put("inUpdateRequest", fromPatch);
+        attribute.put("readBack", !fromPatch);
+
+        return attribute;
+    }
+
+    /**
+     * WHAT THE DISCRIMINATOR DECIDES, REFUSED BY THE PLAN RATHER THAN BY THE API.
+     *
+     * A discriminated union of objects becomes one attribute per variant, and
+     * nothing stops a configuration from setting two of them -- or from setting
+     * the one its discriminator did not ask for. Polar answers 422; the
+     * hand-written provider refuses it in the plan, where the message can name
+     * both. The same applies to the other half of the question: an attribute the
+     * chosen variant demands and nobody set, which Polar also answers 422 to.
+     *
+     * Most of this comes out of the flattening itself: the discriminator, and
+     * which attributes belong to which variant. What the document cannot say is
+     * recorded beside it -- see `conflictWhen` and `requiredWhen` in the
+     * configuration. A MERGED conflict rule has one attribute for every variant,
+     * so there is nothing to choose between between them and the config says
+     * what belongs to what.
+     */
+    private void applyUnionRules(OperationMap operations, List<Map<String, Object>> attributes,
+                                 CodegenModel request, Map<String, Object> per) {
+        String discriminator = null;
+        Map<String, Object> blocks = new LinkedHashMap<>();
+        Map<String, Object> fields = new LinkedHashMap<>();
+
+        // READ OFF THE FLATTENED SCHEMA, not off a name worked out here again:
+        // the flattening is the only thing that knows which attributes belong to
+        // which variant, and it wrote the answer down when it did it.
+        if (request != null && openAPI != null && openAPI.getComponents() != null
+                && openAPI.getComponents().getSchemas() != null) {
+            io.swagger.v3.oas.models.media.Schema schema =
+                    openAPI.getComponents().getSchemas().get(request.classname);
+            if (schema != null && schema.getExtensions() != null) {
+                if (schema.getExtensions().get("x-terraform-variants") instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> recorded =
+                            new LinkedHashMap<>((Map<String, Object>) schema.getExtensions()
+                                    .get("x-terraform-variants"));
+                    Object named = recorded.remove("x-terraform-discriminator");
+                    discriminator = named == null ? null : String.valueOf(named);
+                    blocks.putAll(recorded);
+                }
+                if (schema.getExtensions().get("x-terraform-also-requires") instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> rules = (Map<String, Object>) schema.getExtensions()
+                            .get("x-terraform-also-requires");
+                    Map<String, Object> marker = attributeNamed(attributes,
+                            String.valueOf(rules.get("x-terraform-marker")), true, "", "");
+                    List<Map<String, Object>> needs = new ArrayList<>();
+                    if (marker != null && rules.get("x-terraform-needs") instanceof List) {
+                        for (Object owned : (List<?>) rules.get("x-terraform-needs")) {
+                            Map<String, Object> found = attributeNamed(attributes,
+                                    String.valueOf(owned), true, "", "");
+                            if (found == null) {
+                                continue;
+                            }
+                            Map<String, Object> rule = new LinkedHashMap<>();
+                            describeSet(rule, found);
+                            rule.put("marker", marker.get("terraformName"));
+                            rule.put("markerGo", marker.get("goName"));
+                            needs.add(rule);
+                        }
+                    }
+                    if (!needs.isEmpty()) {
+                        operations.put("alsoRequires", needs);
+                        operations.put("hasVariantRules", true);
+                    }
+                }
+                if (schema.getExtensions().get("x-terraform-exclusive") instanceof List) {
+                    // THE NAME A CONFIGURATION SPELLS, not the document's: the
+                    // flattening recorded the property, and `rename` may have
+                    // moved it since -- a checkout link's `products` is
+                    // `product_ids`. An arm looked up under the old spelling is
+                    // not found, and an ExactlyOneOf missing an arm refuses a
+                    // configuration that is correct.
+                    Map<String, Object> renames = map(per.get("rename"));
+                    List<Map<String, Object>> picks = new ArrayList<>();
+                    boolean whole = true;
+                    for (Object owned : (List<?>) schema.getExtensions()
+                            .get("x-terraform-exclusive")) {
+                        String named = String.valueOf(renames.getOrDefault(
+                                String.valueOf(owned), owned));
+                        Map<String, Object> found = attributeNamed(attributes,
+                                named, true, "", "");
+                        if (found == null) {
+                            whole = false;
+                            continue;
+                        }
+                        Map<String, Object> pick = new LinkedHashMap<>();
+                        pick.put("attribute", found.get("terraformName"));
+                        picks.add(pick);
+                    }
+                    // ALL OF THEM OR NONE. An arm this resource does not expose
+                    // leaves a rule that refuses the arms it does.
+                    if (whole && picks.size() > 1) {
+                        operations.put("exactlyOneOf", picks);
+                        operations.put("hasExactlyOneOf", true);
+                    }
+                }
+                if (schema.getExtensions().get("x-terraform-merged") instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> recorded =
+                            new LinkedHashMap<>((Map<String, Object>) schema.getExtensions()
+                                    .get("x-terraform-merged"));
+                    fields.putAll(recorded);
+                }
+            }
+        }
+
+        // A DISCRIMINATOR MAY BE NAMED IN THE CONFIG even where the flattening
+        // found none to say: a custom field's five variants merge into one
+        // `properties` block, so nothing was renamed and nothing was recorded,
+        // and which fields belong to which kind is the one thing the plan has to
+        // be told.
+        for (String key : new String[] {"conflictWhen", "requiredWhen"}) {
+            for (Map.Entry<String, Object> entry : map(per.get(key)).entrySet()) {
+                if (discriminator == null && !String.valueOf(entry.getKey()).contains(".")) {
+                    discriminator = String.valueOf(entry.getKey());
+                }
+                // ONLY `conflictWhen` SAYS WHAT BELONGS TO WHAT. `requiredWhen`
+                // says what a variant DEMANDS, and it is read again below for
+                // that -- adding it here as well gave every demanded attribute
+                // a second, identical conflict rule.
+                if (!"conflictWhen".equals(key) || !(entry.getValue() instanceof List)) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, List<String>> owned = (Map<String, List<String>>) (Map<?, ?>) fields;
+                for (Object name : (List<?>) entry.getValue()) {
+                    own(owned, String.valueOf(entry.getKey()), String.valueOf(name));
+                }
+            }
+        }
+
+        final String decides = discriminator;
+
+        if (discriminator == null || !attributes.stream()
+                .anyMatch(a -> decides.equals(a.get("terraformName")))) {
+            return;
+        }
+
+        List<Map<String, Object>> conflicts = new ArrayList<>();
+        List<Map<String, Object>> demands = new ArrayList<>();
+
+        // A BLOCK PER VARIANT: renamed, so the configuration picks exactly one,
+        // and the message can name the one it wanted.
+        blocks.forEach((label, value) -> {
+            if (!(value instanceof List)) {
+                return;
+            }
+            for (Object owned : (List<?>) value) {
+                Map<String, Object> found = attributeNamed(attributes,
+                        String.valueOf(owned), false, "", "");
+                if (found == null) {
+                    continue;
+                }
+                Map<String, Object> rule = rule(decides, label, found, true);
+                conflicts.add(rule);
+            }
+        });
+
+        // A FIELD INSIDE THE ONE BLOCK EVERY VARIANT SHARES: the same attribute
+        // name, so the message is about the field and not about the block.
+        fields.forEach((label, value) -> {
+            if (!(value instanceof List)) {
+                return;
+            }
+            for (Object owned : (List<?>) value) {
+                Map<String, Object> found = attributeNamed(attributes,
+                        String.valueOf(owned), false, "", "");
+                if (found == null) {
+                    continue;
+                }
+                conflicts.add(rule(decides, label, found, false));
+            }
+        });
+
+        // AND THE OTHER HALF: an attribute the chosen variant demands. Only where
+        // the config says so -- the document's own required list is the union of
+        // every variant's, and Polar's application asks for more than its
+        // description admits to.
+        for (Map.Entry<String, Object> entry : map(per.get("requiredWhen")).entrySet()) {
+            if (!(entry.getValue() instanceof List)) {
+                continue;
+            }
+            for (Object demanded : (List<?>) entry.getValue()) {
+                Map<String, Object> found = attributeNamed(attributes,
+                        String.valueOf(demanded), true, "", "");
+                if (found == null) {
+                    continue;
+                }
+                demands.add(rule(decides, String.valueOf(entry.getKey()), found, true));
+            }
+        }
+
+        List<Map<String, Object>> blocksOnly = new ArrayList<>();
+        for (Map<String, Object> rule : conflicts) {
+            if (Boolean.TRUE.equals(rule.get("wholeBlock"))) {
+                blocksOnly.add(rule);
+            }
+        }
+
+        if (!conflicts.isEmpty() || !demands.isEmpty()) {
+            operations.put("variantRules", conflicts);
+            operations.put("variantBlocks", blocksOnly);
+            operations.put("variantDemands", demands);
+            operations.put("hasVariantRules", true);
+            operations.put("hasVariantBlocks", !blocksOnly.isEmpty());
+            operations.put("discriminator", discriminator);
+            operations.put("discriminatorGo", camelize(underscore(discriminator)
+                    .toLowerCase(Locale.ROOT)));
+        }
+    }
+
+    /**
+     * One attribute by the name a configuration spells, at the top level or
+     * inside a block -- which is how a merged union's fields are found: a custom
+     * field's `textarea` is a child of the one `properties` block all five kinds
+     * share.
+     *
+     * Deep for a conflict and shallow for a demand: a demanded attribute is one
+     * the chosen variant requires, so it is in every one of them -- `name`, say,
+     * rather than a block's inner field.
+     */
+    private Map<String, Object> attributeNamed(List<Map<String, Object>> attributes,
+                                                String name, boolean topLevelOnly,
+                                                String prefix, String guard) {
+        for (Map<String, Object> attribute : attributes) {
+            if (name.equals(attribute.get("terraformName"))) {
+                String here = String.valueOf(attribute.get("goName"));
+                attribute.put("goPath", prefix.isEmpty() ? here : prefix + "." + here);
+                attribute.put("goGuard", guard);
+                return attribute;
+            }
+        }
+        if (topLevelOnly) {
+            return null;
+        }
+        for (Map<String, Object> attribute : attributes) {
+            // A LIST BLOCK HAS NO ONE FIELD TO NAME: `prices[*].amount` is not an
+            // expression, so a rule about a field inside a list is not emitted.
+            if (Boolean.TRUE.equals(attribute.get("isNestedList"))) {
+                continue;
+            }
+            String here = String.valueOf(attribute.get("goName"));
+            String path = prefix.isEmpty() ? here : prefix + "." + here;
+            Map<String, Object> found = attributeNamed(nestedOf(attribute), name, false,
+                    path, guard + "config." + path + " != nil && ");
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * One rule the plan refuses with. `goPath` rather than `goName`, because a
+     * field of a merged block is reached through it.
+     */
+    private Map<String, Object> rule(String discriminator, String label,
+                                     Map<String, Object> attribute, boolean wholeBlock) {
+        Map<String, Object> rule = new LinkedHashMap<>();
+
+        // `duration.repeating` rather than `repeating`: WHICH DISCRIMINATOR
+        // DECIDES THIS ONE. A discount has two -- `type` and `duration` -- and
+        // the flattening only knows the one it flattened.
+        String decides = discriminator;
+        int dot = label.indexOf('.');
+        if (dot > 0) {
+            decides = label.substring(0, dot);
+            label = label.substring(dot + 1);
+        }
+
+        rule.put("discriminator", decides);
+        rule.put("label", label);
+        rule.put("chosenGo", camelize(underscore(decides).toLowerCase(Locale.ROOT)));
+        rule.put("wholeBlock", wholeBlock);
+        describeSet(rule, attribute);
+
+        return rule;
+    }
+
+    /**
+     * HOW ONE ATTRIBUTE IS TESTED FOR BEING SET. A block is a pointer, a list
+     * block is a slice and everything else is a framework value, so there is no
+     * one expression -- and `IsNull` on the first two does not compile.
+     */
+    private void describeSet(Map<String, Object> rule, Map<String, Object> attribute) {
+        String path = String.valueOf(attribute.containsKey("goPath")
+                ? attribute.get("goPath") : attribute.get("goName"));
+        rule.put("attribute", String.valueOf(attribute.get("terraformName")));
+        rule.put("goName", path);
+
+        String set;
+        String unset;
+        if (Boolean.TRUE.equals(attribute.get("isNestedList"))) {
+            set = "len(config." + path + ") > 0";
+            unset = "len(config." + path + ") == 0";
+        } else if (Boolean.TRUE.equals(attribute.get("isNested"))) {
+            set = "config." + path + " != nil";
+            unset = "config." + path + " == nil";
+        } else {
+            set = "!config." + path + ".IsNull()";
+            unset = "config." + path + ".IsNull()";
+        }
+        String guard = attribute.containsKey("goGuard")
+                ? String.valueOf(attribute.get("goGuard")) : "";
+        rule.put("isSet", guard + set);
+        rule.put("notSet", guard + unset);
+    }
 
     /**
      * A nested resource hangs off its parents, and their identifiers are in
@@ -1571,16 +2658,17 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * disqualify `prices`, which was the first version of this and threw away
      * the whole block for one field in a variant nobody here uses.
      *
-     * CHILDREN ARE Optional AND Computed, except where the document requires
-     * them. Polar fills in a price's `price_currency` and `tax_behavior` when
-     * the configuration omits them, and an Optional-only attribute that the
-     * server answers is "Provider produced inconsistent result after apply" on
-     * every single apply. Optional means a configuration may say it; Computed
-     * means the server may.
+     * CHILDREN FOLLOW THE SAME RULE AS THE TOP LEVEL: required where the document
+     * requires them, Optional alone where it does not, and Optional AND Computed
+     * only for the handful of positions the config names. Polar fills in a
+     * price's `price_currency` when the configuration omits it, and that one
+     * position is why `computed` exists; every other optional child used to be
+     * Optional-and-Computed too, which no configuration can observe.
      */
     private void nest(List<Map<String, Object>> attributes, List<ModelMap> allModels,
                       Map<String, CodegenProperty> writable,
-                      Map<String, CodegenProperty> patchable, String resourceClassName) {
+                      Map<String, CodegenProperty> patchable, String resourceClassName,
+                      Map<String, Object> unwraps, List<String> responseBlocks) {
         if (!nestedAttributes || nestedMaxDepth < 1) {
             return;
         }
@@ -1603,25 +2691,85 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // goType is the RESPONSE type, because that is what the schema was
             // built from -- so nesting on it produced a block whose
             // ToClientModel assigned an Address into an AddressInput field.
-            String responseGo = String.valueOf(attribute.get("goType"));
+            String responseGo = attribute.containsKey("responseGoType")
+                    ? String.valueOf(attribute.get("responseGoType"))
+                    : String.valueOf(attribute.get("goType"));
             CodegenProperty writes = writable.get(String.valueOf(attribute.get("name"))
                     .toLowerCase(Locale.ROOT));
             String go = writes != null ? writes.dataType : responseGo;
 
-            if (!nestInto(attribute, allModels, go, resourceClassName, 1)) {
+            // A WRAPPER OBJECT THAT EXISTS ONLY TO CARRY A SERVER DEFAULT. A
+            // seat-based price's `seat_tiers` is an object whose one required
+            // field is the list of tiers and whose other field defaults to
+            // `volume`; as the wrapper it is a block holding a block, and as the
+            // list it is what a configuration means. The client field is still the
+            // wrapper, so the conversion builds it around the list.
+            Object unwrapped = unwraps.get(terraformName);
+            if (unwrapped != null) {
+                CodegenModel wrapper = modelNamed(allModels, bare(go));
+                CodegenProperty inner = wrapper == null ? null : propertyNamed(wrapper.vars,
+                        String.valueOf(unwrapped));
+                if (inner == null) {
+                    System.err.println("[polar] unwrap '" + terraformName + "' has no "
+                            + unwrapped + " inside " + go + " -- left alone");
+                } else {
+                    attribute.put("unwrappedGo", camelize(String.valueOf(unwrapped)));
+                    attribute.put("nestedWrapperType", bare(go));
+                    go = inner.dataType;
+                }
+            }
+
+            // A BLOCK WHOSE CHILDREN DESCRIBE WHAT THE SERVER ANSWERS. Polar
+            // declares two schemas for an organization's feature settings -- an
+            // Update to send and a Settings to read back -- and they are not the
+            // same fields, so typed from the request the block would offer
+            // `checkout_localization_enabled` and hide `wallets_enabled`. The
+            // struct is the same either way; only the two client types differ,
+            // which is what nestedResponseType is for.
+            boolean fromResponse = responseBlocks.contains(terraformName);
+            String responseShape = responseGo;
+            String requestShape = go;
+
+            if (fromResponse && !go.equals(responseGo)) {
+                go = responseGo;
+            }
+
+            // A BLOCK TYPED FROM THE ANSWER MAY HAVE FIELDS THE REQUEST CANNOT
+            // CARRY -- the whole point of it -- and assigning one into a struct
+            // that has no such field is a compile error rather than a wrong
+            // request. Those children are answered and not sent.
+            Set<String> sendable = null;
+            if (fromResponse && !requestShape.equals(responseShape)) {
+                CodegenModel sending = modelNamed(allModels, bare(requestShape));
+                if (sending != null && sending.vars != null) {
+                    sendable = new HashSet<>();
+                    for (CodegenProperty property : sending.vars) {
+                        sendable.add(property.baseName);
+                    }
+                }
+            }
+
+            if (!nestInto(attribute, allModels, go, resourceClassName, 1, unwraps, sendable)) {
                 continue;
             }
 
-            // READ BACK ONLY WHERE THE TWO SHAPES ARE THE SAME ONE. Where they
-            // differ there is nothing to convert the answer into -- the nested
-            // model is the request's -- so the attribute is not refreshed,
-            // exactly as a scalar whose request and response spellings diverge
-            // is not. And then it must not be Computed either: a Computed
-            // attribute nothing assigns stays unknown past the apply, which is
-            // "provider returned invalid result object after apply".
-            boolean readBack = go.equals(responseGo) && Boolean.TRUE.equals(attribute.get("readBack"));
+            // THE TWO DIRECTIONS TAKE TWO DIFFERENT CLIENT TYPES, and the model
+            // is one struct: ToClientModel sends the request's, FromClientModel
+            // is handed the answer's.
+            if (fromResponse && !requestShape.equals(responseShape)) {
+                attribute.put("nestedClientType", bare(requestShape));
+                attribute.put("nestedResponseType", bare(responseShape));
+            }
+
+            // READ BACK WHEREVER THE ANSWER CAN BE CONVERTED INTO THIS STRUCT,
+            // which is true even where the two shapes differ, as long as the
+            // block was typed from the answer. Where they differ and the block
+            // was typed from the request there is nothing to convert an answer
+            // into, so the attribute is not refreshed -- exactly as a scalar
+            // whose request and response spellings diverge is not.
+            boolean readBack = Boolean.TRUE.equals(attribute.get("readBack"))
+                    && (go.equals(responseShape) || fromResponse);
             attribute.put("readBack", readBack);
-            attribute.put("isComputed", readBack);
 
             // AND THE PATCH HAS TO TAKE THE SAME TYPE. A nested block is
             // converted through the CREATE body's client type, and Polar names
@@ -1635,15 +2783,17 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             if (patch == null || !go.equals(patch.dataType)) {
                 attribute.put("inUpdateRequest", false);
             }
+
             // REQUIRED IF THE CREATE BODY REQUIRES IT. A meter cannot be created
             // without a `filter` or an `aggregation`, and the hand-written
             // provider marks both Required; forcing every block Optional made a
-            // meter appliable with nothing in it.
-            boolean required = writes != null && writes.required;
-            attribute.put("isRequired", required);
-            attribute.put("isOptional", !required);
-            if (required) {
-                attribute.put("isComputed", false);
+            // meter appliable with nothing in it. Unless this resource has
+            // already said otherwise, which is the whole point of saying.
+            if (!Boolean.TRUE.equals(attribute.get("isDeclared"))) {
+                boolean required = writes != null && writes.required;
+                attribute.put("isRequired", required);
+                attribute.put("isOptional", !required);
+                attribute.put("isComputed", required ? false : readBack);
             }
         }
     }
@@ -1655,7 +2805,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * there is nowhere further to go.
      */
     private Map<String, Object> childAttribute(CodegenProperty property, List<ModelMap> allModels,
-                                              String modelPrefix, int depth) {
+                                              String modelPrefix, int depth,
+                                              Map<String, Object> unwraps, Set<String> sendable) {
         Map<String, Object> attribute = new HashMap<>();
 
         attribute.put("name", property.baseName);
@@ -1666,22 +2817,38 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 ? property.description.replace("\"", "'").replace("\n", " ")
                 : "");
         attribute.put("isRequired", property.required);
-        // Everything the document does not require, the server may still
-        // answer -- see the note on nest().
         attribute.put("isOptional", !property.required);
-        attribute.put("isComputed", !property.required);
+        // THE SAME RULE AS THE TOP LEVEL: Optional alone where the document does
+        // not insist, and Optional AND Computed only for the positions the config
+        // names -- a price's `price_currency` is filled in by the server, and
+        // nothing else is.
+        boolean computed = !property.required && computedAttributes.contains(
+                underscore(property.baseName).toLowerCase(Locale.ROOT));
+        attribute.put("isComputed", computed);
         attribute.put("isString", "string".equals(property.dataType));
         attribute.put("isInt64", "int64".equals(property.dataType) || "int32".equals(property.dataType));
         attribute.put("isFloat64", "float64".equals(property.dataType) || "float32".equals(property.dataType));
         attribute.put("isBool", "bool".equals(property.dataType));
         attribute.put("isList", false);
-        attribute.put("isObject", false);
+        // A CHILD THAT NAMES A MODEL IS A BLOCK CANDIDATE. retype() only looks at
+        // an attribute flagged a list or an object, and a pointer to a model is
+        // neither -- so a license key benefit's `expires` was never even
+        // considered for expanding and went out as a string holding JSON, while
+        // its sibling `clauses` (a slice, which retype does look at) became a
+        // block.
+        attribute.put("isObject", namesAModel(property.dataType));
         attribute.put("isSensitive", false);
         attribute.put("terraformType", goType(property.dataType));
         attribute.put("terraformAttrType", goAttrType(property.dataType));
+        // null means every level below this one is described by the type that
+        // carries it, so there is nothing to withhold.
+        attribute.put("inChildRequest", sendable == null || sendable.contains(property.baseName));
 
         unpoint(attribute);
         retype(attribute);
+
+        // The document's own enum is a constraint the schema can check.
+        applyValidators(attribute, new LinkedHashMap<>(), property);
 
         // A CHILD CAN BE A BLOCK TOO, AND A LIST OF BLOCKS. A meter's
         // `filter.clauses` is an array of objects inside an object, and expanding
@@ -1690,7 +2857,28 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         if (Boolean.TRUE.equals(attribute.get("isJson"))
                 && depth < nestedMaxDepth
                 && !jsonAttributes.contains(String.valueOf(attribute.get("terraformName")))) {
-            nestInto(attribute, allModels, String.valueOf(attribute.get("goType")), modelPrefix, depth);
+            // A WRAPPER OBJECT THAT EXISTS ONLY TO CARRY A SERVER DEFAULT, and is
+            // a CHILD this time: a seat-based price's `seat_tiers` is three
+            // levels down, and the list inside the wrapper is what a
+            // configuration means.
+            String childGo = String.valueOf(attribute.get("goType"));
+            Object unwrapped = unwraps.get(String.valueOf(attribute.get("terraformName")));
+
+            if (unwrapped != null) {
+                CodegenModel wrapper = modelNamed(allModels, bare(childGo));
+                CodegenProperty inner = wrapper == null ? null
+                        : propertyNamed(wrapper.vars, String.valueOf(unwrapped));
+                if (inner == null) {
+                    System.err.println("[polar] unwrap '" + attribute.get("terraformName")
+                            + "' has no " + unwrapped + " inside " + childGo + " -- left alone");
+                } else {
+                    attribute.put("unwrappedGo", camelize(String.valueOf(unwrapped)));
+                    attribute.put("nestedWrapperType", bare(childGo));
+                    childGo = inner.dataType;
+                }
+            }
+
+            nestInto(attribute, allModels, childGo, modelPrefix, depth, unwraps, null);
         }
 
         return attribute;
@@ -1708,7 +2896,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * type X) as *X value in assignment".
      */
     private boolean nestInto(Map<String, Object> attribute, List<ModelMap> allModels,
-                             String go, String modelPrefix, int depth) {
+                             String go, String modelPrefix, int depth,
+                             Map<String, Object> unwraps, Set<String> sendable) {
         boolean list = go.startsWith("[]");
         boolean pointer = go.replace("[]", "").startsWith("*");
         String bare = go.replace("[]", "").replace("*", "");
@@ -1722,7 +2911,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         List<Map<String, Object>> children = new ArrayList<>();
         for (CodegenProperty property : model.vars) {
-            children.add(childAttribute(property, allModels, nestedModel, depth + 1));
+            children.add(childAttribute(property, allModels, nestedModel, depth + 1, unwraps,
+                    sendable));
         }
 
         if (children.isEmpty()) {
@@ -1903,6 +3093,16 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 .contains(scalar)) {
             attribute.put("isList", false);
             attribute.put("isObject", false);
+            // AND ITS HCL TYPE, not only the flags. This is reached when the two
+            // spellings of one position differ and the REQUEST's is the scalar:
+            // a customer's `tax_id` goes out as a string and comes back as a list
+            // of the values the server parsed out of it. The flags said "not a
+            // list" and the type still said types.List, which is a schema with
+            // no ElementType -- "tax_id is missing the CustomType or ElementType
+            // field on a collection Attribute" -- and a model field no
+            // conversion touched.
+            attribute.put("terraformType", goType(scalar));
+            attribute.put("terraformAttrType", goAttrType(scalar));
             return;
         }
 
@@ -1912,9 +3112,13 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // "Inappropriate value for attribute events: string required, but have
         // tuple".
         //
-        // A PLAIN Go SLICE OR MAP, not types.List: terraform-plugin-framework
-        // reflects over those, so the conversions are a direct assignment and need
-        // no context to call ElementsAs with.
+        // types.List AND types.Map, not a plain Go slice or map.
+        // terraform-plugin-framework does reflect over the plain ones, which made
+        // the conversions a direct assignment -- but a Computed attribute is
+        // UNKNOWN in the plan and a Go map cannot hold that: "Received unknown
+        // value, however the target type cannot handle unknown values ... Path:
+        // metadata". The framework types can, and are built element by element so
+        // no conversion needs a context to call ElementsAs with.
         String element = elementOf(go);
         if (element != null) {
             boolean isMap = go.startsWith("map[");
@@ -1923,7 +3127,10 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             attribute.put("isScalarMap", isMap);
             attribute.put("isList", true);
             attribute.put("listElementType", frameworkType(element));
-            attribute.put("terraformType", isMap ? "map[string]" + element : "[]" + element);
+            attribute.put("elementGoType", element);
+            attribute.put("elementFromTf", fromFrameworkValue(element));
+            attribute.put("elementToTf", toFrameworkValue(element));
+            attribute.put("terraformType", isMap ? "types.Map" : "types.List");
             attribute.put("terraformAttrType",
                     isMap ? "schema.MapAttribute" : "schema.ListAttribute");
             return;
@@ -1939,6 +3146,36 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     private static final List<String> SCALARS =
             Arrays.asList("string", "bool", "int32", "int64", "float32", "float64");
 
+    /** Whether a Go type is a generated model rather than a scalar or a collection. */
+    private boolean namesAModel(String go) {
+        String bare = bare(go);
+
+        return !bare.isEmpty()
+                && !SCALARS.contains(bare)
+                && !"int".equals(bare)
+                && !"string".equals(bare)
+                && !bare.startsWith("map[")
+                && !bare.startsWith("interface{");
+    }
+
+    /** A Go type with its slice and pointer markers taken off. */
+    private String bare(String go) {
+        return go == null ? "" : go.replace("[]", "").replace("*", "");
+    }
+
+    /** One property of a model, by the name it is declared under. */
+    private CodegenProperty propertyNamed(List<CodegenProperty> properties, String name) {
+        if (properties == null) {
+            return null;
+        }
+        for (CodegenProperty property : properties) {
+            if (property.baseName.equalsIgnoreCase(name)) {
+                return property;
+            }
+        }
+        return null;
+    }
+
     /** The scalar a slice or a string-keyed map is of, or null when it is neither. */
     private String elementOf(String go) {
         String element = null;
@@ -1950,6 +3187,30 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         }
 
         return element != null && SCALARS.contains(element) ? element : null;
+    }
+
+    /** One element out of a types.List or types.Map, as the client's own Go type. */
+    private String fromFrameworkValue(String element) {
+        switch (element) {
+            case "bool": return "element.(types.Bool).ValueBool()";
+            case "int32": return "int32(element.(types.Int64).ValueInt64())";
+            case "int64": return "element.(types.Int64).ValueInt64()";
+            case "float32": return "float32(element.(types.Float64).ValueFloat64())";
+            case "float64": return "element.(types.Float64).ValueFloat64()";
+            default: return "element.(types.String).ValueString()";
+        }
+    }
+
+    /** One element of the client's answer, as the framework value for it. */
+    private String toFrameworkValue(String element) {
+        switch (element) {
+            case "bool": return "types.BoolValue(element)";
+            case "int32": return "types.Int64Value(int64(element))";
+            case "int64": return "types.Int64Value(element)";
+            case "float32": return "types.Float64Value(float64(element))";
+            case "float64": return "types.Float64Value(element)";
+            default: return "types.StringValue(element)";
+        }
     }
 
     /** The framework type for an element, which the schema names rather than Go. */
@@ -2176,116 +3437,47 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     }
 
     /**
-     * A named schema that is not an object is not a struct.
+     * NOTHING IS LEFT TO COLLAPSE, and this says so out loud.
      *
-     * A named string enum, or an anyOf of an integer and an array, gets a model
-     * of its own from openapi-generator, and the template renders a model as a
-     * struct -- so each came out as {@code type Something struct{}}. A property
-     * of that type was then a field nothing could convert
-     * it, so the attribute stayed UNKNOWN through an apply -- "provider
-     * returned invalid result object after apply".
+     * A named schema that is not an object used to arrive here as a model with no
+     * properties -- the templates render a model as a struct, so a string enum
+     * came out {@code type Something struct{}} and a property of that type was a
+     * field nothing could convert. The generator then worked out what the model
+     * really was, and where it could not it fell back to {@code interface{}}:
+     * the attribute became a string holding JSON.
      *
-     * A model with no properties at all is whatever it actually is: the
-     * scalar an enum enumerates, or {@code interface{}} for a union of
-     * shapes, which travels as JSON.
-     *
-     * This runs over ALL models, because a property cannot see the model its
-     * type names.
+     * Those schemas are inlined in the document now, from the config's
+     * `scalars`, so no such model is minted at all. If one turns up anyway the
+     * document has a shape the config does not describe, and the generator stops
+     * rather than guess at it -- a provider that is silently different is worse
+     * than a build that stops.
      */
     @Override
     public Map<String, ModelsMap> postProcessAllModels(Map<String, ModelsMap> models) {
         Map<String, ModelsMap> processed = super.postProcessAllModels(models);
 
-        Map<String, String> notStructs = new LinkedHashMap<>();
+        List<String> empty = new ArrayList<>();
 
         for (ModelsMap entry : processed.values()) {
             for (ModelMap map : entry.getModels()) {
                 CodegenModel model = map.getModel();
-                boolean empty = (model.vars == null || model.vars.isEmpty())
-                        && (model.allVars == null || model.allVars.isEmpty());
 
-                if (!empty) {
-                    continue;
+                if ((model.vars == null || model.vars.isEmpty())
+                        && (model.allVars == null || model.allVars.isEmpty())) {
+                    empty.add(model.classname);
                 }
-
-                notStructs.put(model.classname, scalarOf(model));
             }
         }
 
-        for (ModelsMap entry : processed.values()) {
-            for (ModelMap map : entry.getModels()) {
-                CodegenModel model = map.getModel();
-                List<CodegenProperty> properties = new ArrayList<>(model.vars);
-
-                if (model.allVars != null) {
-                    properties.addAll(model.allVars);
-                }
-
-                for (CodegenProperty property : properties) {
-                    String named = property.dataType == null ? "" : property.dataType;
-
-                    // AND THROUGH A SLICE OR A MAP, not only a pointer. A webhook
-                    // endpoint's `events` is `[]WebhookEventType` and a product's
-                    // `metadata` is `map[string]MetadataValue1` -- both are
-                    // collections of a named model that is really an enum, and
-                    // looking only at the bare name left them collections of a
-                    // struct with no fields. The attribute then fell back to JSON
-                    // and the suite refused it: "attribute events: string
-                    // required, but have tuple".
-                    // ponytail: through a POINTER only. Reaching through `[]` and
-                    // `map[string]` as well is what a list of a collapsed enum
-                    // needs -- `events` is `[]WebhookEventType` and wants to be
-                    // `[]string` -- but the enum's own model file is still
-                    // rendered `type WebhookEventType struct{}`, so the collection
-                    // and the element disagree and the client will not compile.
-                    // The fix is to render an empty model as a type ALIAS to its
-                    // scalar, which is an override of upstream's model template.
-                    String wrapper = named.startsWith("*") ? "*" : "";
-                    String bare = wrapper.isEmpty() ? named : named.substring(1);
-
-                    String scalar = notStructs.get(bare);
-
-                    if (scalar != null) {
-                        // THE PROPERTY KNOWS ITS OWN TYPE even when the model
-                        // minted for it does not. A widened union is a plain
-                        // string, but openapi-generator still mints a model for
-                        // the inline schema and that model carries none of the
-                        // scalar flags -- so scalarOf fell back to interface{} and
-                        // the attribute went back to being a JSON blob. Where the
-                        // model cannot say, the property can.
-                        String resolved = "interface{}".equals(scalar)
-                                ? unionType(property)
-                                : scalar;
-
-                        // A pointer to a collapsed scalar is that scalar; a slice
-                        // or map OF one keeps its wrapper.
-                        property.dataType = resolved;
-                        property.isModel = false;
-                    }
-                }
-            }
+        if (!empty.isEmpty()) {
+            throw new RuntimeException("models with no properties, which the templates would"
+                    + " render as empty structs: " + empty
+                    + " -- say what each one is in the config (`scalars` for a named scalar,"
+                    + " `aliases` for another name for a schema, `unions` for a composition)"
+                    + " and regenerate");
         }
 
         return processed;
-    }
-
-    /** What a model with no properties of its own actually is. */
-    private String scalarOf(CodegenModel model) {
-        if (model.isString || "string".equals(model.dataType)) {
-            return "string";
-        }
-        if (model.isInteger || model.isLong) {
-            return "int64";
-        }
-        if (model.isNumber || model.isFloat || model.isDouble) {
-            return "float64";
-        }
-        if (model.isBoolean) {
-            return "bool";
-        }
-        // A union of shapes -- ticketLink is an integer or an array -- has
-        // nothing better, and travels as JSON.
-        return "interface{}";
     }
 
     /**

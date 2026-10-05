@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,40 +33,30 @@ func (d *CustomFieldDataSource) Schema(_ context.Context, _ datasource.SchemaReq
 		Description: "Fetches a custom_field data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"slug": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Identifier of the custom field. It'll be used as key when storing the value.",
 			},
 			"name": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Name of the custom field.",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the custom field.",
-			},
 			"properties": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Which variant this is. Selects which of the optional blocks above applies.",
 			},
 		},
@@ -112,7 +100,7 @@ func (d *CustomFieldDataSource) Read(ctx context.Context, req datasource.ReadReq
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read custom_field data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

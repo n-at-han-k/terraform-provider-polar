@@ -5,5 +5,5 @@ package client
 // AttachedCustomFieldCreate - Schema to attach a custom field to a resource.
 type AttachedCustomFieldCreate struct {
 	CustomFieldId string `json:"custom_field_id,omitempty"`
-	Required *bool `json:"required,omitempty"`
+	Required      *bool  `json:"required,omitempty"`
 }

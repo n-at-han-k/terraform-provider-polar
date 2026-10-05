@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,24 +33,18 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 		Description: "Fetches a discount data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
 			},
 			"code": schema.StringAttribute{
@@ -76,16 +68,11 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "Maximum number of times the discount can be redeemed by a single customer.",
 			},
 			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The organization ID.",
-			},
 			"duration": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "",
 			},
 			"duration_in_months": schema.Int64Attribute{
@@ -109,7 +96,7 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "",
 			},
 		},
@@ -153,7 +140,7 @@ func (d *DiscountDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read discount data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

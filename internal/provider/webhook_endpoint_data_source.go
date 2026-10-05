@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,19 +33,22 @@ func (d *WebhookEndpointDataSource) Schema(_ context.Context, _ datasource.Schem
 		Description: "Fetches a webhook_endpoint data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Creation timestamp of the object.",
+				Description: "Whether the webhook endpoint is enabled.",
 			},
-			"modified_at": schema.StringAttribute{
+			"secret": schema.StringAttribute{
 				Computed:    true,
-				Description: "Last modification timestamp of the object.",
+				Description: "The secret used to sign the webhook events.",
 			},
 			"url": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The URL where the webhook events will be sent.",
 			},
 			"name": schema.StringAttribute{
@@ -55,17 +56,12 @@ func (d *WebhookEndpointDataSource) Schema(_ context.Context, _ datasource.Schem
 				Description: "An optional name for the webhook endpoint to help organize and identify it.",
 			},
 			"format": schema.StringAttribute{
-				Required:    true,
-				Description: "The format of the webhook payload.",
+				Computed:    true,
+				Description: "",
 			},
 			"events": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Required:    true,
-				Description: "The events that will trigger the webhook.",
-			},
-			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The organization ID associated with the webhook endpoint.",
+				Description: "The events that will trigger the webhook.",
 			},
 		},
 	}
@@ -108,7 +104,7 @@ func (d *WebhookEndpointDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read webhook_endpoint data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

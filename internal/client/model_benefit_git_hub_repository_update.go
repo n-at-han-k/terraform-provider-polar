@@ -4,8 +4,8 @@ package client
 
 // BenefitGitHubRepositoryUpdate - BenefitGitHubRepositoryUpdate struct
 type BenefitGitHubRepositoryUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Description string `json:"description,omitempty"`
-	Type string `json:"type,omitempty"`
-	Properties *BenefitGitHubRepositoryCreateProperties `json:"properties,omitempty"`
+	Metadata    map[string]string                        `json:"metadata,omitempty"`
+	Description string                                   `json:"description,omitempty"`
+	Type        string                                   `json:"type,omitempty"`
+	Properties  *BenefitGitHubRepositoryCreateProperties `json:"properties,omitempty"`
 }

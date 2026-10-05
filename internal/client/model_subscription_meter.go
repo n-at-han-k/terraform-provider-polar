@@ -4,12 +4,12 @@ package client
 
 // SubscriptionMeter - Current consumption and spending for a subscription meter.
 type SubscriptionMeter struct {
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Id string `json:"id,omitempty"`
+	CreatedAt     string  `json:"created_at,omitempty"`
+	ModifiedAt    string  `json:"modified_at,omitempty"`
+	Id            string  `json:"id,omitempty"`
 	ConsumedUnits float32 `json:"consumed_units,omitempty"`
-	CreditedUnits int32 `json:"credited_units,omitempty"`
-	Amount int32 `json:"amount,omitempty"`
-	MeterId string `json:"meter_id,omitempty"`
-	Meter *Meter `json:"meter,omitempty"`
+	CreditedUnits int32   `json:"credited_units,omitempty"`
+	Amount        int32   `json:"amount,omitempty"`
+	MeterId       string  `json:"meter_id,omitempty"`
+	Meter         *Meter  `json:"meter,omitempty"`
 }

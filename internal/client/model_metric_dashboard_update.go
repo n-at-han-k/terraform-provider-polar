@@ -4,6 +4,6 @@ package client
 
 // MetricDashboardUpdate - Schema for updating a metrics dashboard.
 type MetricDashboardUpdate struct {
-	Name string `json:"name,omitempty"`
+	Name    string   `json:"name,omitempty"`
 	Metrics []string `json:"metrics,omitempty"`
 }

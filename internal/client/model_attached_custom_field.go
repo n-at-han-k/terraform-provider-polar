@@ -4,8 +4,8 @@ package client
 
 // AttachedCustomField - Schema of a custom field attached to a resource.
 type AttachedCustomField struct {
-	CustomFieldId string `json:"custom_field_id,omitempty"`
-	CustomField *CustomField `json:"custom_field,omitempty"`
-	Order int32 `json:"order,omitempty"`
-	Required *bool `json:"required,omitempty"`
+	CustomFieldId string       `json:"custom_field_id,omitempty"`
+	CustomField   *CustomField `json:"custom_field,omitempty"`
+	Order         int32        `json:"order,omitempty"`
+	Required      *bool        `json:"required,omitempty"`
 }

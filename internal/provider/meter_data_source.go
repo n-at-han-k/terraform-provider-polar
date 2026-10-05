@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,29 +33,23 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 		Description: "Fetches a meter data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The name of the meter. Will be shown on customer's invoices and usage.",
 			},
 			"unit": schema.StringAttribute{
 				Computed:    true,
-				Description: "The unit of the meter.",
+				Description: "",
 			},
 			"custom_label": schema.StringAttribute{
 				Computed:    true,
@@ -68,16 +60,12 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
 			"filter": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
 			"aggregation": schema.StringAttribute{
-				Required:    true,
-				Description: "",
-			},
-			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the organization owning the meter.",
+				Description: "The aggregation to apply on the filtered events to calculate the meter.",
 			},
 		},
 	}
@@ -120,7 +108,7 @@ func (d *MeterDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read meter data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

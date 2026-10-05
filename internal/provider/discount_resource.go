@@ -3,29 +3,27 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 var _ resource.Resource = &DiscountResource{}
 var _ resource.ResourceWithImportState = &DiscountResource{}
+var _ resource.ResourceWithValidateConfig = &DiscountResource{}
 
 func NewDiscountResource() resource.Resource {
 	return &DiscountResource{}
@@ -47,18 +45,10 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
@@ -66,76 +56,296 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
 			},
 			"code": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Code customers can use to apply the discount during checkout.",
 			},
 			"starts_at": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Timestamp after which the discount is redeemable.",
 			},
 			"ends_at": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Timestamp after which the discount is no longer redeemable.",
 			},
 			"max_redemptions": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Maximum number of times the discount can be redeemed.",
 			},
 			"max_redemptions_per_customer": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Maximum number of times the discount can be redeemed by a single customer.",
 			},
-			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"products": schema.ListAttribute{
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The organization ID.",
-			},
 			"duration": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"once",
+						"forever",
+						"repeating",
+					),
+				},
 				Description: "",
 			},
 			"duration_in_months": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "",
 			},
 			"amount": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "",
 			},
 			"currency": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"aed",
+						"all",
+						"amd",
+						"aoa",
+						"ars",
+						"aud",
+						"awg",
+						"azn",
+						"bam",
+						"bbd",
+						"bdt",
+						"bif",
+						"bmd",
+						"bnd",
+						"bob",
+						"brl",
+						"bsd",
+						"bwp",
+						"bzd",
+						"cad",
+						"cdf",
+						"chf",
+						"clp",
+						"cny",
+						"cop",
+						"crc",
+						"cve",
+						"czk",
+						"djf",
+						"dkk",
+						"dop",
+						"dzd",
+						"egp",
+						"etb",
+						"eur",
+						"fjd",
+						"fkp",
+						"gbp",
+						"gel",
+						"gip",
+						"gmd",
+						"gnf",
+						"gtq",
+						"gyd",
+						"hkd",
+						"hnl",
+						"htg",
+						"huf",
+						"idr",
+						"ils",
+						"inr",
+						"isk",
+						"jmd",
+						"jpy",
+						"kes",
+						"kgs",
+						"khr",
+						"kmf",
+						"krw",
+						"kyd",
+						"kzt",
+						"lak",
+						"lkr",
+						"lrd",
+						"lsl",
+						"mad",
+						"mdl",
+						"mga",
+						"mkd",
+						"mnt",
+						"mop",
+						"mur",
+						"mvr",
+						"mwk",
+						"mxn",
+						"myr",
+						"mzn",
+						"nad",
+						"ngn",
+						"nio",
+						"nok",
+						"npr",
+						"nzd",
+						"pab",
+						"pen",
+						"pgk",
+						"php",
+						"pkr",
+						"pln",
+						"pyg",
+						"qar",
+						"ron",
+						"rsd",
+						"rwf",
+						"sar",
+						"sbd",
+						"scr",
+						"sek",
+						"sgd",
+						"shp",
+						"sos",
+						"srd",
+						"szl",
+						"thb",
+						"tjs",
+						"top",
+						"try",
+						"ttd",
+						"twd",
+						"tzs",
+						"uah",
+						"ugx",
+						"usd",
+						"uyu",
+						"uzs",
+						"vnd",
+						"vuv",
+						"wst",
+						"xaf",
+						"xcd",
+						"xcg",
+						"xof",
+						"xpf",
+						"yer",
+						"zar",
+						"zmw",
+					),
+				},
 				Description: "",
 			},
 			"amounts": schema.MapAttribute{
-				Computed:    true,
 				Optional:    true,
 				ElementType: types.Int64Type,
 				Description: "Map of currency to fixed amount to discount from the total.",
 			},
 			"basis_points": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"fixed",
+						"percentage",
+					),
+				},
 				Description: "",
 			},
 		},
+	}
+}
+
+// ValidateConfig refuses WHAT THE DISCRIMINATOR SAYS: a field that belongs to
+// another variant, and one the chosen variant demands and nobody set.
+//
+// amount are the
+// fields a flattened union became, one set per variant, and nothing in the schema
+// stops a configuration from filling two of them -- or from filling the one
+// type did not ask for. Polar answers 422 for that, which arrives
+// after the plan as a refused request rather than as a message naming the two
+// attributes that disagreed.
+//
+// The plan is where it can be named.
+func (r *DiscountResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config DiscountModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// type may be unknown while a variable decides it, and there is
+	// nothing to check against until it is known.
+	if config.Type.IsUnknown() {
+		return
+	}
+
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if !config.Amount.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "fixed" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("amount"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "amount", "fixed"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if !config.Currency.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "fixed" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("currency"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "currency", "fixed"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if !config.Amounts.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "fixed" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("amounts"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "amounts", "fixed"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if !config.BasisPoints.IsNull() && !config.Type.IsUnknown() && config.Type.ValueString() != "percentage" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("basis_points"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when type is %q.", "basis_points", "percentage"),
+		)
+	}
+	// A FIELD OF THE ONE BLOCK EVERY VARIANT SHARES, so there is no other block
+	// to name: the message is about the field.
+	if !config.DurationInMonths.IsNull() && !config.Duration.IsUnknown() && config.Duration.ValueString() != "repeating" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("duration_in_months"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when duration is %q.", "duration_in_months", "repeating"),
+		)
+	}
+	if config.Type.ValueString() == "fixed" && config.Amounts.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("amounts"),
+			"Missing required property",
+			fmt.Sprintf("%q is required when type is %q.", "amounts", "fixed"),
+		)
+	}
+	if config.Type.ValueString() == "percentage" && config.BasisPoints.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("basis_points"),
+			"Missing required property",
+			fmt.Sprintf("%q is required when type is %q.", "basis_points", "percentage"),
+		)
+	}
+	if config.Duration.ValueString() == "repeating" && config.DurationInMonths.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("duration_in_months"),
+			"Missing required property",
+			fmt.Sprintf("%q is required when duration is %q.", "duration_in_months", "repeating"),
+		)
 	}
 }
 

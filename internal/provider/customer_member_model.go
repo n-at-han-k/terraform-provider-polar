@@ -9,15 +9,12 @@ import (
 
 // CustomerMemberModel is the Terraform model for customer_member.
 type CustomerMemberModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Email types.String `tfsdk:"email"`
-	Name types.String `tfsdk:"name"`
+	Id         types.String `tfsdk:"id"`
+	Email      types.String `tfsdk:"email"`
+	Name       types.String `tfsdk:"name"`
 	ExternalId types.String `tfsdk:"external_id"`
-	Role types.String `tfsdk:"role"`
+	Role       types.String `tfsdk:"role"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *CustomerMemberModel) ToClientModel() (*client.MemberCreateFromCustomer, error) {
@@ -59,13 +56,39 @@ func (m *CustomerMemberModel) ToUpdateModel() (*client.MemberUpdate, error) {
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *CustomerMemberModel) FromClientModel(c *client.Member) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *CustomerMemberModel) FromAnswer(c *client.Member) {
+	m.fromAnswer(c, true)
+}
+
+func (m *CustomerMemberModel) fromAnswer(c *client.Member, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Email = types.StringValue(c.Email)
-	m.Name = types.StringValue(c.Name)
-	m.ExternalId = types.StringValue(c.ExternalId)
-	m.Role = types.StringValue(c.Role)
+	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
+		m.Email = types.StringValue(c.Email)
+	}
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
+	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
+		m.ExternalId = types.StringValue(c.ExternalId)
+	}
+	if everything || !m.Role.IsNull() && !m.Role.IsUnknown() {
+		m.Role = types.StringValue(c.Role)
+	}
 }

@@ -4,6 +4,6 @@ package client
 
 // BenefitLicenseKeyExpirationProperties - BenefitLicenseKeyExpirationProperties struct
 type BenefitLicenseKeyExpirationProperties struct {
-	Ttl int32 `json:"ttl,omitempty"`
+	Ttl       int32  `json:"ttl,omitempty"`
 	Timeframe string `json:"timeframe,omitempty"`
 }

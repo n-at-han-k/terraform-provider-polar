@@ -10,24 +10,22 @@ import (
 
 // OrganizationModel is the Terraform model for organization.
 type OrganizationModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Name types.String `tfsdk:"name"`
-	Slug types.String `tfsdk:"slug"`
-	AvatarUrl types.String `tfsdk:"avatar_url"`
-	LegalEntity *OrganizationLegalEntityModel `tfsdk:"legal_entity"`
-	Email types.String `tfsdk:"email"`
-	Website types.String `tfsdk:"website"`
-	Socials []OrganizationSocialsModel `tfsdk:"socials"`
-	Details *OrganizationDetailsModel `tfsdk:"details"`
-	Country types.String `tfsdk:"country"`
-	FeatureSettings *OrganizationFeatureSettingsModel `tfsdk:"feature_settings"`
-	SubscriptionSettings *OrganizationSubscriptionSettingsModel `tfsdk:"subscription_settings"`
-	CustomerEmailSettings *OrganizationCustomerEmailSettingsModel `tfsdk:"customer_email_settings"`
-	CustomerPortalSettings *OrganizationCustomerPortalSettingsModel `tfsdk:"customer_portal_settings"`
-	DefaultPresentmentCurrency types.String `tfsdk:"default_presentment_currency"`
-	DefaultTaxBehavior types.String `tfsdk:"default_tax_behavior"`
+	Id                         types.String                             `tfsdk:"id"`
+	Name                       types.String                             `tfsdk:"name"`
+	Slug                       types.String                             `tfsdk:"slug"`
+	AvatarUrl                  types.String                             `tfsdk:"avatar_url"`
+	LegalEntity                *OrganizationLegalEntityModel            `tfsdk:"legal_entity"`
+	Email                      types.String                             `tfsdk:"email"`
+	Website                    types.String                             `tfsdk:"website"`
+	Socials                    []OrganizationSocialsModel               `tfsdk:"socials"`
+	Details                    *OrganizationDetailsModel                `tfsdk:"details"`
+	Country                    types.String                             `tfsdk:"country"`
+	FeatureSettings            *OrganizationFeatureSettingsModel        `tfsdk:"feature_settings"`
+	SubscriptionSettings       *OrganizationSubscriptionSettingsModel   `tfsdk:"subscription_settings"`
+	CustomerEmailSettings      *OrganizationCustomerEmailSettingsModel  `tfsdk:"customer_email_settings"`
+	CustomerPortalSettings     *OrganizationCustomerPortalSettingsModel `tfsdk:"customer_portal_settings"`
+	DefaultPresentmentCurrency types.String                             `tfsdk:"default_presentment_currency"`
+	DefaultTaxBehavior         types.String                             `tfsdk:"default_tax_behavior"`
 }
 
 // OrganizationLegalEntityModel is one `legal_entity` block.
@@ -37,18 +35,18 @@ type OrganizationModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationLegalEntityModel struct {
-	Type types.String `tfsdk:"type"`
 	RegisteredName types.String `tfsdk:"registered_name"`
+	Type           types.String `tfsdk:"type"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
 func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCreateLegalEntity, error) {
 	out := &client.OrganizationCreateLegalEntity{}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
 	if !m.RegisteredName.IsNull() && !m.RegisteredName.IsUnknown() {
 		out.RegisteredName = m.RegisteredName.ValueString()
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
 	}
 	return out, nil
 }
@@ -60,9 +58,10 @@ func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCrea
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCreateLegalEntity) {
-	m.Type = types.StringValue(c.Type)
 	m.RegisteredName = types.StringValue(c.RegisteredName)
+	m.Type = types.StringValue(c.Type)
 }
+
 // OrganizationSocialsModel is one `socials` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -71,7 +70,7 @@ func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCre
 // in step with the fields by hand.
 type OrganizationSocialsModel struct {
 	Platform types.String `tfsdk:"platform"`
-	Url types.String `tfsdk:"url"`
+	Url      types.String `tfsdk:"url"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -96,6 +95,7 @@ func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialL
 	m.Platform = types.StringValue(c.Platform)
 	m.Url = types.StringValue(c.Url)
 }
+
 // OrganizationDetailsModel is one `details` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -103,16 +103,16 @@ func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialL
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationDetailsModel struct {
-	About types.String `tfsdk:"about"`
-	ProductDescription types.String `tfsdk:"product_description"`
-	SellingCategories []string `tfsdk:"selling_categories"`
-	PricingModels []string `tfsdk:"pricing_models"`
-	IntendedUse types.String `tfsdk:"intended_use"`
-	CustomerAcquisition []string `tfsdk:"customer_acquisition"`
-	FutureAnnualRevenue types.Int64 `tfsdk:"future_annual_revenue"`
-	Switching types.Bool `tfsdk:"switching"`
-	SwitchingFrom types.String `tfsdk:"switching_from"`
-	PreviousAnnualRevenue types.Int64 `tfsdk:"previous_annual_revenue"`
+	About                 types.String `tfsdk:"about"`
+	ProductDescription    types.String `tfsdk:"product_description"`
+	SellingCategories     types.List   `tfsdk:"selling_categories"`
+	PricingModels         types.List   `tfsdk:"pricing_models"`
+	IntendedUse           types.String `tfsdk:"intended_use"`
+	CustomerAcquisition   types.List   `tfsdk:"customer_acquisition"`
+	FutureAnnualRevenue   types.Int64  `tfsdk:"future_annual_revenue"`
+	Switching             types.Bool   `tfsdk:"switching"`
+	SwitchingFrom         types.String `tfsdk:"switching_from"`
+	PreviousAnnualRevenue types.Int64  `tfsdk:"previous_annual_revenue"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -162,6 +162,7 @@ func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails
 	m.SwitchingFrom = types.StringValue(c.SwitchingFrom)
 	m.PreviousAnnualRevenue = types.Int64Value(int64(c.PreviousAnnualRevenue))
 }
+
 // OrganizationFeatureSettingsModel is one `feature_settings` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -169,10 +170,21 @@ func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationFeatureSettingsModel struct {
-	SeatBasedPricingEnabled types.Bool `tfsdk:"seat_based_pricing_enabled"`
-	MemberModelEnabled types.Bool `tfsdk:"member_model_enabled"`
-	CheckoutLocalizationEnabled types.Bool `tfsdk:"checkout_localization_enabled"`
-	OverviewMetrics []string `tfsdk:"overview_metrics"`
+	IssueFundingEnabled           types.Bool `tfsdk:"issue_funding_enabled"`
+	SeatBasedPricingEnabled       types.Bool `tfsdk:"seat_based_pricing_enabled"`
+	WalletsEnabled                types.Bool `tfsdk:"wallets_enabled"`
+	MemberModelEnabled            types.Bool `tfsdk:"member_model_enabled"`
+	CheckoutLocalizationEnabled   types.Bool `tfsdk:"checkout_localization_enabled"`
+	OverviewMetrics               types.List `tfsdk:"overview_metrics"`
+	ResetProrationBehaviorEnabled types.Bool `tfsdk:"reset_proration_behavior_enabled"`
+	OffSessionChargesEnabled      types.Bool `tfsdk:"off_session_charges_enabled"`
+	SlackBenefitEnabled           types.Bool `tfsdk:"slack_benefit_enabled"`
+	PreviewAccessEnabled          types.Bool `tfsdk:"preview_access_enabled"`
+	DisputesEnabled               types.Bool `tfsdk:"disputes_enabled"`
+	SsoEnabled                    types.Bool `tfsdk:"sso_enabled"`
+	DisputeAutoAcceptEnabled      types.Bool `tfsdk:"dispute_auto_accept_enabled"`
+	CompassEnabled                types.Bool `tfsdk:"compass_enabled"`
+	MerchantMigrationEnabled      types.Bool `tfsdk:"merchant_migration_enabled"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -195,15 +207,25 @@ func (m *OrganizationFeatureSettingsModel) ToClientModel() (*client.Organization
 
 // FromClientModel fills one block from what the server answered.
 //
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.OrganizationFeatureSettingsUpdate) {
+// A DIFFERENT CLIENT TYPE FROM THE ONE IT SENDS: this block's children describe
+// what Polar answers, and the request carries its own -- see `responseBlocks` in
+// the generator configuration. The struct is the same either way, so the two
+// conversions have the same fields to work with and do not.
+func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.OrganizationFeatureSettings) {
+	if c.IssueFundingEnabled != nil {
+		m.IssueFundingEnabled = types.BoolValue(*c.IssueFundingEnabled)
+	} else {
+		m.IssueFundingEnabled = types.BoolNull()
+	}
 	if c.SeatBasedPricingEnabled != nil {
 		m.SeatBasedPricingEnabled = types.BoolValue(*c.SeatBasedPricingEnabled)
 	} else {
 		m.SeatBasedPricingEnabled = types.BoolNull()
+	}
+	if c.WalletsEnabled != nil {
+		m.WalletsEnabled = types.BoolValue(*c.WalletsEnabled)
+	} else {
+		m.WalletsEnabled = types.BoolNull()
 	}
 	if c.MemberModelEnabled != nil {
 		m.MemberModelEnabled = types.BoolValue(*c.MemberModelEnabled)
@@ -215,7 +237,53 @@ func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.Organizatio
 	} else {
 		m.CheckoutLocalizationEnabled = types.BoolNull()
 	}
+	if c.ResetProrationBehaviorEnabled != nil {
+		m.ResetProrationBehaviorEnabled = types.BoolValue(*c.ResetProrationBehaviorEnabled)
+	} else {
+		m.ResetProrationBehaviorEnabled = types.BoolNull()
+	}
+	if c.OffSessionChargesEnabled != nil {
+		m.OffSessionChargesEnabled = types.BoolValue(*c.OffSessionChargesEnabled)
+	} else {
+		m.OffSessionChargesEnabled = types.BoolNull()
+	}
+	if c.SlackBenefitEnabled != nil {
+		m.SlackBenefitEnabled = types.BoolValue(*c.SlackBenefitEnabled)
+	} else {
+		m.SlackBenefitEnabled = types.BoolNull()
+	}
+	if c.PreviewAccessEnabled != nil {
+		m.PreviewAccessEnabled = types.BoolValue(*c.PreviewAccessEnabled)
+	} else {
+		m.PreviewAccessEnabled = types.BoolNull()
+	}
+	if c.DisputesEnabled != nil {
+		m.DisputesEnabled = types.BoolValue(*c.DisputesEnabled)
+	} else {
+		m.DisputesEnabled = types.BoolNull()
+	}
+	if c.SsoEnabled != nil {
+		m.SsoEnabled = types.BoolValue(*c.SsoEnabled)
+	} else {
+		m.SsoEnabled = types.BoolNull()
+	}
+	if c.DisputeAutoAcceptEnabled != nil {
+		m.DisputeAutoAcceptEnabled = types.BoolValue(*c.DisputeAutoAcceptEnabled)
+	} else {
+		m.DisputeAutoAcceptEnabled = types.BoolNull()
+	}
+	if c.CompassEnabled != nil {
+		m.CompassEnabled = types.BoolValue(*c.CompassEnabled)
+	} else {
+		m.CompassEnabled = types.BoolNull()
+	}
+	if c.MerchantMigrationEnabled != nil {
+		m.MerchantMigrationEnabled = types.BoolValue(*c.MerchantMigrationEnabled)
+	} else {
+		m.MerchantMigrationEnabled = types.BoolNull()
+	}
 }
+
 // OrganizationSubscriptionSettingsModel is one `subscription_settings` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -223,11 +291,11 @@ func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.Organizatio
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationSubscriptionSettingsModel struct {
-	AllowMultipleSubscriptions types.Bool `tfsdk:"allow_multiple_subscriptions"`
-	ProrationBehavior types.String `tfsdk:"proration_behavior"`
-	BenefitRevocationGracePeriod types.Int64 `tfsdk:"benefit_revocation_grace_period"`
-	PreventTrialAbuse types.Bool `tfsdk:"prevent_trial_abuse"`
-	AllowCustomerUpdates types.Bool `tfsdk:"allow_customer_updates"`
+	AllowMultipleSubscriptions   types.Bool   `tfsdk:"allow_multiple_subscriptions"`
+	ProrationBehavior            types.String `tfsdk:"proration_behavior"`
+	BenefitRevocationGracePeriod types.Int64  `tfsdk:"benefit_revocation_grace_period"`
+	PreventTrialAbuse            types.Bool   `tfsdk:"prevent_trial_abuse"`
+	AllowCustomerUpdates         types.Bool   `tfsdk:"allow_customer_updates"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -279,6 +347,7 @@ func (m *OrganizationSubscriptionSettingsModel) FromClientModel(c *client.Organi
 		m.AllowCustomerUpdates = types.BoolNull()
 	}
 }
+
 // OrganizationCustomerEmailSettingsModel is one `customer_email_settings` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -286,20 +355,20 @@ func (m *OrganizationSubscriptionSettingsModel) FromClientModel(c *client.Organi
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationCustomerEmailSettingsModel struct {
-	OrderConfirmation types.Bool `tfsdk:"order_confirmation"`
-	PaymentMethodExpirationReminder types.Bool `tfsdk:"payment_method_expiration_reminder"`
-	SubscriptionCancellation types.Bool `tfsdk:"subscription_cancellation"`
-	SubscriptionConfirmation types.Bool `tfsdk:"subscription_confirmation"`
-	SubscriptionCycled types.Bool `tfsdk:"subscription_cycled"`
-	SubscriptionCycledAfterTrial types.Bool `tfsdk:"subscription_cycled_after_trial"`
-	SubscriptionPastDue types.Bool `tfsdk:"subscription_past_due"`
-	SubscriptionPaused types.Bool `tfsdk:"subscription_paused"`
-	SubscriptionResumed types.Bool `tfsdk:"subscription_resumed"`
-	SubscriptionRenewalReminder types.Bool `tfsdk:"subscription_renewal_reminder"`
-	SubscriptionRevoked types.Bool `tfsdk:"subscription_revoked"`
+	OrderConfirmation                   types.Bool `tfsdk:"order_confirmation"`
+	PaymentMethodExpirationReminder     types.Bool `tfsdk:"payment_method_expiration_reminder"`
+	SubscriptionCancellation            types.Bool `tfsdk:"subscription_cancellation"`
+	SubscriptionConfirmation            types.Bool `tfsdk:"subscription_confirmation"`
+	SubscriptionCycled                  types.Bool `tfsdk:"subscription_cycled"`
+	SubscriptionCycledAfterTrial        types.Bool `tfsdk:"subscription_cycled_after_trial"`
+	SubscriptionPastDue                 types.Bool `tfsdk:"subscription_past_due"`
+	SubscriptionPaused                  types.Bool `tfsdk:"subscription_paused"`
+	SubscriptionResumed                 types.Bool `tfsdk:"subscription_resumed"`
+	SubscriptionRenewalReminder         types.Bool `tfsdk:"subscription_renewal_reminder"`
+	SubscriptionRevoked                 types.Bool `tfsdk:"subscription_revoked"`
 	SubscriptionTrialConversionReminder types.Bool `tfsdk:"subscription_trial_conversion_reminder"`
-	SubscriptionUncanceled types.Bool `tfsdk:"subscription_uncanceled"`
-	SubscriptionUpdated types.Bool `tfsdk:"subscription_updated"`
+	SubscriptionUncanceled              types.Bool `tfsdk:"subscription_uncanceled"`
+	SubscriptionUpdated                 types.Bool `tfsdk:"subscription_updated"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -442,6 +511,7 @@ func (m *OrganizationCustomerEmailSettingsModel) FromClientModel(c *client.Organ
 		m.SubscriptionUpdated = types.BoolNull()
 	}
 }
+
 // OrganizationCustomerPortalSettingsModel is one `customer_portal_settings` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -449,9 +519,9 @@ func (m *OrganizationCustomerEmailSettingsModel) FromClientModel(c *client.Organ
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type OrganizationCustomerPortalSettingsModel struct {
-	Usage types.String `tfsdk:"usage"`
-	Subscription types.String `tfsdk:"subscription"`
-	Customer types.String `tfsdk:"customer"`
+	Usage        *OrganizationCustomerPortalSettingsModelUsageModel        `tfsdk:"usage"`
+	Subscription *OrganizationCustomerPortalSettingsModelSubscriptionModel `tfsdk:"subscription"`
+	Customer     *OrganizationCustomerPortalSettingsModelCustomerModel     `tfsdk:"customer"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -467,6 +537,128 @@ func (m *OrganizationCustomerPortalSettingsModel) ToClientModel() (*client.Organ
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModel) FromClientModel(c *client.OrganizationCustomerPortalSettings) {
+}
+
+// OrganizationCustomerPortalSettingsModelUsageModel is one `usage` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type OrganizationCustomerPortalSettingsModelUsageModel struct {
+	Show types.Bool `tfsdk:"show"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *OrganizationCustomerPortalSettingsModelUsageModel) ToClientModel() (*client.CustomerPortalUsageSettings, error) {
+	out := &client.CustomerPortalUsageSettings{}
+	if !m.Show.IsNull() && !m.Show.IsUnknown() {
+		Show := m.Show.ValueBool()
+		out.Show = &Show
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *OrganizationCustomerPortalSettingsModelUsageModel) FromClientModel(c *client.CustomerPortalUsageSettings) {
+	if c.Show != nil {
+		m.Show = types.BoolValue(*c.Show)
+	} else {
+		m.Show = types.BoolNull()
+	}
+}
+
+// OrganizationCustomerPortalSettingsModelSubscriptionModel is one `subscription` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type OrganizationCustomerPortalSettingsModelSubscriptionModel struct {
+	UpdateSeats types.Bool `tfsdk:"update_seats"`
+	UpdatePlan  types.Bool `tfsdk:"update_plan"`
+	Pause       types.Bool `tfsdk:"pause"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *OrganizationCustomerPortalSettingsModelSubscriptionModel) ToClientModel() (*client.CustomerPortalSubscriptionSettings, error) {
+	out := &client.CustomerPortalSubscriptionSettings{}
+	if !m.UpdateSeats.IsNull() && !m.UpdateSeats.IsUnknown() {
+		UpdateSeats := m.UpdateSeats.ValueBool()
+		out.UpdateSeats = &UpdateSeats
+	}
+	if !m.UpdatePlan.IsNull() && !m.UpdatePlan.IsUnknown() {
+		UpdatePlan := m.UpdatePlan.ValueBool()
+		out.UpdatePlan = &UpdatePlan
+	}
+	if !m.Pause.IsNull() && !m.Pause.IsUnknown() {
+		Pause := m.Pause.ValueBool()
+		out.Pause = &Pause
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *OrganizationCustomerPortalSettingsModelSubscriptionModel) FromClientModel(c *client.CustomerPortalSubscriptionSettings) {
+	if c.UpdateSeats != nil {
+		m.UpdateSeats = types.BoolValue(*c.UpdateSeats)
+	} else {
+		m.UpdateSeats = types.BoolNull()
+	}
+	if c.UpdatePlan != nil {
+		m.UpdatePlan = types.BoolValue(*c.UpdatePlan)
+	} else {
+		m.UpdatePlan = types.BoolNull()
+	}
+	if c.Pause != nil {
+		m.Pause = types.BoolValue(*c.Pause)
+	} else {
+		m.Pause = types.BoolNull()
+	}
+}
+
+// OrganizationCustomerPortalSettingsModelCustomerModel is one `customer` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type OrganizationCustomerPortalSettingsModelCustomerModel struct {
+	AllowEmailChange types.Bool `tfsdk:"allow_email_change"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *OrganizationCustomerPortalSettingsModelCustomerModel) ToClientModel() (*client.CustomerPortalCustomerSettings, error) {
+	out := &client.CustomerPortalCustomerSettings{}
+	if !m.AllowEmailChange.IsNull() && !m.AllowEmailChange.IsUnknown() {
+		AllowEmailChange := m.AllowEmailChange.ValueBool()
+		out.AllowEmailChange = &AllowEmailChange
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *OrganizationCustomerPortalSettingsModelCustomerModel) FromClientModel(c *client.CustomerPortalCustomerSettings) {
+	if c.AllowEmailChange != nil {
+		m.AllowEmailChange = types.BoolValue(*c.AllowEmailChange)
+	} else {
+		m.AllowEmailChange = types.BoolNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -593,13 +785,6 @@ func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) 
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
 		out.Country = m.Country.ValueString()
 	}
-	if m.FeatureSettings != nil {
-		converted, err := m.FeatureSettings.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("feature_settings: %w", err)
-		}
-		out.FeatureSettings = converted
-	}
 	if m.SubscriptionSettings != nil {
 		converted, err := m.SubscriptionSettings.ToClientModel()
 		if err != nil {
@@ -630,55 +815,89 @@ func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) 
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *OrganizationModel) FromClientModel(c *client.Organization) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *OrganizationModel) FromAnswer(c *client.Organization) {
+	m.fromAnswer(c, true)
+}
+
+func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Name = types.StringValue(c.Name)
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
 	m.Slug = types.StringValue(c.Slug)
-	m.AvatarUrl = types.StringValue(c.AvatarUrl)
-	m.Email = types.StringValue(c.Email)
-	m.Website = types.StringValue(c.Website)
-	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
-	// compares element by element, so a server that reorders or adds a price is
-	// a diff -- which is correct: it did something the configuration did not say.
-	Socials := make([]OrganizationSocialsModel, 0, len(c.Socials))
-	for index := range c.Socials {
-		block := OrganizationSocialsModel{}
-		if index < len(m.Socials) {
-			block = m.Socials[index]
-		}
-		block.FromClientModel(&c.Socials[index])
-		Socials = append(Socials, block)
+	if everything || !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
+		m.AvatarUrl = types.StringValue(c.AvatarUrl)
 	}
-	m.Socials = Socials
-	m.Country = types.StringValue(c.Country)
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.SubscriptionSettings != nil {
-		block := OrganizationSubscriptionSettingsModel{}
-		if m.SubscriptionSettings != nil {
-			block = *m.SubscriptionSettings
-		}
-		block.FromClientModel(c.SubscriptionSettings)
-		m.SubscriptionSettings = &block
-	} else {
-		m.SubscriptionSettings = nil
+	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
+		m.Email = types.StringValue(c.Email)
 	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.CustomerEmailSettings != nil {
-		block := OrganizationCustomerEmailSettingsModel{}
-		if m.CustomerEmailSettings != nil {
-			block = *m.CustomerEmailSettings
+	if everything || !m.Website.IsNull() && !m.Website.IsUnknown() {
+		m.Website = types.StringValue(c.Website)
+	}
+	if everything || m.Socials != nil {
+		// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
+		// compares element by element, so a server that reorders or adds a price is
+		// a diff -- which is correct: it did something the configuration did not say.
+		Socials := make([]OrganizationSocialsModel, 0, len(c.Socials))
+		for index := range c.Socials {
+			block := OrganizationSocialsModel{}
+			if index < len(m.Socials) {
+				block = m.Socials[index]
+			}
+			block.FromClientModel(&c.Socials[index])
+			Socials = append(Socials, block)
 		}
-		block.FromClientModel(c.CustomerEmailSettings)
-		m.CustomerEmailSettings = &block
-	} else {
-		m.CustomerEmailSettings = nil
+		m.Socials = Socials
+	}
+	if everything || !m.Country.IsNull() && !m.Country.IsUnknown() {
+		m.Country = types.StringValue(c.Country)
+	}
+	if everything || m.SubscriptionSettings != nil {
+		// A pointer the server left nil is a block that is not there. Writing an
+		// empty one instead would be a diff against a configuration that correctly
+		// omitted it.
+		if c.SubscriptionSettings != nil {
+			block := OrganizationSubscriptionSettingsModel{}
+			if m.SubscriptionSettings != nil {
+				block = *m.SubscriptionSettings
+			}
+			block.FromClientModel(c.SubscriptionSettings)
+			m.SubscriptionSettings = &block
+		} else {
+			m.SubscriptionSettings = nil
+		}
+	}
+	if everything || m.CustomerEmailSettings != nil {
+		// A pointer the server left nil is a block that is not there. Writing an
+		// empty one instead would be a diff against a configuration that correctly
+		// omitted it.
+		if c.CustomerEmailSettings != nil {
+			block := OrganizationCustomerEmailSettingsModel{}
+			if m.CustomerEmailSettings != nil {
+				block = *m.CustomerEmailSettings
+			}
+			block.FromClientModel(c.CustomerEmailSettings)
+			m.CustomerEmailSettings = &block
+		} else {
+			m.CustomerEmailSettings = nil
+		}
 	}
 	// A pointer the server left nil is a block that is not there. Writing an
 	// empty one instead would be a diff against a configuration that correctly
@@ -693,6 +912,10 @@ func (m *OrganizationModel) FromClientModel(c *client.Organization) {
 	} else {
 		m.CustomerPortalSettings = nil
 	}
-	m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
-	m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
+	if everything || !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
+		m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
+	}
+	if everything || !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
+		m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
+	}
 }

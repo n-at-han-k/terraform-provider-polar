@@ -4,8 +4,8 @@ package client
 
 // ProductPriceFixedCreate - Schema to create a fixed price.
 type ProductPriceFixedCreate struct {
-	AmountType string `json:"amount_type,omitempty"`
+	AmountType    string `json:"amount_type,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
-	TaxBehavior string `json:"tax_behavior,omitempty"`
-	PriceAmount int32 `json:"price_amount,omitempty"`
+	TaxBehavior   string `json:"tax_behavior,omitempty"`
+	PriceAmount   int32  `json:"price_amount,omitempty"`
 }

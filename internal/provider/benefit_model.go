@@ -5,30 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // BenefitModel is the Terraform model for benefit.
 type BenefitModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Description types.String `tfsdk:"description"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Visibility types.String `tfsdk:"visibility"`
-	CustomProperties *BenefitCustomPropertiesModel `tfsdk:"custom_properties"`
-	DiscordProperties *BenefitDiscordPropertiesModel `tfsdk:"discord_properties"`
-	GithubRepositoryProperties *BenefitGithubRepositoryPropertiesModel `tfsdk:"github_repository_properties"`
-	DownloadablesProperties *BenefitDownloadablesPropertiesModel `tfsdk:"downloadables_properties"`
-	LicenseKeysProperties *BenefitLicenseKeysPropertiesModel `tfsdk:"license_keys_properties"`
-	MeterCreditProperties *BenefitMeterCreditPropertiesModel `tfsdk:"meter_credit_properties"`
-	FeatureFlagProperties jsontypes.Normalized `tfsdk:"feature_flag_properties"`
+	Id                           types.String                              `tfsdk:"id"`
+	Metadata                     types.Map                                 `tfsdk:"metadata"`
+	Description                  types.String                              `tfsdk:"description"`
+	Visibility                   types.String                              `tfsdk:"visibility"`
+	CustomProperties             *BenefitCustomPropertiesModel             `tfsdk:"custom_properties"`
+	DiscordProperties            *BenefitDiscordPropertiesModel            `tfsdk:"discord_properties"`
+	GithubRepositoryProperties   *BenefitGithubRepositoryPropertiesModel   `tfsdk:"github_repository_properties"`
+	DownloadablesProperties      *BenefitDownloadablesPropertiesModel      `tfsdk:"downloadables_properties"`
+	LicenseKeysProperties        *BenefitLicenseKeysPropertiesModel        `tfsdk:"license_keys_properties"`
+	MeterCreditProperties        *BenefitMeterCreditPropertiesModel        `tfsdk:"meter_credit_properties"`
+	FeatureFlagProperties        jsontypes.Normalized                      `tfsdk:"feature_flag_properties"`
 	SlackSharedChannelProperties *BenefitSlackSharedChannelPropertiesModel `tfsdk:"slack_shared_channel_properties"`
-	Type types.String `tfsdk:"type"`
+	Type                         types.String                              `tfsdk:"type"`
 }
 
 // BenefitCustomPropertiesModel is one `custom_properties` block.
@@ -59,6 +57,7 @@ func (m *BenefitCustomPropertiesModel) ToClientModel() (*client.BenefitCustomCre
 func (m *BenefitCustomPropertiesModel) FromClientModel(c *client.BenefitCustomCreateProperties) {
 	m.Note = types.StringValue(c.Note)
 }
+
 // BenefitDiscordPropertiesModel is one `discord_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -67,8 +66,8 @@ func (m *BenefitCustomPropertiesModel) FromClientModel(c *client.BenefitCustomCr
 // in step with the fields by hand.
 type BenefitDiscordPropertiesModel struct {
 	GuildToken types.String `tfsdk:"guild_token"`
-	RoleId types.String `tfsdk:"role_id"`
-	KickMember types.Bool `tfsdk:"kick_member"`
+	RoleId     types.String `tfsdk:"role_id"`
+	KickMember types.Bool   `tfsdk:"kick_member"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -102,6 +101,7 @@ func (m *BenefitDiscordPropertiesModel) FromClientModel(c *client.BenefitDiscord
 		m.KickMember = types.BoolNull()
 	}
 }
+
 // BenefitGithubRepositoryPropertiesModel is one `github_repository_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -110,8 +110,8 @@ func (m *BenefitDiscordPropertiesModel) FromClientModel(c *client.BenefitDiscord
 // in step with the fields by hand.
 type BenefitGithubRepositoryPropertiesModel struct {
 	RepositoryOwner types.String `tfsdk:"repository_owner"`
-	RepositoryName types.String `tfsdk:"repository_name"`
-	Permission types.String `tfsdk:"permission"`
+	RepositoryName  types.String `tfsdk:"repository_name"`
+	Permission      types.String `tfsdk:"permission"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -140,6 +140,7 @@ func (m *BenefitGithubRepositoryPropertiesModel) FromClientModel(c *client.Benef
 	m.RepositoryName = types.StringValue(c.RepositoryName)
 	m.Permission = types.StringValue(c.Permission)
 }
+
 // BenefitDownloadablesPropertiesModel is one `downloadables_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -147,8 +148,8 @@ func (m *BenefitGithubRepositoryPropertiesModel) FromClientModel(c *client.Benef
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type BenefitDownloadablesPropertiesModel struct {
-	Archived map[string]bool `tfsdk:"archived"`
-	Files []string `tfsdk:"files"`
+	Archived types.Map  `tfsdk:"archived"`
+	Files    types.List `tfsdk:"files"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -165,6 +166,7 @@ func (m *BenefitDownloadablesPropertiesModel) ToClientModel() (*client.BenefitDo
 // returned invalid result object after apply".
 func (m *BenefitDownloadablesPropertiesModel) FromClientModel(c *client.BenefitDownloadablesCreateProperties) {
 }
+
 // BenefitLicenseKeysPropertiesModel is one `license_keys_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -172,10 +174,10 @@ func (m *BenefitDownloadablesPropertiesModel) FromClientModel(c *client.BenefitD
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type BenefitLicenseKeysPropertiesModel struct {
-	Prefix types.String `tfsdk:"prefix"`
-	Expires types.String `tfsdk:"expires"`
-	Activations types.String `tfsdk:"activations"`
-	LimitUsage types.Int64 `tfsdk:"limit_usage"`
+	Prefix      types.String                                       `tfsdk:"prefix"`
+	Expires     *BenefitLicenseKeysPropertiesModelExpiresModel     `tfsdk:"expires"`
+	Activations *BenefitLicenseKeysPropertiesModelActivationsModel `tfsdk:"activations"`
+	LimitUsage  types.Int64                                        `tfsdk:"limit_usage"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -200,6 +202,80 @@ func (m *BenefitLicenseKeysPropertiesModel) FromClientModel(c *client.BenefitLic
 	m.Prefix = types.StringValue(c.Prefix)
 	m.LimitUsage = types.Int64Value(int64(c.LimitUsage))
 }
+
+// BenefitLicenseKeysPropertiesModelExpiresModel is one `expires` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitLicenseKeysPropertiesModelExpiresModel struct {
+	Ttl       types.Int64  `tfsdk:"ttl"`
+	Timeframe types.String `tfsdk:"timeframe"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitLicenseKeysPropertiesModelExpiresModel) ToClientModel() (*client.BenefitLicenseKeyExpirationProperties, error) {
+	out := &client.BenefitLicenseKeyExpirationProperties{}
+	if !m.Ttl.IsNull() && !m.Ttl.IsUnknown() {
+		out.Ttl = int32(m.Ttl.ValueInt64())
+	}
+	if !m.Timeframe.IsNull() && !m.Timeframe.IsUnknown() {
+		out.Timeframe = m.Timeframe.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitLicenseKeysPropertiesModelExpiresModel) FromClientModel(c *client.BenefitLicenseKeyExpirationProperties) {
+	m.Ttl = types.Int64Value(int64(c.Ttl))
+	m.Timeframe = types.StringValue(c.Timeframe)
+}
+
+// BenefitLicenseKeysPropertiesModelActivationsModel is one `activations` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type BenefitLicenseKeysPropertiesModelActivationsModel struct {
+	Limit               types.Int64 `tfsdk:"limit"`
+	EnableCustomerAdmin types.Bool  `tfsdk:"enable_customer_admin"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *BenefitLicenseKeysPropertiesModelActivationsModel) ToClientModel() (*client.BenefitLicenseKeyActivationCreateProperties, error) {
+	out := &client.BenefitLicenseKeyActivationCreateProperties{}
+	if !m.Limit.IsNull() && !m.Limit.IsUnknown() {
+		out.Limit = int32(m.Limit.ValueInt64())
+	}
+	if !m.EnableCustomerAdmin.IsNull() && !m.EnableCustomerAdmin.IsUnknown() {
+		EnableCustomerAdmin := m.EnableCustomerAdmin.ValueBool()
+		out.EnableCustomerAdmin = &EnableCustomerAdmin
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *BenefitLicenseKeysPropertiesModelActivationsModel) FromClientModel(c *client.BenefitLicenseKeyActivationCreateProperties) {
+	m.Limit = types.Int64Value(int64(c.Limit))
+	if c.EnableCustomerAdmin != nil {
+		m.EnableCustomerAdmin = types.BoolValue(*c.EnableCustomerAdmin)
+	} else {
+		m.EnableCustomerAdmin = types.BoolNull()
+	}
+}
+
 // BenefitMeterCreditPropertiesModel is one `meter_credit_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -207,9 +283,9 @@ func (m *BenefitLicenseKeysPropertiesModel) FromClientModel(c *client.BenefitLic
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type BenefitMeterCreditPropertiesModel struct {
-	Units types.Int64 `tfsdk:"units"`
-	Rollover types.Bool `tfsdk:"rollover"`
-	MeterId types.String `tfsdk:"meter_id"`
+	Units    types.Int64  `tfsdk:"units"`
+	Rollover types.Bool   `tfsdk:"rollover"`
+	MeterId  types.String `tfsdk:"meter_id"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -243,6 +319,7 @@ func (m *BenefitMeterCreditPropertiesModel) FromClientModel(c *client.BenefitMet
 	}
 	m.MeterId = types.StringValue(c.MeterId)
 }
+
 // BenefitSlackSharedChannelPropertiesModel is one `slack_shared_channel_properties` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -250,12 +327,12 @@ func (m *BenefitMeterCreditPropertiesModel) FromClientModel(c *client.BenefitMet
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type BenefitSlackSharedChannelPropertiesModel struct {
-	SlackIntegrationId types.String `tfsdk:"slack_integration_id"`
+	SlackIntegrationId  types.String `tfsdk:"slack_integration_id"`
 	ChannelNameTemplate types.String `tfsdk:"channel_name_template"`
-	Private types.Bool `tfsdk:"private"`
-	WelcomeMessage types.String `tfsdk:"welcome_message"`
-	ArchiveOnRevoke types.Bool `tfsdk:"archive_on_revoke"`
-	TeamInvitees []string `tfsdk:"team_invitees"`
+	Private             types.Bool   `tfsdk:"private"`
+	WelcomeMessage      types.String `tfsdk:"welcome_message"`
+	ArchiveOnRevoke     types.Bool   `tfsdk:"archive_on_revoke"`
+	TeamInvitees        types.List   `tfsdk:"team_invitees"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -306,19 +383,14 @@ func (m *BenefitSlackSharedChannelPropertiesModel) FromClientModel(c *client.Ben
 // ToClientModel converts a Terraform model to a client model.
 func (m *BenefitModel) ToClientModel() (*client.BenefitCreate, error) {
 	out := &client.BenefitCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
 		out.Description = m.Description.ValueString()
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		out.Visibility = m.Visibility.ValueString()
@@ -397,8 +469,9 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitCreate, error) {
 func (m *BenefitModel) ToUpdateModel() (*client.BenefitUpdate, error) {
 	out := &client.BenefitUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
@@ -413,34 +486,60 @@ func (m *BenefitModel) ToUpdateModel() (*client.BenefitUpdate, error) {
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *BenefitModel) FromClientModel(c *client.Benefit) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *BenefitModel) FromAnswer(c *client.Benefit) {
+	m.fromAnswer(c, true)
+}
+
+func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.Description = types.StringValue(c.Description)
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.Visibility = types.StringValue(c.Visibility)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.FeatureFlagProperties); err == nil {
-		if m.FeatureFlagProperties.IsNull() || m.FeatureFlagProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.FeatureFlagProperties.ValueString()) {
-			m.FeatureFlagProperties = jsontypes.NewNormalizedValue(string(encoded))
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		m.Description = types.StringValue(c.Description)
+	}
+	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		m.Visibility = types.StringValue(c.Visibility)
+	}
+	if everything || !m.FeatureFlagProperties.IsNull() && !m.FeatureFlagProperties.IsUnknown() {
+		// Marshalling a Go value cannot fail in a way worth surfacing here; an
+		// unrepresentable one would have failed on the way in.
+		//
+		// The answer is only written when it says something the configuration does
+		// not already say -- see jsonSupersetOf. A server that merely filled in its
+		// own defaults has told us nothing, and recording it would fail the apply
+		// and then propose an update forever.
+		if encoded, err := json.Marshal(c.FeatureFlagProperties); err == nil {
+			if m.FeatureFlagProperties.IsNull() || m.FeatureFlagProperties.IsUnknown() ||
+				!jsonSupersetOf(string(encoded), m.FeatureFlagProperties.ValueString()) {
+				m.FeatureFlagProperties = jsontypes.NewNormalizedValue(string(encoded))
+			}
 		}
 	}
-	m.Type = types.StringValue(c.Type)
+	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
+		m.Type = types.StringValue(c.Type)
+	}
 }

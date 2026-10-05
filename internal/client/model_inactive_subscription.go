@@ -4,6 +4,6 @@ package client
 
 // InactiveSubscription - InactiveSubscription struct
 type InactiveSubscription struct {
-	Error string `json:"error,omitempty"`
+	Error  string `json:"error,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }

@@ -27,8 +27,9 @@ rm -rf internal/provider internal/client
 
 # -c, not --additional-properties: the configuration is DERIVED too, and the
 # list of positions that cannot be a typed block is longer than a command line
-# should carry. reference/generator-config.yaml is written by bin/generate-config from the
-# document, so the generator's settings cannot drift from what the document says.
+# should carry. reference/generator-config.json is written by bin/generate-config
+# from the document, so the generator's settings cannot drift from what the
+# document says.
 openapi-generator-polar generate \
   -i "$SPEC" \
   -g polar-terraform \
@@ -37,6 +38,11 @@ openapi-generator-polar generate \
   --git-user-id n-at-han-k \
   --git-repo-id terraform-provider-polar \
   --additional-properties="polarConfig=$CONFIG"
+
+# MUSTACHE CANNOT COUNT INDENTATION and this template nests attributes inside
+# blocks inside blocks, so what comes out is correct Go and unreadable Go. What
+# is committed should be the readable half.
+gofmt -w internal main.go
 
 # The generator cannot write a go.sum -- only the toolchain knows the hashes,
 # and the Dockerfile builds with no network for the module cache.

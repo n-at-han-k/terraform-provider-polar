@@ -110,3 +110,29 @@ than this provider's organization token.
 | `/v1/webhooks/deliveries` | no create (a report), no member read (a verb) |
 | `/v1/webhooks/endpoints/{id}/secret` | no create (a report), no member read (a verb) |
 | `/v1/webhooks/events/{id}/redeliver` | no create (a report), no member read (a verb) |
+
+## Per-resource attributes
+
+The document marks nothing readOnly, so every response-only field would reach
+the schema, and every optional field the server fills in would be Optional AND
+Computed. Both are decisions rather than consequences, and they are recorded in
+this table -- which is what `attributes.drop` and `attributes.byResource` in the
+generator configuration say.
+
+| resource | dropped everywhere | not exposed | only the update/read body has it | optional AND computed | sensitive |
+|---|---|---|---|---|---|
+| `polar_benefit` | `created_at`, `modified_at`, `organization_id` |  |  |  | `guild_token` |
+| `polar_checkout_link` | `created_at`, `modified_at`, `organization_id` |  | `products`, `url`, `client_secret` | `allow_discount_codes`, `require_billing_address` | `client_secret` |
+| `polar_checkout` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_custom_field` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_customer` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_customer_external_member` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_customer_member` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_discount` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_meter` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_metric_dashboard` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_order` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_organization` | `created_at`, `modified_at`, `organization_id` |  |  | `order_confirmation`, `subscription_cancellation`, `subscription_confirmation`, `subscription_cycled`, `subscription_cycled_after_trial`, `subscription_past_due`, `subscription_revoked`, `subscription_uncanceled`, `subscription_updated`, `allow_customer_updates`, `allow_multiple_subscriptions`, `benefit_revocation_grace_period`, `prevent_trial_abuse`, `proration_behavior`, `issue_funding_enabled`, `revops_enabled`, `wallets_enabled`, `member_model_enabled`, `seat_based_pricing_enabled` |  |
+| `polar_product` | `created_at`, `modified_at`, `organization_id` |  | `is_archived` | `medias`, `is_archived` |  |
+| `polar_subscription` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
+| `polar_webhook_endpoint` | `created_at`, `modified_at`, `organization_id` |  | `enabled`, `secret` | `enabled`, `name` | `secret` |

@@ -5,27 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // OrderModel is the Terraform model for order.
 type OrderModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
+	Id              types.String         `tfsdk:"id"`
 	CustomFieldData jsontypes.Normalized `tfsdk:"custom_field_data"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	CustomerId types.String `tfsdk:"customer_id"`
-	ProductId types.String `tfsdk:"product_id"`
-	Currency types.String `tfsdk:"currency"`
-	Amount types.Int64 `tfsdk:"amount"`
-	Description types.String `tfsdk:"description"`
+	Metadata        types.Map            `tfsdk:"metadata"`
+	CustomerId      types.String         `tfsdk:"customer_id"`
+	ProductId       types.String         `tfsdk:"product_id"`
+	Currency        types.String         `tfsdk:"currency"`
+	Amount          types.Int64          `tfsdk:"amount"`
+	Description     types.String         `tfsdk:"description"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *OrderModel) ToClientModel() (*client.OrderCreate, error) {
@@ -38,16 +35,11 @@ func (m *OrderModel) ToClientModel() (*client.OrderCreate, error) {
 			return out, fmt.Errorf("custom_field_data: %w", err)
 		}
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
 		out.CustomerId = m.CustomerId.ValueString()
@@ -67,51 +59,63 @@ func (m *OrderModel) ToClientModel() (*client.OrderCreate, error) {
 	return out, nil
 }
 
-
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *OrderModel) FromClientModel(c *client.Order) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *OrderModel) FromAnswer(c *client.Order) {
+	m.fromAnswer(c, true)
+}
+
+func (m *OrderModel) fromAnswer(c *client.Order, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.CustomFieldData); err == nil {
-		if m.CustomFieldData.IsNull() || m.CustomFieldData.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.CustomFieldData.ValueString()) {
-			m.CustomFieldData = jsontypes.NewNormalizedValue(string(encoded))
+	if everything || !m.CustomFieldData.IsNull() && !m.CustomFieldData.IsUnknown() {
+		// Marshalling a Go value cannot fail in a way worth surfacing here; an
+		// unrepresentable one would have failed on the way in.
+		//
+		// The answer is only written when it says something the configuration does
+		// not already say -- see jsonSupersetOf. A server that merely filled in its
+		// own defaults has told us nothing, and recording it would fail the apply
+		// and then propose an update forever.
+		if encoded, err := json.Marshal(c.CustomFieldData); err == nil {
+			if m.CustomFieldData.IsNull() || m.CustomFieldData.IsUnknown() ||
+				!jsonSupersetOf(string(encoded), m.CustomFieldData.ValueString()) {
+				m.CustomFieldData = jsontypes.NewNormalizedValue(string(encoded))
+			}
 		}
 	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.OrganizationId.IsUnknown() {
-		m.OrganizationId = types.StringNull()
+	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		m.CustomerId = types.StringValue(c.CustomerId)
 	}
-	m.CustomerId = types.StringValue(c.CustomerId)
-	m.ProductId = types.StringValue(c.ProductId)
-	m.Currency = types.StringValue(c.Currency)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Amount.IsUnknown() {
-		m.Amount = types.Int64Null()
+	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
+		m.ProductId = types.StringValue(c.ProductId)
 	}
-	m.Description = types.StringValue(c.Description)
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		m.Currency = types.StringValue(c.Currency)
+	}
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		m.Description = types.StringValue(c.Description)
+	}
 }

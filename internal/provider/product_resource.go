@@ -3,29 +3,27 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 var _ resource.Resource = &ProductResource{}
 var _ resource.ResourceWithImportState = &ProductResource{}
+var _ resource.ResourceWithValidateConfig = &ProductResource{}
 
 func NewProductResource() resource.Resource {
 	return &ProductResource{}
@@ -47,18 +45,15 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"is_archived": schema.BoolAttribute{
 				Computed:    true,
 				Optional:    true,
+				Description: "Whether the product is archived. If `true`, the product won't be available for purchase anymore. Existing customers will still have access to their benefits, and subscriptions will continue normally.",
+			},
+			"metadata": schema.MapAttribute{
+				Computed:    true,
+				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
@@ -66,101 +61,242 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "The name of the product.",
 			},
 			"description": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The description of the product.",
 			},
 			"visibility": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The visibility of the product.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"draft",
+						"private",
+						"public",
+					),
+				},
+				Description: "",
 			},
 			"prices": schema.ListNestedAttribute{
-				Required:    true,
+				Required: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"fixed_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"custom_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"seat_based_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"metered_unit_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
 						"price_currency": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The currency in which the customer will be charged.",
+							Computed: true,
+							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									"aed",
+									"all",
+									"amd",
+									"aoa",
+									"ars",
+									"aud",
+									"awg",
+									"azn",
+									"bam",
+									"bbd",
+									"bdt",
+									"bif",
+									"bmd",
+									"bnd",
+									"bob",
+									"brl",
+									"bsd",
+									"bwp",
+									"bzd",
+									"cad",
+									"cdf",
+									"chf",
+									"clp",
+									"cny",
+									"cop",
+									"crc",
+									"cve",
+									"czk",
+									"djf",
+									"dkk",
+									"dop",
+									"dzd",
+									"egp",
+									"etb",
+									"eur",
+									"fjd",
+									"fkp",
+									"gbp",
+									"gel",
+									"gip",
+									"gmd",
+									"gnf",
+									"gtq",
+									"gyd",
+									"hkd",
+									"hnl",
+									"htg",
+									"huf",
+									"idr",
+									"ils",
+									"inr",
+									"isk",
+									"jmd",
+									"jpy",
+									"kes",
+									"kgs",
+									"khr",
+									"kmf",
+									"krw",
+									"kyd",
+									"kzt",
+									"lak",
+									"lkr",
+									"lrd",
+									"lsl",
+									"mad",
+									"mdl",
+									"mga",
+									"mkd",
+									"mnt",
+									"mop",
+									"mur",
+									"mvr",
+									"mwk",
+									"mxn",
+									"myr",
+									"mzn",
+									"nad",
+									"ngn",
+									"nio",
+									"nok",
+									"npr",
+									"nzd",
+									"pab",
+									"pen",
+									"pgk",
+									"php",
+									"pkr",
+									"pln",
+									"pyg",
+									"qar",
+									"ron",
+									"rsd",
+									"rwf",
+									"sar",
+									"sbd",
+									"scr",
+									"sek",
+									"sgd",
+									"shp",
+									"sos",
+									"srd",
+									"szl",
+									"thb",
+									"tjs",
+									"top",
+									"try",
+									"ttd",
+									"twd",
+									"tzs",
+									"uah",
+									"ugx",
+									"usd",
+									"uyu",
+									"uzs",
+									"vnd",
+									"vuv",
+									"wst",
+									"xaf",
+									"xcd",
+									"xcg",
+									"xof",
+									"xpf",
+									"yer",
+									"zar",
+									"zmw",
+								),
+							},
+							Description: "",
 						},
 						"tax_behavior": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The tax behavior of the price. If not set, it will default to the organization's default tax behavior.",
+							Optional: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									"location",
+									"inclusive",
+									"exclusive",
+								),
+							},
+							Description: "",
 						},
 						"price_amount": schema.Int64Attribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "The price in cents. Set to `0` for a free price. Minimum amounts per currency: - USD: 0.5 - AED: 2 - ALL: 50 - AMD: 200 - AOA: 500 - ARS: 750 - AUD: 0.7 - AWG: 1 - AZN: 1 - BAM: 1 - BBD: 2 - BDT: 70 - BIF: 2,000 - BMD: 1 - BND: 1 - BOB: 5 - BRL: 2.5 - BSD: 1 - BWP: 10 - BZD: 2 - CAD: 0.7 - CDF: 2,000 - CHF: 0.5 - CLP: 500 - CNY: 5 - COP: 2,000 - CRC: 300 - CVE: 50 - CZK: 15 - DJF: 100 - DKK: 3.2 - DOP: 40 - DZD: 70 - EGP: 30 - ETB: 80 - EUR: 0.5 - FJD: 2 - FKP: 1 - GBP: 0.4 - GEL: 2 - GNF: 5,000 - GIP: 1 - GMD: 40 - GTQ: 5 - GYD: 200 - HKD: 4 - HNL: 20 - HTG: 70 - HUF: 175 - IDR: 9,000 - ILS: 1.5 - INR: 60 - ISK: 70 - JMD: 80 - JPY: 80 - KES: 70 - KGS: 50 - KHR: 3,000 - KMF: 500 - KRW: 800 - KYD: 1 - KZT: 300 - LAK: 20,000 - LKR: 200 - LRD: 100 - LSL: 10 - MAD: 5 - MDL: 10 - MGA: 3,000 - MKD: 50 - MNT: 2,000 - MOP: 5 - MUR: 50 - MVR: 8 - MXN: 9 - MWK: 1,000 - MYR: 2 - MZN: 50 - NAD: 10 - NGN: 700 - NIO: 20 - NOK: 5 - NPR: 80 - NZD: 0.9 - PAB: 1 - PEN: 2 - PGK: 3 - PHP: 35 - PKR: 200 - PLN: 2 - PYG: 4,000 - QAR: 2 - RON: 2.5 - RSD: 60 - RWF: 1,000 - SAR: 2 - SBD: 4 - SCR: 8 - SEK: 5 - SGD: 0.7 - SHP: 1 - SOS: 500 - SRD: 20 - SZL: 10 - THB: 20 - TJS: 5 - TOP: 2 - TRY: 30 - TTD: 4 - TWD: 20 - TZS: 2,000 - UAH: 30 - UGX: 2,000 - UYU: 20 - UZS: 7,000 - VND: 20,000 - VUV: 100 - WST: 2 - XAF: 500 - XCD: 2 - XCG: 1 - XOF: 500 - XPF: 100 - YER: 200 - ZAR: 9 - ZMW: 10 - Other currencies: 50 minor units",
 						},
 						"minimum_amount": schema.Int64Attribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "The minimum amount the customer can pay. If set to 0, the price is 'free or pay what you want' and $0 is accepted. If set to a value below the minimum price amount for the currency, it will be rejected. Defaults to the minimum price amount for the currency. Minimum per currency: - USD: 0.5 - AED: 2 - ALL: 50 - AMD: 200 - AOA: 500 - ARS: 750 - AUD: 0.7 - AWG: 1 - AZN: 1 - BAM: 1 - BBD: 2 - BDT: 70 - BIF: 2,000 - BMD: 1 - BND: 1 - BOB: 5 - BRL: 2.5 - BSD: 1 - BWP: 10 - BZD: 2 - CAD: 0.7 - CDF: 2,000 - CHF: 0.5 - CLP: 500 - CNY: 5 - COP: 2,000 - CRC: 300 - CVE: 50 - CZK: 15 - DJF: 100 - DKK: 3.2 - DOP: 40 - DZD: 70 - EGP: 30 - ETB: 80 - EUR: 0.5 - FJD: 2 - FKP: 1 - GBP: 0.4 - GEL: 2 - GNF: 5,000 - GIP: 1 - GMD: 40 - GTQ: 5 - GYD: 200 - HKD: 4 - HNL: 20 - HTG: 70 - HUF: 175 - IDR: 9,000 - ILS: 1.5 - INR: 60 - ISK: 70 - JMD: 80 - JPY: 80 - KES: 70 - KGS: 50 - KHR: 3,000 - KMF: 500 - KRW: 800 - KYD: 1 - KZT: 300 - LAK: 20,000 - LKR: 200 - LRD: 100 - LSL: 10 - MAD: 5 - MDL: 10 - MGA: 3,000 - MKD: 50 - MNT: 2,000 - MOP: 5 - MUR: 50 - MVR: 8 - MXN: 9 - MWK: 1,000 - MYR: 2 - MZN: 50 - NAD: 10 - NGN: 700 - NIO: 20 - NOK: 5 - NPR: 80 - NZD: 0.9 - PAB: 1 - PEN: 2 - PGK: 3 - PHP: 35 - PKR: 200 - PLN: 2 - PYG: 4,000 - QAR: 2 - RON: 2.5 - RSD: 60 - RWF: 1,000 - SAR: 2 - SBD: 4 - SCR: 8 - SEK: 5 - SGD: 0.7 - SHP: 1 - SOS: 500 - SRD: 20 - SZL: 10 - THB: 20 - TJS: 5 - TOP: 2 - TRY: 30 - TTD: 4 - TWD: 20 - TZS: 2,000 - UAH: 30 - UGX: 2,000 - UYU: 20 - UZS: 7,000 - VND: 20,000 - VUV: 100 - WST: 2 - XAF: 500 - XCD: 2 - XCG: 1 - XOF: 500 - XPF: 100 - YER: 200 - ZAR: 9 - ZMW: 10 - Other currencies: 50 minor units",
 						},
 						"maximum_amount": schema.Int64Attribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "The price in cents. Minimum amounts per currency: - USD: 0.5 - AED: 2 - ALL: 50 - AMD: 200 - AOA: 500 - ARS: 750 - AUD: 0.7 - AWG: 1 - AZN: 1 - BAM: 1 - BBD: 2 - BDT: 70 - BIF: 2,000 - BMD: 1 - BND: 1 - BOB: 5 - BRL: 2.5 - BSD: 1 - BWP: 10 - BZD: 2 - CAD: 0.7 - CDF: 2,000 - CHF: 0.5 - CLP: 500 - CNY: 5 - COP: 2,000 - CRC: 300 - CVE: 50 - CZK: 15 - DJF: 100 - DKK: 3.2 - DOP: 40 - DZD: 70 - EGP: 30 - ETB: 80 - EUR: 0.5 - FJD: 2 - FKP: 1 - GBP: 0.4 - GEL: 2 - GNF: 5,000 - GIP: 1 - GMD: 40 - GTQ: 5 - GYD: 200 - HKD: 4 - HNL: 20 - HTG: 70 - HUF: 175 - IDR: 9,000 - ILS: 1.5 - INR: 60 - ISK: 70 - JMD: 80 - JPY: 80 - KES: 70 - KGS: 50 - KHR: 3,000 - KMF: 500 - KRW: 800 - KYD: 1 - KZT: 300 - LAK: 20,000 - LKR: 200 - LRD: 100 - LSL: 10 - MAD: 5 - MDL: 10 - MGA: 3,000 - MKD: 50 - MNT: 2,000 - MOP: 5 - MUR: 50 - MVR: 8 - MXN: 9 - MWK: 1,000 - MYR: 2 - MZN: 50 - NAD: 10 - NGN: 700 - NIO: 20 - NOK: 5 - NPR: 80 - NZD: 0.9 - PAB: 1 - PEN: 2 - PGK: 3 - PHP: 35 - PKR: 200 - PLN: 2 - PYG: 4,000 - QAR: 2 - RON: 2.5 - RSD: 60 - RWF: 1,000 - SAR: 2 - SBD: 4 - SCR: 8 - SEK: 5 - SGD: 0.7 - SHP: 1 - SOS: 500 - SRD: 20 - SZL: 10 - THB: 20 - TJS: 5 - TOP: 2 - TRY: 30 - TTD: 4 - TWD: 20 - TZS: 2,000 - UAH: 30 - UGX: 2,000 - UYU: 20 - UZS: 7,000 - VND: 20,000 - VUV: 100 - WST: 2 - XAF: 500 - XCD: 2 - XCG: 1 - XOF: 500 - XPF: 100 - YER: 200 - ZAR: 9 - ZMW: 10 - Other currencies: 50 minor units",
 						},
 						"preset_amount": schema.Int64Attribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "The price in cents. Minimum amounts per currency: - USD: 0.5 - AED: 2 - ALL: 50 - AMD: 200 - AOA: 500 - ARS: 750 - AUD: 0.7 - AWG: 1 - AZN: 1 - BAM: 1 - BBD: 2 - BDT: 70 - BIF: 2,000 - BMD: 1 - BND: 1 - BOB: 5 - BRL: 2.5 - BSD: 1 - BWP: 10 - BZD: 2 - CAD: 0.7 - CDF: 2,000 - CHF: 0.5 - CLP: 500 - CNY: 5 - COP: 2,000 - CRC: 300 - CVE: 50 - CZK: 15 - DJF: 100 - DKK: 3.2 - DOP: 40 - DZD: 70 - EGP: 30 - ETB: 80 - EUR: 0.5 - FJD: 2 - FKP: 1 - GBP: 0.4 - GEL: 2 - GNF: 5,000 - GIP: 1 - GMD: 40 - GTQ: 5 - GYD: 200 - HKD: 4 - HNL: 20 - HTG: 70 - HUF: 175 - IDR: 9,000 - ILS: 1.5 - INR: 60 - ISK: 70 - JMD: 80 - JPY: 80 - KES: 70 - KGS: 50 - KHR: 3,000 - KMF: 500 - KRW: 800 - KYD: 1 - KZT: 300 - LAK: 20,000 - LKR: 200 - LRD: 100 - LSL: 10 - MAD: 5 - MDL: 10 - MGA: 3,000 - MKD: 50 - MNT: 2,000 - MOP: 5 - MUR: 50 - MVR: 8 - MXN: 9 - MWK: 1,000 - MYR: 2 - MZN: 50 - NAD: 10 - NGN: 700 - NIO: 20 - NOK: 5 - NPR: 80 - NZD: 0.9 - PAB: 1 - PEN: 2 - PGK: 3 - PHP: 35 - PKR: 200 - PLN: 2 - PYG: 4,000 - QAR: 2 - RON: 2.5 - RSD: 60 - RWF: 1,000 - SAR: 2 - SBD: 4 - SCR: 8 - SEK: 5 - SGD: 0.7 - SHP: 1 - SOS: 500 - SRD: 20 - SZL: 10 - THB: 20 - TJS: 5 - TOP: 2 - TRY: 30 - TTD: 4 - TWD: 20 - TZS: 2,000 - UAH: 30 - UGX: 2,000 - UYU: 20 - UZS: 7,000 - VND: 20,000 - VUV: 100 - WST: 2 - XAF: 500 - XCD: 2 - XCG: 1 - XOF: 500 - XPF: 100 - YER: 200 - ZAR: 9 - ZMW: 10 - Other currencies: 50 minor units",
 						},
-						"seat_tiers": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
+						"seat_tiers": schema.ListNestedAttribute{
+							Optional: true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"min_seats": schema.Int64Attribute{
+										Required:    true,
+										Description: "Minimum number of seats (inclusive)",
+									},
+									"max_seats": schema.Int64Attribute{
+										Optional:    true,
+										Description: "Maximum number of seats (inclusive). None for unlimited.",
+									},
+									"price_per_seat": schema.Int64Attribute{
+										Required:    true,
+										Description: "Price per seat in cents for this tier",
+									},
+								},
+							},
 							Description: "Tiered pricing based on seat quantity",
 						},
 						"meter_id": schema.StringAttribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "The ID of the meter associated to the price.",
 						},
 						"unit_amount": schema.StringAttribute{
-							Computed:    true,
 							Optional:    true,
-							Description: "",
+							Description: "The price per unit in cents. Supports up to 12 decimal places.",
 						},
 						"cap_amount": schema.Int64Attribute{
-							Computed:    true,
 							Optional:    true,
 							Description: "Optional maximum amount in cents that can be charged, regardless of the number of units consumed.",
+						},
+						"amount_type": schema.StringAttribute{
+							Required: true,
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									"custom",
+									"fixed",
+									"metered_unit",
+									"seat_based",
+								),
+							},
+							Description: "Which variant this is. Selects which of the optional blocks above applies.",
 						},
 					},
 				},
 				Description: "List of prices for this product.",
 			},
-			"medias": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"medias": schema.ListAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "List of medias associated to the product.",
 			},
 			"attached_custom_fields": schema.ListNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"custom_field_id": schema.StringAttribute{
@@ -175,42 +311,133 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 				Description: "List of custom fields attached to the product.",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the organization owning the product.",
-			},
 			"trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The interval unit for the trial period.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"day",
+						"week",
+						"month",
+						"year",
+					),
+				},
+				Description: "",
 			},
 			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The number of interval units for the trial period.",
 			},
 			"recurring_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"day",
+						"week",
+						"month",
+						"year",
+					),
+				},
+				Description: "",
 			},
 			"recurring_interval_count": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
 			},
 			"meter_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"day",
+						"week",
+						"month",
+						"year",
+					),
+				},
+				Description: "",
 			},
 			"meter_interval_count": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Number of meter interval units. None when no meter cycle is set.",
 			},
 		},
+	}
+}
+
+// ValidateConfig refuses WHAT THE DISCRIMINATOR SAYS: a field that belongs to
+// another variant, and one the chosen variant demands and nobody set.
+//
+// trial_interval are the
+// fields a flattened union became, one set per variant, and nothing in the schema
+// stops a configuration from filling two of them -- or from filling the one
+//
+//	did not ask for. Polar answers 422 for that, which arrives
+//
+// after the plan as a refused request rather than as a message naming the two
+// attributes that disagreed.
+//
+// The plan is where it can be named.
+func (r *ProductResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config ProductModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of recurring_interval -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if !config.TrialInterval.IsNull() && config.RecurringInterval.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("trial_interval"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "trial_interval", "recurring_interval"),
+		)
+	}
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of recurring_interval -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if !config.TrialIntervalCount.IsNull() && config.RecurringInterval.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("trial_interval_count"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "trial_interval_count", "recurring_interval"),
+		)
+	}
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of recurring_interval -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if !config.RecurringIntervalCount.IsNull() && config.RecurringInterval.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("recurring_interval_count"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "recurring_interval_count", "recurring_interval"),
+		)
+	}
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of recurring_interval -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if !config.MeterInterval.IsNull() && config.RecurringInterval.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("meter_interval"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "meter_interval", "recurring_interval"),
+		)
+	}
+	// THE ARM WITH NO NAME OF ITS OWN. One of the create body's alternatives is
+	// the ABSENCE of recurring_interval -- a one-time product against a recurring one --
+	// so there is no second block to name and no discriminator to read. What
+	// there is: these belong to the arm that sets it.
+	if !config.MeterIntervalCount.IsNull() && config.RecurringInterval.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("meter_interval_count"),
+			"Conflicting properties field",
+			fmt.Sprintf("%q can only be set when %q is set.", "meter_interval_count", "recurring_interval"),
+		)
 	}
 }
 

@@ -1,0 +1,173 @@
+{{!
+    Upstream's template, with the provider block answering the document's own
+    questions rather than openapi-generator's.
+
+    Upstream emits a fixed five: an `endpoint` URL, an `api_key`, a `token`,
+    a `username` and a `password` -- one per kind of authentication a document
+    may declare, none of which is right here. Polar declares FIVE security
+    schemes and two servers, and which of them this provider holds is not
+    something a response code says: `pat` is a personal token,
+    `customer_session` and `member_session` are minted for one end user, and
+    `oidc` is a browser. The one that scopes to an organization is the one a
+    Terraform provider needs, and a configuration that has to spell `endpoint`
+    can point this provider at an address Polar never described.
+
+    So the block is TOLD: which scheme, what the credential is called, which
+    variable it falls back to, and which servers there are to choose between.
+    See `provider.token` and `provider.environment` in the generator
+    configuration.
+}}
+{{>partial_header}}
+package provider
+
+import (
+	"context"
+	"os"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"{{gitHost}}/{{gitUserId}}/{{gitRepoId}}/internal/client"
+)
+
+var _ provider.Provider = &{{providerName}}Provider{}
+
+type {{providerName}}Provider struct {
+	version string
+}
+
+// {{providerName}}ProviderModel maps the provider block into Go.
+type {{providerName}}ProviderModel struct {
+	{{providerTokenGo}} types.String `tfsdk:"{{providerTokenAttribute}}"`
+	{{providerEnvironmentGo}} types.String `tfsdk:"{{providerEnvironmentAttribute}}"`
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &{{providerName}}Provider{
+			version: version,
+		}
+	}
+}
+
+func (p *{{providerName}}Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "{{providerName}}"
+	resp.Version = p.version
+}
+
+func (p *{{providerName}}Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: "The Polar provider enables Terraform to manage [Polar.sh](https://polar.sh) resources such as products, meters, benefits, and webhook endpoints.",
+		Attributes: map[string]schema.Attribute{
+			"{{providerTokenAttribute}}": schema.StringAttribute{
+				Optional:            true,
+				Sensitive:           true,
+				MarkdownDescription: "{{{providerTokenDescription}}}",
+			},
+			"{{providerEnvironmentAttribute}}": schema.StringAttribute{
+				Optional: true,
+				MarkdownDescription: "{{{providerEnvironmentDescription}}} Must be one of: {{#providerEnvironmentValues}}{{#-first}}`{{name}}`{{/-first}}{{^-first}}, `{{name}}`{{/-first}}{{/providerEnvironmentValues}}.",
+				Validators: []validator.String{
+					stringvalidator.OneOf({{#providerEnvironmentValues}}{{#-first}}"{{name}}"{{/-first}}{{^-first}}, "{{name}}"{{/-first}}{{/providerEnvironmentValues}}),
+				},
+			},
+		},
+	}
+}
+
+// Configure resolves the credential and the environment, and builds the client
+// every resource is handed.
+//
+// THE CONFIGURATION BLOCK TAKES PRECEDENCE over the environment variable, and
+// neither is required: a plan with no configuration at all must still be able to
+// resolve a value from the environment, which is how the acceptance suite is run
+// and how a CI pipeline passes a credential it does not write to disk. What is
+// NOT allowed is a plan with neither, and the message says which variable to set
+// rather than failing inside the first request with a 401.
+func (p *{{providerName}}Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var config {{providerName}}ProviderModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	token := config.{{providerTokenGo}}.ValueString()
+	if token == "" {
+		token = os.Getenv("{{{providerTokenEnv}}}")
+	}
+	if token == "" {
+		resp.Diagnostics.AddError(
+			"Missing {{providerName}} Access Token",
+			"The provider requires a {{providerName}} access token. Set it in the provider configuration or via the {{{providerTokenEnv}}} environment variable.",
+		)
+		return
+	}
+
+	server := config.{{providerEnvironmentGo}}.ValueString()
+	if server == "" {
+		server = os.Getenv("{{{providerEnvironmentEnv}}}")
+	}
+	if server == "" {
+		resp.Diagnostics.AddError(
+			"Missing {{providerName}} Server",
+			"The provider requires a server environment ({{#providerEnvironmentValues}}{{#-first}}`{{name}}`{{/-first}}{{^-first}}, `{{name}}`{{/-first}}{{/providerEnvironmentValues}}). Set it in the provider configuration or via the {{{providerEnvironmentEnv}}} environment variable.",
+		)
+		return
+	}
+
+	// THE URL IS THE DOCUMENT'S, looked up by the name a configuration spelled.
+	// A name that is not one of them is caught by the OneOf validator above; the
+	// check here is what keeps an unset map from silently producing no client.
+	var endpoint string
+	for _, known := range providerEnvironments {
+		if known.Name == server {
+			endpoint = known.URL
+		}
+	}
+	if endpoint == "" {
+		resp.Diagnostics.AddError(
+			"Unknown {{providerName}} Server",
+			"The server must be one of {{#providerEnvironmentValues}}{{#-first}}`{{name}}`{{/-first}}{{^-first}}, `{{name}}`{{/-first}}{{/providerEnvironmentValues}}, got: "+server,
+		)
+		return
+	}
+
+	c := client.NewClient(endpoint)
+	c.Token = token
+
+	resp.DataSourceData = c
+	resp.ResourceData = c
+}
+
+// providerEnvironment is one of the document's servers: the name a
+// configuration spells and the base URL that name answers to.
+type providerEnvironment struct {
+	Name string
+	URL  string
+}
+
+// providerEnvironments, from the document's own `servers` -- see
+// `provider.environment` in the generator configuration.
+var providerEnvironments = []providerEnvironment{
+{{#providerEnvironmentValues}}
+	{Name: "{{name}}", URL: "{{url}}"},
+{{/providerEnvironmentValues}}
+}
+
+func (p *{{providerName}}Provider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+{{#apiInfo}}{{#apis}}{{#operations}}		New{{resourceClassName}}Resource,
+{{/operations}}{{/apis}}{{/apiInfo}}	}
+}
+
+func (p *{{providerName}}Provider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+{{#apiInfo}}{{#apis}}{{#operations}}		New{{resourceClassName}}DataSource,
+{{/operations}}{{/apis}}{{/apiInfo}}	}
+}

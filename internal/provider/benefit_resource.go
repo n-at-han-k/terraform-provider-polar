@@ -3,29 +3,28 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
-
-
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 var _ resource.Resource = &BenefitResource{}
 var _ resource.ResourceWithImportState = &BenefitResource{}
+var _ resource.ResourceWithValidateConfig = &BenefitResource{}
 
 func NewBenefitResource() resource.Resource {
 	return &BenefitResource{}
@@ -47,39 +46,34 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:    true,
 				Description: "The ID of the benefit.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"description": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(42),
+				},
 				Description: "The description of the benefit.",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the organization owning the benefit.",
-			},
 			"visibility": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The visibility of the benefit in the customer portal.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"draft",
+						"private",
+						"public",
+					),
+				},
+				Description: "",
 			},
 			"custom_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"note": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "Private note to be shared with customers who have this benefit granted.",
 					},
@@ -87,10 +81,11 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"discord_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"guild_token": schema.StringAttribute{
 						Required:    true,
+						Sensitive:   true,
 						Description: "",
 					},
 					"role_id": schema.StringAttribute{
@@ -105,7 +100,7 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"github_repository_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"repository_owner": schema.StringAttribute{
 						Required:    true,
@@ -116,17 +111,25 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Description: "The name of the repository.",
 					},
 					"permission": schema.StringAttribute{
-						Required:    true,
+						Required: true,
+						Validators: []validator.String{
+							stringvalidator.OneOf(
+								"pull",
+								"triage",
+								"push",
+								"maintain",
+								"admin",
+							),
+						},
 						Description: "The permission level to grant. Read more about roles and their permissions on [GitHub documentation](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role).",
 					},
 				},
 				Description: "",
 			},
 			"downloadables_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"archived": schema.MapAttribute{
-						Computed:    true,
 						Optional:    true,
 						ElementType: types.BoolType,
 						Description: "",
@@ -140,25 +143,48 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"license_keys_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"prefix": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
-					"expires": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
+					"expires": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"ttl": schema.Int64Attribute{
+								Required:    true,
+								Description: "",
+							},
+							"timeframe": schema.StringAttribute{
+								Required: true,
+								Validators: []validator.String{
+									stringvalidator.OneOf(
+										"year",
+										"month",
+										"day",
+									),
+								},
+								Description: "",
+							},
+						},
 						Description: "",
 					},
-					"activations": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
+					"activations": schema.SingleNestedAttribute{
+						Optional: true,
+						Attributes: map[string]schema.Attribute{
+							"limit": schema.Int64Attribute{
+								Required:    true,
+								Description: "",
+							},
+							"enable_customer_admin": schema.BoolAttribute{
+								Required:    true,
+								Description: "",
+							},
+						},
 						Description: "",
 					},
 					"limit_usage": schema.Int64Attribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
@@ -166,7 +192,7 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"meter_credit_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"units": schema.Int64Attribute{
 						Required:    true,
@@ -185,12 +211,11 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"feature_flag_properties": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
 				Optional:    true,
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
 			"slack_shared_channel_properties": schema.SingleNestedAttribute{
-				Optional:    true,
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"slack_integration_id": schema.StringAttribute{
 						Required:    true,
@@ -201,22 +226,18 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Description: "",
 					},
 					"private": schema.BoolAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"welcome_message": schema.StringAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"archive_on_revoke": schema.BoolAttribute{
-						Computed:    true,
 						Optional:    true,
 						Description: "",
 					},
 					"team_invitees": schema.ListAttribute{
-						Computed:    true,
 						Optional:    true,
 						ElementType: types.StringType,
 						Description: "",
@@ -225,10 +246,121 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"custom",
+						"discord",
+						"downloadables",
+						"feature_flag",
+						"github_repository",
+						"license_keys",
+						"meter_credit",
+						"slack_shared_channel",
+					),
+				},
 				Description: "Which variant this is. Selects which of the optional blocks above applies.",
 			},
 		},
+	}
+}
+
+// ValidateConfig refuses WHAT THE DISCRIMINATOR SAYS: a field that belongs to
+// another variant, and one the chosen variant demands and nobody set.
+//
+// custom_properties are the
+// fields a flattened union became, one set per variant, and nothing in the schema
+// stops a configuration from filling two of them -- or from filling the one
+// type did not ask for. Polar answers 422 for that, which arrives
+// after the plan as a refused request rather than as a message naming the two
+// attributes that disagreed.
+//
+// The plan is where it can be named.
+func (r *BenefitResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config BenefitModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// type may be unknown while a variable decides it, and there is
+	// nothing to check against until it is known.
+	if config.Type.IsUnknown() {
+		return
+	}
+
+	chosen := config.Type.ValueString()
+
+	// WHICH BLOCK EACH VALUE WANTS. A value with no block of its own -- one the
+	// document declares but this provider does not expose -- maps to nothing, and
+	// any block set is then wrong.
+	expected := map[string]string{
+		"custom":               "custom_properties",
+		"discord":              "discord_properties",
+		"github_repository":    "github_repository_properties",
+		"downloadables":        "downloadables_properties",
+		"license_keys":         "license_keys_properties",
+		"meter_credit":         "meter_credit_properties",
+		"feature_flag":         "feature_flag_properties",
+		"slack_shared_channel": "slack_shared_channel_properties",
+	}
+
+	if config.CustomProperties != nil && chosen != "custom" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("custom_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "custom_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.DiscordProperties != nil && chosen != "discord" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("discord_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "discord_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.GithubRepositoryProperties != nil && chosen != "github_repository" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("github_repository_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "github_repository_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.DownloadablesProperties != nil && chosen != "downloadables" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("downloadables_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "downloadables_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.LicenseKeysProperties != nil && chosen != "license_keys" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("license_keys_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "license_keys_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.MeterCreditProperties != nil && chosen != "meter_credit" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("meter_credit_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "meter_credit_properties", chosen, expected[chosen]),
+		)
+	}
+	if !config.FeatureFlagProperties.IsNull() && chosen != "feature_flag" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("feature_flag_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "feature_flag_properties", chosen, expected[chosen]),
+		)
+	}
+	if config.SlackSharedChannelProperties != nil && chosen != "slack_shared_channel" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("slack_shared_channel_properties"),
+			"Conflicting properties block",
+			fmt.Sprintf("%q cannot be set when type is %q. Use %q instead.", "slack_shared_channel_properties", chosen, expected[chosen]),
+		)
 	}
 }
 

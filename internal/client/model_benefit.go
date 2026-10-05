@@ -4,24 +4,24 @@ package client
 
 // Benefit - Benefit struct
 type Benefit struct {
-	Id string `json:"id,omitempty"`
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Description string `json:"description,omitempty"`
-	Selectable *bool `json:"selectable,omitempty"`
-	Deletable *bool `json:"deletable,omitempty"`
-	IsDeleted *bool `json:"is_deleted,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
-	Visibility string `json:"visibility,omitempty"`
-	CustomProperties *BenefitCustomProperties `json:"custom_properties,omitempty"`
-	DiscordProperties *BenefitDiscordProperties `json:"discord_properties,omitempty"`
-	GithubRepositoryProperties *BenefitGitHubRepositoryProperties `json:"github_repository_properties,omitempty"`
-	DownloadablesProperties *BenefitDownloadablesProperties `json:"downloadables_properties,omitempty"`
-	LicenseKeysProperties *BenefitLicenseKeysProperties `json:"license_keys_properties,omitempty"`
-	MeterCreditProperties *BenefitMeterCreditProperties `json:"meter_credit_properties,omitempty"`
-	FeatureFlagProperties map[string]interface{} `json:"feature_flag_properties,omitempty"`
+	Id                           string                               `json:"id,omitempty"`
+	CreatedAt                    string                               `json:"created_at,omitempty"`
+	ModifiedAt                   string                               `json:"modified_at,omitempty"`
+	Description                  string                               `json:"description,omitempty"`
+	Selectable                   *bool                                `json:"selectable,omitempty"`
+	Deletable                    *bool                                `json:"deletable,omitempty"`
+	IsDeleted                    *bool                                `json:"is_deleted,omitempty"`
+	OrganizationId               string                               `json:"organization_id,omitempty"`
+	Metadata                     map[string]string                    `json:"metadata,omitempty"`
+	Visibility                   string                               `json:"visibility,omitempty"`
+	CustomProperties             *BenefitCustomProperties             `json:"custom_properties,omitempty"`
+	DiscordProperties            *BenefitDiscordProperties            `json:"discord_properties,omitempty"`
+	GithubRepositoryProperties   *BenefitGitHubRepositoryProperties   `json:"github_repository_properties,omitempty"`
+	DownloadablesProperties      *BenefitDownloadablesProperties      `json:"downloadables_properties,omitempty"`
+	LicenseKeysProperties        *BenefitLicenseKeysProperties        `json:"license_keys_properties,omitempty"`
+	MeterCreditProperties        *BenefitMeterCreditProperties        `json:"meter_credit_properties,omitempty"`
+	FeatureFlagProperties        map[string]interface{}               `json:"feature_flag_properties,omitempty"`
 	SlackSharedChannelProperties *BenefitSlackSharedChannelProperties `json:"slack_shared_channel_properties,omitempty"`
-	VisibilityConfigurable *bool `json:"visibility_configurable,omitempty"`
-	Type string `json:"type,omitempty"`
+	VisibilityConfigurable       *bool                                `json:"visibility_configurable,omitempty"`
+	Type                         string                               `json:"type,omitempty"`
 }

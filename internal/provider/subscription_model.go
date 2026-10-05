@@ -2,36 +2,28 @@
 package provider
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // SubscriptionModel is the Terraform model for subscription.
 type SubscriptionModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	ProductId types.String `tfsdk:"product_id"`
-	CustomerId types.String `tfsdk:"customer_id"`
+	Id                 types.String `tfsdk:"id"`
+	Metadata           types.Map    `tfsdk:"metadata"`
+	ProductId          types.String `tfsdk:"product_id"`
+	CustomerId         types.String `tfsdk:"customer_id"`
 	ExternalCustomerId types.String `tfsdk:"external_customer_id"`
 }
-
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *SubscriptionModel) ToClientModel() (*client.SubscriptionCreate, error) {
 	out := &client.SubscriptionCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
@@ -62,19 +54,42 @@ func (m *SubscriptionModel) ToUpdateModel() (*client.SubscriptionUpdate, error) 
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *SubscriptionModel) FromClientModel(c *client.Subscription) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *SubscriptionModel) FromAnswer(c *client.Subscription) {
+	m.fromAnswer(c, true)
+}
+
+func (m *SubscriptionModel) fromAnswer(c *client.Subscription, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.ProductId = types.StringValue(c.ProductId)
-	m.CustomerId = types.StringValue(c.CustomerId)
+	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
+		m.ProductId = types.StringValue(c.ProductId)
+	}
+	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		m.CustomerId = types.StringValue(c.CustomerId)
+	}
 }

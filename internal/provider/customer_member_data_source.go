@@ -7,7 +7,6 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -34,19 +33,14 @@ func (d *CustomerMemberDataSource) Schema(_ context.Context, _ datasource.Schema
 		Description: "Fetches a customer_member data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the member.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"email": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The email address of the member.",
 			},
 			"name": schema.StringAttribute{
@@ -59,7 +53,7 @@ func (d *CustomerMemberDataSource) Schema(_ context.Context, _ datasource.Schema
 			},
 			"role": schema.StringAttribute{
 				Computed:    true,
-				Description: "The role of the member within the customer.",
+				Description: "",
 			},
 		},
 	}
@@ -102,7 +96,7 @@ func (d *CustomerMemberDataSource) Read(ctx context.Context, req datasource.Read
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read customer_member data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

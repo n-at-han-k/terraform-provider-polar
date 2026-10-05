@@ -2,26 +2,21 @@
 package provider
 
 import (
-	"encoding/json"
 	"fmt"
-
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 // CustomFieldModel is the Terraform model for custom_field.
 type CustomFieldModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Slug types.String `tfsdk:"slug"`
-	Name types.String `tfsdk:"name"`
-	OrganizationId types.String `tfsdk:"organization_id"`
+	Id         types.String                `tfsdk:"id"`
+	Metadata   types.Map                   `tfsdk:"metadata"`
+	Slug       types.String                `tfsdk:"slug"`
+	Name       types.String                `tfsdk:"name"`
 	Properties *CustomFieldPropertiesModel `tfsdk:"properties"`
-	Type types.String `tfsdk:"type"`
+	Type       types.String                `tfsdk:"type"`
 }
 
 // CustomFieldPropertiesModel is one `properties` block.
@@ -31,17 +26,20 @@ type CustomFieldModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type CustomFieldPropertiesModel struct {
-	FormLabel types.String `tfsdk:"form_label"`
-	FormHelpText types.String `tfsdk:"form_help_text"`
-	FormPlaceholder types.String `tfsdk:"form_placeholder"`
-	Textarea types.Bool `tfsdk:"textarea"`
-	MinLength types.Int64 `tfsdk:"min_length"`
-	MaxLength types.Int64 `tfsdk:"max_length"`
+	FormLabel       types.String                             `tfsdk:"form_label"`
+	FormHelpText    types.String                             `tfsdk:"form_help_text"`
+	FormPlaceholder types.String                             `tfsdk:"form_placeholder"`
+	Textarea        types.Bool                               `tfsdk:"textarea"`
+	MinLength       types.Int64                              `tfsdk:"min_length"`
+	MaxLength       types.Int64                              `tfsdk:"max_length"`
+	Ge              types.Int64                              `tfsdk:"ge"`
+	Le              types.Int64                              `tfsdk:"le"`
+	Options         []CustomFieldPropertiesModelOptionsModel `tfsdk:"options"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldTextProperties, error) {
-	out := &client.CustomFieldTextProperties{}
+func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldCreateProperties, error) {
+	out := &client.CustomFieldCreateProperties{}
 	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
 		out.FormLabel = m.FormLabel.ValueString()
 	}
@@ -61,6 +59,12 @@ func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldTextPro
 	if !m.MaxLength.IsNull() && !m.MaxLength.IsUnknown() {
 		out.MaxLength = int32(m.MaxLength.ValueInt64())
 	}
+	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
+		out.Ge = int32(m.Ge.ValueInt64())
+	}
+	if !m.Le.IsNull() && !m.Le.IsUnknown() {
+		out.Le = int32(m.Le.ValueInt64())
+	}
 	return out, nil
 }
 
@@ -70,7 +74,7 @@ func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldTextPro
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldTextProperties) {
+func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldCreateProperties) {
 	m.FormLabel = types.StringValue(c.FormLabel)
 	m.FormHelpText = types.StringValue(c.FormHelpText)
 	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
@@ -81,17 +85,51 @@ func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldTextPr
 	}
 	m.MinLength = types.Int64Value(int64(c.MinLength))
 	m.MaxLength = types.Int64Value(int64(c.MaxLength))
+	m.Ge = types.Int64Value(int64(c.Ge))
+	m.Le = types.Int64Value(int64(c.Le))
+}
+
+// CustomFieldPropertiesModelOptionsModel is one `options` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomFieldPropertiesModelOptionsModel struct {
+	Value types.String `tfsdk:"value"`
+	Label types.String `tfsdk:"label"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomFieldPropertiesModelOptionsModel) ToClientModel() (*client.CustomFieldSelectOption, error) {
+	out := &client.CustomFieldSelectOption{}
+	if !m.Value.IsNull() && !m.Value.IsUnknown() {
+		out.Value = m.Value.ValueString()
+	}
+	if !m.Label.IsNull() && !m.Label.IsUnknown() {
+		out.Label = m.Label.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomFieldPropertiesModelOptionsModel) FromClientModel(c *client.CustomFieldSelectOption) {
+	m.Value = types.StringValue(c.Value)
+	m.Label = types.StringValue(c.Label)
 }
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 	out := &client.CustomFieldCreate{}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
@@ -99,9 +137,6 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	if m.Properties != nil {
 		converted, err := m.Properties.ToClientModel()
@@ -127,8 +162,9 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 func (m *CustomFieldModel) ToUpdateModel() (*client.CustomFieldUpdate, error) {
 	out := &client.CustomFieldUpdate{}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
+		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
+		for key, element := range m.Metadata.Elements() {
+			out.Metadata[key] = element.(types.String).ValueString()
 		}
 	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
@@ -137,34 +173,51 @@ func (m *CustomFieldModel) ToUpdateModel() (*client.CustomFieldUpdate, error) {
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
-	if m.Properties != nil {
-		converted, err := m.Properties.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("properties: %w", err)
-		}
-		out.Properties = converted
-	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
 	}
 	return out, nil
 }
 
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *CustomFieldModel) FromAnswer(c *client.CustomField) {
+	m.fromAnswer(c, true)
+}
+
+func (m *CustomFieldModel) fromAnswer(c *client.CustomField, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	if c.Metadata == nil {
+		m.Metadata = types.MapNull(types.StringType)
+	} else {
+		Metadata := make(map[string]attr.Value, len(c.Metadata))
+		for key, element := range c.Metadata {
+			Metadata[key] = types.StringValue(element)
+		}
+		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	m.Slug = types.StringValue(c.Slug)
-	m.Name = types.StringValue(c.Name)
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.Type = types.StringValue(c.Type)
+	if everything || !m.Slug.IsNull() && !m.Slug.IsUnknown() {
+		m.Slug = types.StringValue(c.Slug)
+	}
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
+	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
+		m.Type = types.StringValue(c.Type)
+	}
 }

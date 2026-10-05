@@ -5,5 +5,5 @@ package client
 // BenefitDownloadablesCreateProperties - BenefitDownloadablesCreateProperties struct
 type BenefitDownloadablesCreateProperties struct {
 	Archived map[string]bool `json:"archived,omitempty"`
-	Files []string `json:"files,omitempty"`
+	Files    []string        `json:"files,omitempty"`
 }

@@ -18,6 +18,9 @@ import (
 {{#usesEncodingJson}}
 
 {{/usesEncodingJson}}
+{{#usesAttr}}
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+{{/usesAttr}}
 {{#usesTypes}}
 	"github.com/hashicorp/terraform-plugin-framework/types"
 {{/usesTypes}}
@@ -54,6 +57,7 @@ type {{nestedModel}} struct {
 func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) {
 	out := &client.{{nestedClientType}}{}
 {{#nested}}
+{{#inChildRequest}}
 {{#isString}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
 		out.{{goName}} = m.{{goName}}.ValueString()
@@ -83,17 +87,28 @@ func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) 
 		}
 	}
 {{/isJson}}
+{{/inChildRequest}}
 {{/nested}}
 	return out, nil
 }
 
 // FromClientModel fills one block from what the server answered.
+{{#nestedResponseType}}
+//
+// A DIFFERENT CLIENT TYPE FROM THE ONE IT SENDS: this block's children describe
+// what Polar answers, and the request carries its own -- see `responseBlocks` in
+// the generator configuration. The struct is the same either way, so the two
+// conversions have the same fields to work with and do not.
+func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedResponseType}}) {
+{{/nestedResponseType}}
+{{^nestedResponseType}}
 //
 // EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
+{{/nestedResponseType}}
 {{#nested}}
 {{#isString}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
@@ -164,6 +179,23 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 {{/isJson}}
 {{#isNested}}
 {{#isNestedList}}
+{{#unwrappedGo}}
+	// A WRAPPER AROUND THE LIST. The client field is an object whose one field is
+	// this list and whose other fields are server defaults -- the document's
+	// spelling, not the one a configuration means.
+	if m.{{goName}} != nil {
+		out.{{goName}} = &client.{{nestedWrapperType}}{}
+		out.{{goName}}.{{unwrappedGo}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}}.{{unwrappedGo}} = append(out.{{goName}}.{{unwrappedGo}}, *converted)
+		}
+	}
+{{/unwrappedGo}}
+{{^unwrappedGo}}
 	if len(m.{{goName}}) > 0 {
 		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
 		for index := range m.{{goName}} {
@@ -174,6 +206,7 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 			out.{{goName}} = append(out.{{goName}}, *converted)
 		}
 	}
+{{/unwrappedGo}}
 {{/isNestedList}}
 {{#isNestedObject}}
 	if m.{{goName}} != nil {
@@ -186,10 +219,35 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 {{/isNestedObject}}
 {{/isNested}}
 {{#isScalarList}}
-	out.{{goName}} = m.{{goName}}
+{{#isScalarSet}}
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make([]{{elementGoType}}, 0, len(m.{{goName}}.Elements()))
+		for _, element := range m.{{goName}}.Elements() {
+			out.{{goName}} = append(out.{{goName}}, {{elementFromTf}})
+		}
+	}
+{{/isScalarSet}}
+{{^isScalarSet}}
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make([]{{elementGoType}}, 0, len(m.{{goName}}.Elements()))
+		for _, element := range m.{{goName}}.Elements() {
+			out.{{goName}} = append(out.{{goName}}, {{elementFromTf}})
+		}
+	}
+{{/isScalarSet}}
 {{/isScalarList}}
 {{#isScalarMap}}
-	out.{{goName}} = m.{{goName}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make(map[string]{{elementGoType}}, len(m.{{goName}}.Elements()))
+		for key, element := range m.{{goName}}.Elements() {
+			out.{{goName}}[key] = {{elementFromTf}}
+		}
+	}
 {{/isScalarMap}}
 {{/inRequest}}
 {{/tfAttributes}}
@@ -240,6 +298,23 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 {{/isJson}}
 {{#isNested}}
 {{#isNestedList}}
+{{#unwrappedGo}}
+	// A WRAPPER AROUND THE LIST. The client field is an object whose one field is
+	// this list and whose other fields are server defaults -- the document's
+	// spelling, not the one a configuration means.
+	if m.{{goName}} != nil {
+		out.{{goName}} = &client.{{nestedWrapperType}}{}
+		out.{{goName}}.{{unwrappedGo}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}}.{{unwrappedGo}} = append(out.{{goName}}.{{unwrappedGo}}, *converted)
+		}
+	}
+{{/unwrappedGo}}
+{{^unwrappedGo}}
 	if len(m.{{goName}}) > 0 {
 		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
 		for index := range m.{{goName}} {
@@ -250,6 +325,7 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 			out.{{goName}} = append(out.{{goName}}, *converted)
 		}
 	}
+{{/unwrappedGo}}
 {{/isNestedList}}
 {{#isNestedObject}}
 	if m.{{goName}} != nil {
@@ -262,10 +338,35 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 {{/isNestedObject}}
 {{/isNested}}
 {{#isScalarList}}
-	out.{{goName}} = m.{{goName}}
+{{#isScalarSet}}
+	// A SET, not a list: which webhook event types this endpoint listens to does
+	// not depend on the order they were written in, and a server that answers
+	// them in another order has not done anything a configuration could tell.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make([]{{elementGoType}}, 0, len(m.{{goName}}.Elements()))
+		for _, element := range m.{{goName}}.Elements() {
+			out.{{goName}} = append(out.{{goName}}, {{elementFromTf}})
+		}
+	}
+{{/isScalarSet}}
+{{^isScalarSet}}
+	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
+	// takes one and these functions have none to give.
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make([]{{elementGoType}}, 0, len(m.{{goName}}.Elements()))
+		for _, element := range m.{{goName}}.Elements() {
+			out.{{goName}} = append(out.{{goName}}, {{elementFromTf}})
+		}
+	}
+{{/isScalarSet}}
 {{/isScalarList}}
 {{#isScalarMap}}
-	out.{{goName}} = m.{{goName}}
+	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+		out.{{goName}} = make(map[string]{{elementGoType}}, len(m.{{goName}}.Elements()))
+		for key, element := range m.{{goName}}.Elements() {
+			out.{{goName}}[key] = {{elementFromTf}}
+		}
+	}
 {{/isScalarMap}}
 {{/inUpdateRequest}}
 {{/tfAttributes}}
@@ -274,10 +375,38 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 {{/hasSeparateUpdateModel}}
 
 {{#responseModel}}
-// FromClientModel updates the Terraform model from a client model.
+// FromClientModel updates the Terraform model from a client model, for a
+// RESOURCE: an attribute that is Optional alone is written only where the
+// configuration already said something.
+//
+// OPTIONAL ALONE MEANS THE CONFIGURATION OWNS IT. A value the plan left null and
+// the read then answers is "Provider produced inconsistent result after apply",
+// on every apply -- so a position the create body does not insist on is filled
+// in here only if it was filled in there. The positions where the SERVER fills
+// it in are the ones that are Optional AND Computed, and those are written
+// unconditionally.
 func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}) {
+	m.fromAnswer(c, false)
+}
+
+// FromAnswer writes every attribute the server answered, which is what a DATA
+// SOURCE wants: there is no configuration behind it to disagree with, and its
+// schema says Computed for everything but the identifier it was given.
+func (m *{{resourceClassName}}Model) FromAnswer(c *client.{{responseModel}}) {
+	m.fromAnswer(c, true)
+}
+
+func (m *{{resourceClassName}}Model) fromAnswer(c *client.{{responseModel}}, everything bool) {
 {{#tfAttributes}}
 {{#readBack}}
+{{^isComputed}}
+{{#isNested}}
+	if everything || m.{{goName}} != nil {
+{{/isNested}}
+{{^isNested}}
+	if everything || !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{/isNested}}
+{{/isComputed}}
 {{#isString}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
 {{/isString}}
@@ -313,11 +442,46 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 		}
 	}
 {{/isJson}}
+{{#isScalarSet}}
+	// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know
+	// yet has to end up known either way -- "provider still indicated an unknown
+	// value ... all values must be known after apply".
+	if c.{{goName}} == nil {
+		m.{{goName}} = types.SetNull({{listElementType}})
+	} else {
+		{{goName}} := make([]attr.Value, 0, len(c.{{goName}}))
+		for _, element := range c.{{goName}} {
+			{{goName}} = append({{goName}}, {{elementToTf}})
+		}
+		m.{{goName}} = types.SetValueMust({{listElementType}}, {{goName}})
+	}
+{{/isScalarSet}}
 {{#isScalarList}}
-	m.{{goName}} = c.{{goName}}
+{{^isScalarSet}}
+	// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know
+	// yet has to end up known either way -- "provider still indicated an unknown
+	// value ... all values must be known after apply".
+	if c.{{goName}} == nil {
+		m.{{goName}} = types.ListNull({{listElementType}})
+	} else {
+		{{goName}} := make([]attr.Value, 0, len(c.{{goName}}))
+		for _, element := range c.{{goName}} {
+			{{goName}} = append({{goName}}, {{elementToTf}})
+		}
+		m.{{goName}} = types.ListValueMust({{listElementType}}, {{goName}})
+	}
+{{/isScalarSet}}
 {{/isScalarList}}
 {{#isScalarMap}}
-	m.{{goName}} = c.{{goName}}
+	if c.{{goName}} == nil {
+		m.{{goName}} = types.MapNull({{listElementType}})
+	} else {
+		{{goName}} := make(map[string]attr.Value, len(c.{{goName}}))
+		for key, element := range c.{{goName}} {
+			{{goName}}[key] = {{elementToTf}}
+		}
+		m.{{goName}} = types.MapValueMust({{listElementType}}, {{goName}})
+	}
 {{/isScalarMap}}
 {{#isNested}}
 {{#isNestedList}}
@@ -363,6 +527,9 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 {{/nestedPointer}}
 {{/isNestedObject}}
 {{/isNested}}
+{{^isComputed}}
+	}
+{{/isComputed}}
 {{/readBack}}
 {{^readBack}}
 {{#inRequest}}
@@ -374,7 +541,7 @@ func (m *{{resourceClassName}}Model) FromClientModel(c *client.{{responseModel}}
 	// the apply is over: "provider returned invalid result object after apply".
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.{{goName}}.IsUnknown() {
-		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}
+		m.{{goName}} = {{#isString}}types.StringNull(){{/isString}}{{#isInt64}}types.Int64Null(){{/isInt64}}{{#isFloat64}}types.Float64Null(){{/isFloat64}}{{#isBool}}types.BoolNull(){{/isBool}}{{#isJson}}jsontypes.NewNormalizedNull(){{/isJson}}{{#isScalarList}}{{#isScalarSet}}types.SetNull({{listElementType}}){{/isScalarSet}}{{^isScalarSet}}types.ListNull({{listElementType}}){{/isScalarSet}}{{/isScalarList}}{{#isScalarMap}}types.MapNull({{listElementType}}){{/isScalarMap}}
 	}
 {{/isComputed}}
 {{/isNested}}

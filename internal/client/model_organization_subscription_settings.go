@@ -4,9 +4,9 @@ package client
 
 // OrganizationSubscriptionSettings - OrganizationSubscriptionSettings struct
 type OrganizationSubscriptionSettings struct {
-	AllowMultipleSubscriptions *bool `json:"allow_multiple_subscriptions,omitempty"`
-	ProrationBehavior string `json:"proration_behavior,omitempty"`
-	BenefitRevocationGracePeriod int32 `json:"benefit_revocation_grace_period,omitempty"`
-	PreventTrialAbuse *bool `json:"prevent_trial_abuse,omitempty"`
-	AllowCustomerUpdates *bool `json:"allow_customer_updates,omitempty"`
+	AllowMultipleSubscriptions   *bool  `json:"allow_multiple_subscriptions,omitempty"`
+	ProrationBehavior            string `json:"proration_behavior,omitempty"`
+	BenefitRevocationGracePeriod int32  `json:"benefit_revocation_grace_period,omitempty"`
+	PreventTrialAbuse            *bool  `json:"prevent_trial_abuse,omitempty"`
+	AllowCustomerUpdates         *bool  `json:"allow_customer_updates,omitempty"`
 }

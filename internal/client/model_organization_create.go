@@ -4,19 +4,19 @@ package client
 
 // OrganizationCreate - OrganizationCreate struct
 type OrganizationCreate struct {
-	Name string `json:"name,omitempty"`
-	Slug string `json:"slug,omitempty"`
-	AvatarUrl string `json:"avatar_url,omitempty"`
-	LegalEntity *OrganizationCreateLegalEntity `json:"legal_entity,omitempty"`
-	Email string `json:"email,omitempty"`
-	Website string `json:"website,omitempty"`
-	Socials []OrganizationSocialLink `json:"socials,omitempty"`
-	Details *OrganizationDetails `json:"details,omitempty"`
-	Country string `json:"country,omitempty"`
-	FeatureSettings *OrganizationFeatureSettingsUpdate `json:"feature_settings,omitempty"`
-	SubscriptionSettings *OrganizationSubscriptionSettings `json:"subscription_settings,omitempty"`
-	CustomerEmailSettings *OrganizationCustomerEmailSettings `json:"customer_email_settings,omitempty"`
-	CustomerPortalSettings *OrganizationCustomerPortalSettings `json:"customer_portal_settings,omitempty"`
-	DefaultPresentmentCurrency string `json:"default_presentment_currency,omitempty"`
-	DefaultTaxBehavior string `json:"default_tax_behavior,omitempty"`
+	Name                       string                              `json:"name,omitempty"`
+	Slug                       string                              `json:"slug,omitempty"`
+	AvatarUrl                  string                              `json:"avatar_url,omitempty"`
+	LegalEntity                *OrganizationCreateLegalEntity      `json:"legal_entity,omitempty"`
+	Email                      string                              `json:"email,omitempty"`
+	Website                    string                              `json:"website,omitempty"`
+	Socials                    []OrganizationSocialLink            `json:"socials,omitempty"`
+	Details                    *OrganizationDetails                `json:"details,omitempty"`
+	Country                    string                              `json:"country,omitempty"`
+	FeatureSettings            *OrganizationFeatureSettingsUpdate  `json:"feature_settings,omitempty"`
+	SubscriptionSettings       *OrganizationSubscriptionSettings   `json:"subscription_settings,omitempty"`
+	CustomerEmailSettings      *OrganizationCustomerEmailSettings  `json:"customer_email_settings,omitempty"`
+	CustomerPortalSettings     *OrganizationCustomerPortalSettings `json:"customer_portal_settings,omitempty"`
+	DefaultPresentmentCurrency string                              `json:"default_presentment_currency,omitempty"`
+	DefaultTaxBehavior         string                              `json:"default_tax_behavior,omitempty"`
 }

@@ -11,7 +11,9 @@
     "document",
     "resources",
     "attributes",
-    "unions"
+    "unions",
+    "scalars",
+    "aliases"
   ],
   "properties": {
     "version": {
@@ -19,13 +21,15 @@
       "const": 1
     },
     "provider": {
-      "description": "What the provider is called and where it is served from. Not derived from the document -- these are ours to choose, and the address has to agree with the filesystem mirror on both sides.",
+      "description": "What the provider is called, where it is served from, and how a configuration points it at one of the document's servers. Not derived from the document -- these are ours to choose, and the address has to agree with the filesystem mirror on both sides.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "name",
         "address",
-        "version"
+        "version",
+        "token",
+        "environment"
       ],
       "properties": {
         "name": {
@@ -41,6 +45,89 @@
           "description": "The version in the mirror path, which is also the release tag the binary comes from.",
           "type": "string",
           "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "token": {
+          "description": "THE CREDENTIAL THIS PROVIDER HOLDS. The document declares several security schemes and nothing in it says which one a Terraform provider should carry: `pat` is a personal token, `customer_session` and `member_session` are minted for one end user, and `oidc` is a browser. The one that scopes to an organization is what this provider needs, and that is a decision.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attribute",
+            "scheme",
+            "env",
+            "description"
+          ],
+          "properties": {
+            "attribute": {
+              "description": "What the provider block calls the credential. Becomes the schema attribute, and the field of the generated model.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "scheme": {
+              "description": "The key under `components.securitySchemes` whose value is sent. Names the document's own entry rather than a shape of its own, so the header prefix comes from that entry and not from a guess.",
+              "type": "string"
+            },
+            "env": {
+              "description": "The environment variable the credential falls back to when the block does not set it.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "description": {
+              "description": "What the attribute's description says.",
+              "type": "string"
+            }
+          }
+        },
+        "environment": {
+          "description": "WHICH OF THE DOCUMENT'S SERVERS TO TALK TO. Polar has two -- production and sandbox -- and taking a URL in the provider block instead means a configuration that can point this provider at an address Polar never described. The environments themselves are the document's; what the attribute is called and which variable it falls back to are ours.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attribute",
+            "env",
+            "description",
+            "values"
+          ],
+          "properties": {
+            "attribute": {
+              "description": "What the provider block calls the environment. Carries the `values` names as its enum, so a typo is refused by the schema rather than by the API.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "env": {
+              "description": "The environment variable the choice falls back to when the block does not set it.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "description": {
+              "description": "What the attribute's description says.",
+              "type": "string"
+            },
+            "values": {
+              "description": "The servers, in the document's own order, each with the id a configuration spells and the base URL that id answers to. The version prefix is already on the URL: the whole API is at `/v1`, not one route of it.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "url"
+                ],
+                "properties": {
+                  "name": {
+                    "description": "The server's id, as a configuration spells it.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  },
+                  "url": {
+                    "description": "The base URL for it, version prefix included.",
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -87,12 +174,16 @@
       }
     },
     "attributes": {
-      "description": "How the schema is shaped once the resources are known.",
+      "description": "How the schema is shaped once the resources are known: what is exposed at all, and what each of the remaining attributes is FOR. The document marks nothing readOnly, so nothing here can be read off it.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "nestedMaxDepth",
-        "json"
+        "json",
+        "drop",
+        "computed",
+        "sensitive",
+        "byResource"
       ],
       "properties": {
         "nestedMaxDepth": {
@@ -108,6 +199,203 @@
             "type": "string"
           },
           "default": []
+        },
+        "drop": {
+          "description": "Property names no resource exposes, at the top level or inside a block. What the server owns and no configuration may set: the document declares every response-only field writable because nothing marks it readOnly, and an attribute nobody can write is noise in `tofu plan`. Polar's own `organization_id` goes for a second reason -- the provider block IS the organization, so the attribute could only ever contradict the credential in use.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "default": []
+        },
+        "computed": {
+          "description": "Property names that are Optional AND Computed wherever they appear. That is the one combination the document never asks for and a server default does: an attribute the configuration may leave out, which the server then fills in. Optional alone plans null and the read answers a value, which is \"Provider produced inconsistent result after apply\" on every apply. Anything ELSE the create body takes without insisting is Optional alone.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "default": []
+        },
+        "sensitive": {
+          "description": "Property names that are Sensitive wherever they appear. Nothing in Polar's description is secret by itself, and the words in a name are not evidence: `guild_token` is a Discord bot token and nothing else in the document says so.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "default": []
+        },
+        "byResource": {
+          "description": "WHAT ONE RESOURCE DOES WITH EACH OF ITS ATTRIBUTES, keyed by the Terraform resource name. The hand-written provider's schema resource by resource, which is the most judgement there is: nothing in the document says that a meter's `unit` is not worth exposing, or that an organization's `slug` is the server's to derive.\n\nEvery key says one thing, and every one of them names an attribute a configuration spells:",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "drop": {
+                "description": "Property names this resource does not expose. Applied inside blocks too, so a price's `tax_behavior` goes with it.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "include": {
+                "description": "Positions the CREATE body does not take that the resource still offers, taken from the UPDATE body where there is one and from the read answer where there is not. Polar archives a product through `is_archived` and has no DELETE for it at all, so a field only the patch declares still has to be reachable; Polar never hands out a webhook endpoint's secret at create, so that one comes from the read answer.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "required": {
+                "description": "Property names that are Required, even where the document does not require them.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "optional": {
+                "description": "Property names that are Optional alone, even where the document requires them. Polar's document marks a custom field's merged `properties` required because its own five variants each require it -- but which variant applies is not known until the discriminator is read, and a schema cannot wait for that.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "computed": {
+                "description": "Property names that are Computed alone, even where a configuration may write them. An organization's `slug` is the server's to derive however its own form spells it, and a checkout link's `payment_processor` is which processor the organization settled on.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "optionalComputed": {
+                "description": "Property names that are Optional AND Computed, whatever the document and the server default between them say.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "sensitive": {
+                "description": "Property names that are Sensitive, whatever their names suggest.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "set": {
+                "description": "Property names that are a Set rather than a List, because which ones matter and not what order. A webhook endpoint's `events` is a set of event types, and a server that answers them in another order has not done anything a configuration could tell.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "rename": {
+                "description": "Property name -> the name a configuration spells it with. The Go field and the JSON key are untouched; only the name in HCL moves.",
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": {}
+              },
+              "unwrap": {
+                "description": "Property name -> the one property inside it worth having. A wrapper object that exists only to carry a server default: `seat_tiers` is an object whose required field is `tiers` and whose other field defaults to `volume`, so as the wrapper it is a block holding a block and as the list it is what a configuration means.",
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": {}
+              },
+              "responseBlocks": {
+                "description": "Blocks whose children describe what the SERVER ANSWERS rather than what the request carries. A document may declare two schemas for one position -- an Update to send and a Settings to read back -- and they are not the same fields; typed from the request, an organization's `feature_settings` would offer `checkout_localization_enabled` and hide `wallets_enabled`. The struct is the same either way, so only the two client types differ.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "default": []
+              },
+              "validators": {
+                "description": "Constraints the document does not carry, keyed by the attribute they are on. Polar's own application limits a benefit's description to 42 characters and answers 422 past that, while its description says only `type: string`; the schema is where a person finds that out first.",
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "lengthAtMost": {
+                      "description": "`stringvalidator.LengthAtMost`, on a string attribute.",
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "lengthAtLeast": {
+                      "description": "`stringvalidator.LengthAtLeast`, on a string attribute.",
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "oneOf": {
+                      "description": "`stringvalidator.OneOf`, when the values to allow are not the document's enum -- a benefit kind Polar has shipped since the hand-written provider was written, or one it has retired.",
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    },
+                    "pattern": {
+                      "description": "`stringvalidator.RegexMatches`, for a shape the document cannot express. A webhook endpoint's url carries `format: uri`, which `http://example.com` satisfies and Polar will not answer; only Polar knows the scheme has to be https.",
+                      "type": "string"
+                    },
+                    "message": {
+                      "description": "What the pattern validator says when it refuses. The default is the pattern itself, which is rarely what a person needs to read.",
+                      "type": "string"
+                    }
+                  }
+                },
+                "default": {}
+              },
+              "conflictWhen": {
+                "description": "Which attributes belong to which variant of a union that was MERGED rather than split, keyed by the discriminator's value for that variant. A custom field's five kinds share one `properties` block, so which fields belong to which kind is invisible in the schema -- and `textarea` on a number field is a request Polar refuses. The rules for a union that was split are worked out from the flattening; this is for the ones that were not. A key may instead be `<discriminator>.<value>`, where the resource has more than one discriminator and the flattened one is not the one that decides.",
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  }
+                },
+                "default": {}
+              },
+              "requiredWhen": {
+                "description": "Which attributes a variant demands and the document does not, keyed by the discriminator's value for that variant. A fixed discount's `amounts` is not in Polar's required list -- its required list is the union of every variant's -- and Polar's application refuses a fixed discount with no amount. A key may instead be `<discriminator>.<value>`: a repeating discount's `duration_in_months` is decided by `duration`, not by `type`.",
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  }
+                },
+                "default": {}
+              }
+            }
+          }
         }
       }
     },
@@ -170,6 +458,27 @@
           }
         ]
       }
+    },
+    "scalars": {
+      "description": "NAMED SCHEMAS THAT ARE NOT OBJECTS, and the scalar each one is. openapi-generator mints a model for every named schema and the templates render a model as a struct, so `WebhookEventType` -- `type: string` with an enum of 40 values -- came out `type WebhookEventType struct{}`, and a webhook endpoint's `events` came out a list of those. The generator was left to work out that such a model is really a scalar, and where it could not it fell back to `interface{}`: the attribute became a string holding JSON and the suite refused it, \"attribute events: string required, but have tuple\". That fallback is precisely the inaccurate calculation this file exists to prevent, so the answer is computed from the document once and stated here. 135 of Polar's schemas are plain strings.",
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "string",
+          "number",
+          "integer",
+          "boolean"
+        ]
+      },
+      "default": {}
+    },
+    "aliases": {
+      "description": "NAMED SCHEMAS THAT ARE ONLY ANOTHER NAME, and what each one stands for. `CheckoutCreate` is `{\"$ref\": \"CheckoutProductsCreate\"}` and nothing else; openapi-generator mints a model for it all the same, carrying none of the target's properties -- `type CheckoutCreate struct{}` where the checkout resource's create body should be. Every reference is sent to the thing itself instead.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {}
     }
   }
 }

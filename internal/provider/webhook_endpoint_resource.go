@@ -3,23 +3,21 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -47,16 +45,24 @@ func (r *WebhookEndpointResource) Schema(_ context.Context, _ resource.SchemaReq
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Creation timestamp of the object.",
+				Optional:    true,
+				Description: "Whether the webhook endpoint is enabled.",
 			},
-			"modified_at": schema.StringAttribute{
+			"secret": schema.StringAttribute{
 				Computed:    true,
-				Description: "Last modification timestamp of the object.",
+				Sensitive:   true,
+				Description: "The secret used to sign the webhook events.",
 			},
 			"url": schema.StringAttribute{
-				Required:    true,
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile("^https://"),
+						"webhook URL must use HTTPS",
+					),
+				},
 				Description: "The URL where the webhook events will be sent.",
 			},
 			"name": schema.StringAttribute{
@@ -65,18 +71,20 @@ func (r *WebhookEndpointResource) Schema(_ context.Context, _ resource.SchemaReq
 				Description: "An optional name for the webhook endpoint to help organize and identify it.",
 			},
 			"format": schema.StringAttribute{
-				Required:    true,
-				Description: "The format of the webhook payload.",
+				Required: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"raw",
+						"discord",
+						"slack",
+					),
+				},
+				Description: "",
 			},
-			"events": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"events": schema.SetAttribute{
 				Required:    true,
+				ElementType: types.StringType,
 				Description: "The events that will trigger the webhook.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The organization ID associated with the webhook endpoint.",
 			},
 		},
 	}

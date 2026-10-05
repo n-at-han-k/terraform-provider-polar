@@ -31,9 +31,35 @@
 {{#isOptional}}
 							Optional:    true,
 {{/isOptional}}
+{{#isSensitive}}
+							Sensitive:   true,
+{{/isSensitive}}
 {{#isList}}
 							ElementType: {{listElementType}},
 {{/isList}}
+{{#hasStringValidator}}
+							Validators: []validator.String{
+{{#validatorLengthAtMost}}
+								stringvalidator.LengthAtMost({{.}}),
+{{/validatorLengthAtMost}}
+{{#validatorLengthAtLeast}}
+								stringvalidator.LengthAtLeast({{.}}),
+{{/validatorLengthAtLeast}}
+							{{#validatorPattern}}
+								stringvalidator.RegexMatches(
+									regexp.MustCompile("{{{validatorPattern}}}"),
+									"{{validatorMessage}}",
+								),
+{{/validatorPattern}}
+{{#hasOneOf}}
+								stringvalidator.OneOf(
+{{#validatorOneOf}}
+									"{{.}}",
+{{/validatorOneOf}}
+								),
+{{/hasOneOf}}
+							},
+{{/hasStringValidator}}
 {{#isNested}}
 {{>nested_schema}}
 {{/isNested}}
@@ -59,9 +85,35 @@
 {{#isOptional}}
 						Optional:    true,
 {{/isOptional}}
+{{#isSensitive}}
+						Sensitive:   true,
+{{/isSensitive}}
 {{#isList}}
 						ElementType: {{listElementType}},
 {{/isList}}
+{{#hasStringValidator}}
+						Validators: []validator.String{
+{{#validatorLengthAtMost}}
+							stringvalidator.LengthAtMost({{.}}),
+{{/validatorLengthAtMost}}
+{{#validatorLengthAtLeast}}
+							stringvalidator.LengthAtLeast({{.}}),
+{{/validatorLengthAtLeast}}
+						{{#validatorPattern}}
+							stringvalidator.RegexMatches(
+								regexp.MustCompile("{{{validatorPattern}}}"),
+								"{{validatorMessage}}",
+							),
+{{/validatorPattern}}
+{{#hasOneOf}}
+							stringvalidator.OneOf(
+{{#validatorOneOf}}
+								"{{.}}",
+{{/validatorOneOf}}
+							),
+{{/hasOneOf}}
+						},
+{{/hasStringValidator}}
 {{#isNested}}
 {{>nested_schema}}
 {{/isNested}}

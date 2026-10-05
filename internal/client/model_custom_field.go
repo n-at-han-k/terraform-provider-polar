@@ -4,17 +4,17 @@ package client
 
 // CustomField - CustomField struct
 type CustomField struct {
-	CreatedAt string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	Id string `json:"id,omitempty"`
-	Metadata map[string]CustomerMetadataValue `json:"metadata,omitempty"`
-	Slug string `json:"slug,omitempty"`
-	Name string `json:"name,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
-	TextProperties *CustomFieldTextProperties `json:"text_properties,omitempty"`
-	NumberProperties *CustomFieldNumberProperties `json:"number_properties,omitempty"`
-	DateProperties *CustomFieldDateProperties `json:"date_properties,omitempty"`
+	CreatedAt          string                         `json:"created_at,omitempty"`
+	ModifiedAt         string                         `json:"modified_at,omitempty"`
+	Id                 string                         `json:"id,omitempty"`
+	Metadata           map[string]string              `json:"metadata,omitempty"`
+	Slug               string                         `json:"slug,omitempty"`
+	Name               string                         `json:"name,omitempty"`
+	OrganizationId     string                         `json:"organization_id,omitempty"`
+	TextProperties     *CustomFieldTextProperties     `json:"text_properties,omitempty"`
+	NumberProperties   *CustomFieldNumberProperties   `json:"number_properties,omitempty"`
+	DateProperties     *CustomFieldDateProperties     `json:"date_properties,omitempty"`
 	CheckboxProperties *CustomFieldCheckboxProperties `json:"checkbox_properties,omitempty"`
-	SelectProperties *CustomFieldSelectProperties `json:"select_properties,omitempty"`
-	Type string `json:"type,omitempty"`
+	SelectProperties   *CustomFieldSelectProperties   `json:"select_properties,omitempty"`
+	Type               string                         `json:"type,omitempty"`
 }

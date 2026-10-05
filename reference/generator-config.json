@@ -3,7 +3,28 @@
   "provider": {
     "name": "polar",
     "address": "ghcr.io/n-at-han-k/polar",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "token": {
+      "attribute": "access_token",
+      "scheme": "oat",
+      "env": "POLAR_ACCESS_TOKEN",
+      "description": "Polar organization access token. Can also be set with the `POLAR_ACCESS_TOKEN` environment variable."
+    },
+    "environment": {
+      "attribute": "server",
+      "env": "POLAR_SERVER",
+      "description": "The Polar environment to use. Can also be set with the `POLAR_SERVER` environment variable.",
+      "values": [
+        {
+          "name": "production",
+          "url": "https://api.polar.sh/v1"
+        },
+        {
+          "name": "sandbox",
+          "url": "https://sandbox-api.polar.sh/v1"
+        }
+      ]
+    }
   },
   "document": {
     "versionPrefix": "/v1",
@@ -38,7 +59,166 @@
       "ctx",
       "detail",
       "processor_metadata"
-    ]
+    ],
+    "drop": [
+      "created_at",
+      "modified_at",
+      "organization_id"
+    ],
+    "computed": [
+      "metadata",
+      "price_currency"
+    ],
+    "sensitive": [],
+    "byResource": {
+      "polar_benefit": {
+        "validators": {
+          "description": {
+            "lengthAtMost": 42
+          }
+        },
+        "sensitive": [
+          "guild_token"
+        ]
+      },
+      "polar_product": {
+        "include": [
+          "is_archived"
+        ],
+        "optionalComputed": [
+          "medias",
+          "is_archived"
+        ],
+        "unwrap": {
+          "seat_tiers": "tiers"
+        },
+        "optional": [
+          "seat_tiers"
+        ]
+      },
+      "polar_meter": {},
+      "polar_discount": {
+        "conflictWhen": {
+          "duration.repeating": [
+            "duration_in_months"
+          ]
+        },
+        "requiredWhen": {
+          "fixed": [
+            "amounts"
+          ],
+          "percentage": [
+            "basis_points"
+          ],
+          "duration.repeating": [
+            "duration_in_months"
+          ]
+        }
+      },
+      "polar_custom_field": {
+        "optional": [
+          "properties"
+        ],
+        "conflictWhen": {
+          "text": [
+            "textarea"
+          ],
+          "number": [
+            "ge",
+            "le"
+          ],
+          "select": [
+            "options"
+          ]
+        }
+      },
+      "polar_organization": {
+        "optional": [
+          "name",
+          "socials",
+          "feature_settings",
+          "customer_email_settings",
+          "subscription_settings"
+        ],
+        "optionalComputed": [
+          "order_confirmation",
+          "subscription_cancellation",
+          "subscription_confirmation",
+          "subscription_cycled",
+          "subscription_cycled_after_trial",
+          "subscription_past_due",
+          "subscription_revoked",
+          "subscription_uncanceled",
+          "subscription_updated",
+          "allow_customer_updates",
+          "allow_multiple_subscriptions",
+          "benefit_revocation_grace_period",
+          "prevent_trial_abuse",
+          "proration_behavior",
+          "issue_funding_enabled",
+          "revops_enabled",
+          "wallets_enabled",
+          "member_model_enabled",
+          "seat_based_pricing_enabled"
+        ],
+        "computed": [
+          "slug"
+        ],
+        "responseBlocks": [
+          "feature_settings"
+        ]
+      },
+      "polar_checkout_link": {
+        "include": [
+          "products",
+          "url",
+          "client_secret"
+        ],
+        "rename": {
+          "products": "product_ids"
+        },
+        "set": [
+          "product_ids"
+        ],
+        "sensitive": [
+          "client_secret"
+        ],
+        "computed": [
+          "url",
+          "client_secret",
+          "payment_processor"
+        ],
+        "optionalComputed": [
+          "allow_discount_codes",
+          "require_billing_address"
+        ]
+      },
+      "polar_webhook_endpoint": {
+        "include": [
+          "enabled",
+          "secret"
+        ],
+        "computed": [
+          "secret"
+        ],
+        "optionalComputed": [
+          "enabled",
+          "name"
+        ],
+        "sensitive": [
+          "secret"
+        ],
+        "set": [
+          "events"
+        ],
+        "validators": {
+          "url": {
+            "pattern": "^https://",
+            "message": "webhook URL must use HTTPS"
+          }
+        }
+      }
+    }
   },
   "unions": {
     "AssistantBlockPart.block": {
@@ -85,6 +265,36 @@
       },
       "discriminator": "type"
     },
+    "BenefitCustomCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitCustomUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitDiscordCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitDiscordUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitDownloadablesCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitDownloadablesUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitFeatureFlagCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitFeatureFlagUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitGitHubRepositoryCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitGitHubRepositoryUpdate.metadata.values": {
+      "widen": "string"
+    },
     "BenefitGrant.properties": {
       "variants": {
         "BenefitGrantDiscordProperties": "benefit_grant_discord_properties",
@@ -108,6 +318,44 @@
         "BenefitGrantSlackSharedChannelWebhook": "benefit_grant_slack_shared_channel_webhook"
       }
     },
+    "BenefitLicenseKeysCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitLicenseKeysUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitMeterCreditCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitMeterCreditUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitSlackSharedChannelCreate.metadata.values": {
+      "widen": "string"
+    },
+    "BenefitSlackSharedChannelUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "ChannelNamePreviewRequest.customer_metadata.values": {
+      "widen": "string"
+    },
+    "Checkout.custom_field_data.values": {
+      "widen": "string"
+    },
+    "Checkout.discount": {
+      "variants": {
+        "CheckoutDiscountFixedOnceForeverDuration": "checkout_discount_fixed_once_forever_duration",
+        "CheckoutDiscountFixedRepeatDuration": "checkout_discount_fixed_repeat_duration",
+        "CheckoutDiscountPercentageOnceForeverDuration": "checkout_discount_percentage_once_forever_duration",
+        "CheckoutDiscountPercentageRepeatDuration": "checkout_discount_percentage_repeat_duration"
+      }
+    },
+    "Checkout.customer_metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutConfirmStripe.custom_field_data.values": {
+      "widen": "string"
+    },
     "CheckoutForbiddenError": {
       "variants": {
         "AlreadyActiveSubscriptionError": "already_active_subscription_error",
@@ -117,12 +365,102 @@
         "DiscountRedemptionLimitReached": "discount_redemption_limit_reached"
       }
     },
+    "CheckoutLink.discount": {
+      "variants": {
+        "DiscountFixedOnceForeverDurationBase": "discount_fixed_once_forever_duration_base",
+        "DiscountFixedRepeatDurationBase": "discount_fixed_repeat_duration_base",
+        "DiscountPercentageOnceForeverDurationBase": "discount_percentage_once_forever_duration_base",
+        "DiscountPercentageRepeatDurationBase": "discount_percentage_repeat_duration_base"
+      }
+    },
     "CheckoutLinkCreate": {
       "variants": {
         "CheckoutLinkCreateProductPrice": "checkout_link_create_product_price",
         "CheckoutLinkCreateProduct": "checkout_link_create_product",
         "CheckoutLinkCreateProducts": "checkout_link_create_products"
       }
+    },
+    "CheckoutLinkCreateProduct.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutLinkCreateProductPrice.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutLinkCreateProducts.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutLinkUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutPriceCreate.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutPriceCreate.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutPriceCreate.customer_metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutProductCreate.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutProductCreate.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutProductCreate.customer_metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutProductsCreate.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutProductsCreate.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutProductsCreate.customer_metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutProductsCreate.prices.values.items": {
+      "variants": {
+        "ProductPriceFixedCreate": "fixed",
+        "ProductPriceCustomCreate": "custom",
+        "ProductPriceSeatBasedCreate": "seat_based",
+        "ProductPriceMeteredUnitCreate": "metered_unit"
+      },
+      "discriminator": "amount_type"
+    },
+    "CheckoutPublic.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutPublic.discount": {
+      "variants": {
+        "CheckoutDiscountFixedOnceForeverDuration": "checkout_discount_fixed_once_forever_duration",
+        "CheckoutDiscountFixedRepeatDuration": "checkout_discount_fixed_repeat_duration",
+        "CheckoutDiscountPercentageOnceForeverDuration": "checkout_discount_percentage_once_forever_duration",
+        "CheckoutDiscountPercentageRepeatDuration": "checkout_discount_percentage_repeat_duration"
+      }
+    },
+    "CheckoutPublicConfirmed.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutPublicConfirmed.discount": {
+      "variants": {
+        "CheckoutDiscountFixedOnceForeverDuration": "checkout_discount_fixed_once_forever_duration",
+        "CheckoutDiscountFixedRepeatDuration": "checkout_discount_fixed_repeat_duration",
+        "CheckoutDiscountPercentageOnceForeverDuration": "checkout_discount_percentage_once_forever_duration",
+        "CheckoutDiscountPercentageRepeatDuration": "checkout_discount_percentage_repeat_duration"
+      }
+    },
+    "CheckoutUpdate.custom_field_data.values": {
+      "widen": "string"
+    },
+    "CheckoutUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutUpdate.customer_metadata.values": {
+      "widen": "string"
+    },
+    "CheckoutUpdatePublic.custom_field_data.values": {
+      "widen": "string"
     },
     "CompassThreadMessageSchema.parts.items": {
       "variants": {
@@ -155,6 +493,21 @@
       "discriminator": "type",
       "conflicts": "merge"
     },
+    "CustomFieldCreateCheckbox.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldCreateDate.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldCreateNumber.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldCreateSelect.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldCreateText.metadata.values": {
+      "widen": "string"
+    },
     "CustomFieldUpdate": {
       "variants": {
         "CustomFieldUpdateText": "text",
@@ -165,6 +518,21 @@
       },
       "discriminator": "type",
       "conflicts": "merge"
+    },
+    "CustomFieldUpdateCheckbox.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldUpdateDate.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldUpdateNumber.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldUpdateSelect.metadata.values": {
+      "widen": "string"
+    },
+    "CustomFieldUpdateText.metadata.values": {
+      "widen": "string"
     },
     "Customer": {
       "variants": {
@@ -204,6 +572,9 @@
         "CustomerTeamCreate": "customer_team"
       }
     },
+    "CustomerIndividualCreate.metadata.values": {
+      "widen": "string"
+    },
     "CustomerPaymentMethod": {
       "variants": {
         "PaymentMethodCard": "payment_method_card",
@@ -235,6 +606,9 @@
         "BenefitGrantSlackSharedChannelProperties": "benefit_grant_slack_shared_channel_properties"
       }
     },
+    "CustomerStateSubscription.custom_field_data.values": {
+      "widen": "string"
+    },
     "CustomerSubscriptionChangePreview": {
       "variants": {
         "CustomerSubscriptionChangePreviewProduct": "customer_subscription_change_preview_product",
@@ -251,6 +625,21 @@
         "CustomerSubscriptionUpdateClear": "customer_subscription_update_clear"
       }
     },
+    "CustomerTeamCreate.metadata.values": {
+      "widen": "string"
+    },
+    "CustomerUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "CustomerUpdateExternalID.metadata.values": {
+      "widen": "string"
+    },
+    "CustomerUpdatedFields.metadata.values": {
+      "widen": "string"
+    },
+    "DataTableBlock.rows.items.values": {
+      "widen": "string"
+    },
     "Discount": {
       "variants": {
         "DiscountFixedOnceForeverDuration": "discount_fixed_once_forever_duration",
@@ -265,6 +654,24 @@
         "DiscountPercentageCreate": "percentage"
       },
       "discriminator": "type"
+    },
+    "DiscountFixedCreate.metadata.values": {
+      "widen": "string"
+    },
+    "DiscountPercentageCreate.metadata.values": {
+      "widen": "string"
+    },
+    "DiscountUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "EntityListBlock.rows.items.values": {
+      "widen": "string"
+    },
+    "EventMetadataInput.values": {
+      "widen": "string"
+    },
+    "EventMetadataOutput.values": {
+      "widen": "string"
     },
     "EventsIngest.events.items": {
       "variants": {
@@ -301,6 +708,15 @@
     "FilterClause.value": {
       "widen": "string"
     },
+    "Insight.primary_action": {
+      "variants": {
+        "ViewMetricAction": "view_metric",
+        "ViewCostsAction": "view_costs",
+        "AdjustPriceAction": "adjust_price",
+        "AddCurrencyAction": "add_currency"
+      },
+      "discriminator": "type"
+    },
     "LegacyRecurringProductPrice": {
       "variants": {
         "LegacyRecurringProductPriceFixed": "fixed",
@@ -308,11 +724,29 @@
       },
       "discriminator": "amount_type"
     },
+    "LicenseKeyActivate.conditions.values": {
+      "widen": "string"
+    },
+    "LicenseKeyActivate.meta.values": {
+      "widen": "string"
+    },
+    "LicenseKeyActivationBase.meta.values": {
+      "widen": "string"
+    },
+    "LicenseKeyActivationRead.meta.values": {
+      "widen": "string"
+    },
+    "LicenseKeyValidate.conditions.values": {
+      "widen": "string"
+    },
     "ListResource__.items.items": {
       "variants": {
         "OrganizationPaymentMethodCard": "organization_payment_method_card",
         "OrganizationPaymentMethodGeneric": "organization_payment_method_generic"
       }
+    },
+    "MetadataOutputType.values": {
+      "widen": "string"
     },
     "Meter.aggregation": {
       "variants": {
@@ -322,7 +756,21 @@
       },
       "discriminator": "func"
     },
+    "MeterCreate.metadata.values": {
+      "widen": "string"
+    },
     "MeterCreate.aggregation": {
+      "variants": {
+        "CountAggregation": "count",
+        "PropertyAggregation": "avg",
+        "UniqueAggregation": "unique"
+      },
+      "discriminator": "func"
+    },
+    "MeterUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "MeterUpdate.aggregation": {
       "variants": {
         "CountAggregation": "count",
         "PropertyAggregation": "avg",
@@ -670,7 +1118,38 @@
       },
       "discriminator": "type"
     },
+    "Order.custom_field_data.values": {
+      "widen": "string"
+    },
+    "Order.discount": {
+      "variants": {
+        "DiscountFixedOnceForeverDurationBase": "discount_fixed_once_forever_duration_base",
+        "DiscountFixedRepeatDurationBase": "discount_fixed_repeat_duration_base",
+        "DiscountPercentageOnceForeverDurationBase": "discount_percentage_once_forever_duration_base",
+        "DiscountPercentageRepeatDurationBase": "discount_percentage_repeat_duration_base"
+      }
+    },
+    "OrderCreate.custom_field_data.values": {
+      "widen": "string"
+    },
+    "OrderCreate.metadata.values": {
+      "widen": "string"
+    },
+    "OrganizationCreate.legal_entity": {
+      "variants": {
+        "OrganizationIndividualLegalEntitySchema": "individual",
+        "OrganizationCompanyLegalEntitySchema": "company"
+      },
+      "discriminator": "type"
+    },
     "OrganizationSSOConnectionCreate.configuration": {
+      "variants": {
+        "OIDCConfigurationClientSecret": "client_secret",
+        "OIDCConfigurationPrivateKeyJWT": "private_key_jwt"
+      },
+      "discriminator": "auth_method"
+    },
+    "OrganizationSSOConnectionUpdate.configuration": {
       "variants": {
         "OIDCConfigurationClientSecret": "client_secret",
         "OIDCConfigurationPrivateKeyJWT": "private_key_jwt"
@@ -695,6 +1174,9 @@
         "ProductCreateOneTime": "product_create_one_time"
       }
     },
+    "ProductCreateOneTime.metadata.values": {
+      "widen": "string"
+    },
     "ProductCreateOneTime.prices.items": {
       "variants": {
         "ProductPriceFixedCreate": "fixed",
@@ -703,6 +1185,9 @@
         "ProductPriceMeteredUnitCreate": "metered_unit"
       },
       "discriminator": "amount_type"
+    },
+    "ProductCreateRecurring.metadata.values": {
+      "widen": "string"
     },
     "ProductCreateRecurring.prices.items": {
       "variants": {
@@ -725,6 +1210,12 @@
     "ProductPriceMeteredUnitCreate.unit_amount": {
       "widen": "string"
     },
+    "ProductUpdate.metadata.values": {
+      "widen": "string"
+    },
+    "RefundCreate.metadata.values": {
+      "widen": "string"
+    },
     "SearchResults.results.items": {
       "variants": {
         "SearchResultProduct": "product",
@@ -734,11 +1225,28 @@
       },
       "discriminator": "type"
     },
+    "Subscription.custom_field_data.values": {
+      "widen": "string"
+    },
+    "Subscription.discount": {
+      "variants": {
+        "DiscountFixedOnceForeverDurationBase": "discount_fixed_once_forever_duration_base",
+        "DiscountFixedRepeatDurationBase": "discount_fixed_repeat_duration_base",
+        "DiscountPercentageOnceForeverDurationBase": "discount_percentage_once_forever_duration_base",
+        "DiscountPercentageRepeatDurationBase": "discount_percentage_repeat_duration_base"
+      }
+    },
     "SubscriptionChangePreview": {
       "variants": {
         "SubscriptionChangePreviewProduct": "subscription_change_preview_product",
         "SubscriptionChangePreviewSeats": "subscription_change_preview_seats"
       }
+    },
+    "SubscriptionCreateCustomer.metadata.values": {
+      "widen": "string"
+    },
+    "SubscriptionCreateExternalCustomer.metadata.values": {
+      "widen": "string"
     },
     "SubscriptionUpdate": {
       "variants": {
@@ -751,6 +1259,9 @@
         "SubscriptionResume": "subscription_resume",
         "SubscriptionUpdateClear": "subscription_update_clear"
       }
+    },
+    "SubscriptionUpdateBase.trial_end": {
+      "widen": "string"
     },
     "SupportCaseListItem": {
       "variants": {
@@ -809,5 +1320,145 @@
     "ValidationError.loc.items": {
       "widen": "string"
     }
+  },
+  "scalars": {
+    "AggregateField": "string",
+    "AggregationFunction": "string",
+    "AppealDecision": "string",
+    "AvailableScope": "string",
+    "BenefitGrantSortProperty": "string",
+    "BenefitSortProperty": "string",
+    "BenefitType": "string",
+    "BenefitVisibility": "string",
+    "BillingAddressFieldMode": "string",
+    "CheckoutLinkSortProperty": "string",
+    "CheckoutSortProperty": "string",
+    "CheckoutStatus": "string",
+    "ColumnFormat": "string",
+    "ConfidenceLevel": "string",
+    "CountryAlpha2": "string",
+    "CountryAlpha2Input": "string",
+    "CustomFieldSortProperty": "string",
+    "CustomFieldType": "string",
+    "CustomerBenefitGrantSortProperty": "string",
+    "CustomerCancellationReason": "string",
+    "CustomerCustomerMeterSortProperty": "string",
+    "CustomerMeterSortProperty": "string",
+    "CustomerOAuthPlatform": "string",
+    "CustomerOrderSortProperty": "string",
+    "CustomerSortProperty": "string",
+    "CustomerSubscriptionSortProperty": "string",
+    "CustomerType": "string",
+    "CustomerWalletSortProperty": "string",
+    "DiscountDuration": "string",
+    "DiscountSortProperty": "string",
+    "DiscountType": "string",
+    "DisputeSortProperty": "string",
+    "DisputeStatus": "string",
+    "DisputeWinReason": "string",
+    "EventNamesSortProperty": "string",
+    "EventSortProperty": "string",
+    "EventSource": "string",
+    "EventStatisticsSortProperty": "string",
+    "EventTypesSortProperty": "string",
+    "FeedbackStatus": "string",
+    "FeedbackType": "string",
+    "FileServiceTypes": "string",
+    "FilterConjunction": "string",
+    "FilterOperator": "string",
+    "IdentityVerificationStatus": "string",
+    "InsightCategory": "string",
+    "InsightSeverity": "string",
+    "LegacyOrganizationStatus": "string",
+    "LicenseKeyStatus": "string",
+    "MemberRole": "string",
+    "MemberSortProperty": "string",
+    "MerchantMigrationRecordStatus": "string",
+    "MerchantMigrationSourcePlatform": "string",
+    "MerchantMigrationStep": "string",
+    "MeterSortProperty": "string",
+    "MeterUnit": "string",
+    "MetricType": "string",
+    "NotificationRecipientPlatform": "string",
+    "OAuthPlatform": "string",
+    "OIDCAuthMethod": "string",
+    "OrderBillingReason": "string",
+    "OrderBillingReasonInternal": "string",
+    "OrderExportColumn": "string",
+    "OrderSortProperty": "string",
+    "OrderStatus": "string",
+    "OrganizationAccessTokenSortProperty": "string",
+    "OrganizationDeletionBlockedReason": "string",
+    "OrganizationPermission": "string",
+    "OrganizationReviewCheckKey": "string",
+    "OrganizationReviewCheckReason": "string",
+    "OrganizationReviewCheckStatus": "string",
+    "OrganizationReviewSubCheckKey": "string",
+    "OrganizationRole": "string",
+    "OrganizationSSOConnectionType": "string",
+    "OrganizationSocialPlatforms": "string",
+    "OrganizationSortProperty": "string",
+    "OrganizationStatus": "string",
+    "PanStepActor": "string",
+    "PanStepKind": "string",
+    "PanStepOwner": "string",
+    "PanStepStatus": "string",
+    "PanTransferMethod": "string",
+    "PaymentProcessor": "string",
+    "PaymentSortProperty": "string",
+    "PaymentStatus": "string",
+    "PaymentTrigger": "string",
+    "PayoutAccountStatus": "string",
+    "PayoutAccountType": "string",
+    "PayoutAttemptStatus": "string",
+    "PayoutSortProperty": "string",
+    "PayoutStatus": "string",
+    "PlatformFeeType": "string",
+    "PledgeState": "string",
+    "PrecheckEntity": "string",
+    "PrecheckIssueLevel": "string",
+    "PrecheckReasonLevel": "string",
+    "PrecheckRecordStatus": "string",
+    "PresentmentCurrency": "string",
+    "Processor": "string",
+    "ProductBillingType": "string",
+    "ProductPriceSource": "string",
+    "ProductPriceType": "string",
+    "ProductSortProperty": "string",
+    "ProductVisibility": "string",
+    "RecurringInterval": "string",
+    "RefundReason": "string",
+    "RefundSortProperty": "string",
+    "RefundStatus": "string",
+    "Scope": "string",
+    "SeatStatus": "string",
+    "SeatTierType": "string",
+    "StripeAccountCountry": "string",
+    "SubType": "string",
+    "SubscriptionExportColumn": "string",
+    "SubscriptionProrationBehavior": "string",
+    "SubscriptionSortProperty": "string",
+    "SubscriptionStatus": "string",
+    "SupportCaseMessageAuthorKind": "string",
+    "SupportCaseMessageType": "string",
+    "SupportCaseSortProperty": "string",
+    "SupportCaseType": "string",
+    "TaxBehavior": "string",
+    "TaxBehaviorOption": "string",
+    "TaxIDFormat": "string",
+    "TaxJurisdictionSortProperty": "string",
+    "TimeInterval": "string",
+    "TransactionSortProperty": "string",
+    "TransactionType": "string",
+    "TrialInterval": "string",
+    "UserDeletionBlockedReason": "string",
+    "Visibility": "string",
+    "WalletSortProperty": "string",
+    "WalletType": "string",
+    "WebhookEventType": "string",
+    "WebhookFormat": "string"
+  },
+  "aliases": {
+    "CheckoutCreate": "CheckoutProductsCreate"
   }
 }

@@ -3,12 +3,10 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
-
-
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -18,8 +16,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
@@ -47,30 +43,16 @@ func (r *OrderResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"custom_field_data": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
 				Optional:    true,
 				Description: "Key-value object storing custom field values.",
 			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The organization ID.",
 			},
 			"customer_id": schema.StringAttribute{
 				Required:    true,
@@ -81,17 +63,14 @@ func (r *OrderResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "",
 			},
 			"currency": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "",
 			},
 			"amount": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "A custom amount to charge, in the smallest currency unit. Overrides the product's price; defaults to the product's configured price (0 for free products). A positive amount must be at least the currency's minimum.",
 			},
 			"description": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "A summary description of the order.",
 			},

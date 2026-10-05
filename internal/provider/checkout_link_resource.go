@@ -3,28 +3,27 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"encoding/json"
 
-
-
+	"github.com/hashicorp/terraform-plugin-framework-validators/resourcevalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
-
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
 var _ resource.Resource = &CheckoutLinkResource{}
+var _ resource.ResourceWithConfigValidators = &CheckoutLinkResource{}
 var _ resource.ResourceWithImportState = &CheckoutLinkResource{}
 
 func NewCheckoutLinkResource() resource.Resource {
@@ -47,36 +46,47 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
+			"url": schema.StringAttribute{
 				Computed:    true,
-				Description: "Creation timestamp of the object.",
+				Description: "",
 			},
-			"modified_at": schema.StringAttribute{
+			"client_secret": schema.StringAttribute{
 				Computed:    true,
-				Description: "Last modification timestamp of the object.",
+				Sensitive:   true,
+				Description: "Client secret used to access the checkout link.",
 			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"metadata": schema.MapAttribute{
 				Computed:    true,
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 			"trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The interval unit for the trial period.",
+				Optional: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"day",
+						"week",
+						"month",
+						"year",
+					),
+				},
+				Description: "",
 			},
 			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "The number of interval units for the trial period.",
 			},
 			"payment_processor": schema.StringAttribute{
-				Required:    true,
-				Description: "Payment processor used.",
+				Computed: true,
+				Validators: []validator.String{
+					stringvalidator.OneOf(
+						"stripe",
+					),
+				},
+				Description: "",
 			},
 			"label": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Optional label to distinguish links internally",
 			},
@@ -91,42 +101,52 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting.",
 			},
 			"discount_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "ID of the discount to apply to the checkout. If the discount is not applicable anymore when opening the checkout link, it'll be ignored.",
 			},
 			"seats": schema.Int64Attribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "Preconfigured number of seats for seat-based pricing. When set, checkout sessions created from this link are locked to this number of seats and the customer won't be able to change it. All products on the link must use seat-based pricing and allow this number of seats. If the products no longer accommodate this value when the link is opened, it'll be ignored.",
 			},
 			"success_url": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "URL where the customer will be redirected after a successful payment.",
 			},
 			"return_url": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "When set, a back button will be shown in the checkout to return to this URL.",
 			},
 			"product_price_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "",
 			},
 			"product_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
 				Description: "",
 			},
-			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"product_ids": schema.SetAttribute{
 				Optional:    true,
+				ElementType: types.StringType,
 				Description: "",
 			},
 		},
+	}
+}
+
+// ConfigValidators refuses WHICH ARM OF THE UNION a configuration meant, where
+// there is no discriminator to read it off.
+//
+// The create body is a oneOf whose arms are told apart by the one attribute each
+// of them alone declares. Nothing in the schema says they are alternatives, so a
+// configuration setting two of them -- or none -- is a request Polar answers 422
+// to, after the plan rather than in it.
+func (r *CheckoutLinkResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		resourcevalidator.ExactlyOneOf(
+			path.MatchRoot("product_price_id"),
+			path.MatchRoot("product_id"),
+			path.MatchRoot("product_ids"),
+		),
 	}
 }
 

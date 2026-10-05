@@ -4,7 +4,7 @@ package client
 
 // MemberUpdate - Schema for updating a member.
 type MemberUpdate struct {
-	Name string `json:"name,omitempty"`
+	Name  string `json:"name,omitempty"`
 	Email string `json:"email,omitempty"`
-	Role string `json:"role,omitempty"`
+	Role  string `json:"role,omitempty"`
 }

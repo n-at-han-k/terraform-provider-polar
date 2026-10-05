@@ -7,10 +7,8 @@ import (
 
 	"encoding/json"
 
-
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,32 +33,26 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 		Description: "Fetches a subscription data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
-			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"product_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The ID of the subscribed product.",
 			},
 			"customer_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The ID of the subscribed customer.",
 			},
 			"external_customer_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The ID of the customer in your system to create the subscription for. It must already exist in Polar.",
 			},
 		},
@@ -104,7 +96,7 @@ func (d *SubscriptionDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read subscription data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

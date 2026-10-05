@@ -4,9 +4,9 @@ package client
 
 // BenefitFeatureFlagUpdate - BenefitFeatureFlagUpdate struct
 type BenefitFeatureFlagUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Description string `json:"description,omitempty"`
-	Visibility string `json:"visibility,omitempty"`
-	Type string `json:"type,omitempty"`
-	Properties map[string]interface{} `json:"properties,omitempty"`
+	Metadata    map[string]string      `json:"metadata,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	Visibility  string                 `json:"visibility,omitempty"`
+	Type        string                 `json:"type,omitempty"`
+	Properties  map[string]interface{} `json:"properties,omitempty"`
 }

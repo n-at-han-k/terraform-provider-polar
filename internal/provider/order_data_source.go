@@ -7,10 +7,9 @@ import (
 
 	"encoding/json"
 
-
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -35,16 +34,11 @@ func (d *OrderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 		Description: "Fetches a order data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
+				// WHAT A DATA SOURCE IS GIVEN. It answers one thing by name, and
+				// everything else is Computed -- including the identifier, which
+				// the plan cannot know.
+				Required:    true,
 				Description: "The ID of the object.",
-			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Creation timestamp of the object.",
-			},
-			"modified_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Last modification timestamp of the object.",
 			},
 			"custom_field_data": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
@@ -52,20 +46,15 @@ func (d *OrderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Description: "Key-value object storing custom field values.",
 			},
 			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The organization ID.",
-			},
 			"customer_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "",
 			},
 			"product_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "",
 			},
 			"currency": schema.StringAttribute{
@@ -121,7 +110,7 @@ func (d *OrderDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	config.FromClientModel(&result)
+	config.FromAnswer(&result)
 
 	tflog.Trace(ctx, "read order data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

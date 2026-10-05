@@ -4,14 +4,14 @@ package client
 
 // OrganizationDetails - OrganizationDetails struct
 type OrganizationDetails struct {
-	About string `json:"about,omitempty"`
-	ProductDescription string `json:"product_description,omitempty"`
-	SellingCategories []string `json:"selling_categories,omitempty"`
-	PricingModels []string `json:"pricing_models,omitempty"`
-	IntendedUse string `json:"intended_use,omitempty"`
-	CustomerAcquisition []string `json:"customer_acquisition,omitempty"`
-	FutureAnnualRevenue int32 `json:"future_annual_revenue,omitempty"`
-	Switching *bool `json:"switching,omitempty"`
-	SwitchingFrom string `json:"switching_from,omitempty"`
-	PreviousAnnualRevenue int32 `json:"previous_annual_revenue,omitempty"`
+	About                 string   `json:"about,omitempty"`
+	ProductDescription    string   `json:"product_description,omitempty"`
+	SellingCategories     []string `json:"selling_categories,omitempty"`
+	PricingModels         []string `json:"pricing_models,omitempty"`
+	IntendedUse           string   `json:"intended_use,omitempty"`
+	CustomerAcquisition   []string `json:"customer_acquisition,omitempty"`
+	FutureAnnualRevenue   int32    `json:"future_annual_revenue,omitempty"`
+	Switching             *bool    `json:"switching,omitempty"`
+	SwitchingFrom         string   `json:"switching_from,omitempty"`
+	PreviousAnnualRevenue int32    `json:"previous_annual_revenue,omitempty"`
 }
