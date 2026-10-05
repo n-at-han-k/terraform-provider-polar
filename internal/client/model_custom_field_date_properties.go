@@ -4,9 +4,9 @@ package client
 
 // CustomFieldDateProperties - CustomFieldDateProperties struct
 type CustomFieldDateProperties struct {
-	FormLabel       string `json:"form_label,omitempty"`
-	FormHelpText    string `json:"form_help_text,omitempty"`
-	FormPlaceholder string `json:"form_placeholder,omitempty"`
-	Ge              int32  `json:"ge,omitempty"`
-	Le              int32  `json:"le,omitempty"`
+	FormLabel       *string `json:"form_label,omitempty"`
+	FormHelpText    *string `json:"form_help_text,omitempty"`
+	FormPlaceholder *string `json:"form_placeholder,omitempty"`
+	Ge              *int32  `json:"ge,omitempty"`
+	Le              *int32  `json:"le,omitempty"`
 }

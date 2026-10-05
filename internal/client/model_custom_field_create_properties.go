@@ -4,13 +4,13 @@ package client
 
 // CustomFieldCreateProperties - CustomFieldCreateProperties struct
 type CustomFieldCreateProperties struct {
-	FormLabel       string                    `json:"form_label,omitempty"`
-	FormHelpText    string                    `json:"form_help_text,omitempty"`
-	FormPlaceholder string                    `json:"form_placeholder,omitempty"`
+	FormLabel       *string                   `json:"form_label,omitempty"`
+	FormHelpText    *string                   `json:"form_help_text,omitempty"`
+	FormPlaceholder *string                   `json:"form_placeholder,omitempty"`
 	Textarea        *bool                     `json:"textarea,omitempty"`
-	MinLength       int32                     `json:"min_length,omitempty"`
-	MaxLength       int32                     `json:"max_length,omitempty"`
-	Ge              int32                     `json:"ge,omitempty"`
-	Le              int32                     `json:"le,omitempty"`
+	MinLength       *int32                    `json:"min_length,omitempty"`
+	MaxLength       *int32                    `json:"max_length,omitempty"`
+	Ge              *int32                    `json:"ge,omitempty"`
+	Le              *int32                    `json:"le,omitempty"`
 	Options         []CustomFieldSelectOption `json:"options,omitempty"`
 }

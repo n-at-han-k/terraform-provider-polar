@@ -44,19 +44,24 @@ type CustomerBillingAddressModel struct {
 func (m *CustomerBillingAddressModel) ToClientModel() (*client.AddressInput, error) {
 	out := &client.AddressInput{}
 	if !m.Line1.IsNull() && !m.Line1.IsUnknown() {
-		out.Line1 = m.Line1.ValueString()
+		Line1 := m.Line1.ValueString()
+		out.Line1 = &Line1
 	}
 	if !m.Line2.IsNull() && !m.Line2.IsUnknown() {
-		out.Line2 = m.Line2.ValueString()
+		Line2 := m.Line2.ValueString()
+		out.Line2 = &Line2
 	}
 	if !m.PostalCode.IsNull() && !m.PostalCode.IsUnknown() {
-		out.PostalCode = m.PostalCode.ValueString()
+		PostalCode := m.PostalCode.ValueString()
+		out.PostalCode = &PostalCode
 	}
 	if !m.City.IsNull() && !m.City.IsUnknown() {
-		out.City = m.City.ValueString()
+		City := m.City.ValueString()
+		out.City = &City
 	}
 	if !m.State.IsNull() && !m.State.IsUnknown() {
-		out.State = m.State.ValueString()
+		State := m.State.ValueString()
+		out.State = &State
 	}
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
 		out.Country = m.Country.ValueString()
@@ -71,11 +76,41 @@ func (m *CustomerBillingAddressModel) ToClientModel() (*client.AddressInput, err
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
-	m.Line1 = types.StringValue(c.Line1)
-	m.Line2 = types.StringValue(c.Line2)
-	m.PostalCode = types.StringValue(c.PostalCode)
-	m.City = types.StringValue(c.City)
-	m.State = types.StringValue(c.State)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line1 != nil {
+		m.Line1 = types.StringValue(*c.Line1)
+	} else {
+		m.Line1 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line2 != nil {
+		m.Line2 = types.StringValue(*c.Line2)
+	} else {
+		m.Line2 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PostalCode != nil {
+		m.PostalCode = types.StringValue(*c.PostalCode)
+	} else {
+		m.PostalCode = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.City != nil {
+		m.City = types.StringValue(*c.City)
+	} else {
+		m.City = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.State != nil {
+		m.State = types.StringValue(*c.State)
+	} else {
+		m.State = types.StringNull()
+	}
 	m.Country = types.StringValue(c.Country)
 }
 
@@ -98,10 +133,12 @@ func (m *CustomerOwnerModel) ToClientModel() (*client.MemberOwnerCreate, error) 
 		out.Email = m.Email.ValueString()
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		out.ExternalId = m.ExternalId.ValueString()
+		ExternalId := m.ExternalId.ValueString()
+		out.ExternalId = &ExternalId
 	}
 	return out, nil
 }
@@ -114,8 +151,20 @@ func (m *CustomerOwnerModel) ToClientModel() (*client.MemberOwnerCreate, error) 
 // returned invalid result object after apply".
 func (m *CustomerOwnerModel) FromClientModel(c *client.MemberOwnerCreate) {
 	m.Email = types.StringValue(c.Email)
-	m.Name = types.StringValue(c.Name)
-	m.ExternalId = types.StringValue(c.ExternalId)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Name != nil {
+		m.Name = types.StringValue(*c.Name)
+	} else {
+		m.Name = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ExternalId != nil {
+		m.ExternalId = types.StringValue(*c.ExternalId)
+	} else {
+		m.ExternalId = types.StringNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -128,10 +177,12 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 		}
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		out.ExternalId = m.ExternalId.ValueString()
+		ExternalId := m.ExternalId.ValueString()
+		out.ExternalId = &ExternalId
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if m.BillingAddress != nil {
 		converted, err := m.BillingAddress.ToClientModel()
@@ -140,8 +191,13 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 		}
 		out.BillingAddress = converted
 	}
+	if !m.TaxId.IsNull() && !m.TaxId.IsUnknown() {
+		TaxId := m.TaxId.ValueString()
+		out.TaxId = &TaxId
+	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		out.Locale = m.Locale.ValueString()
+		Locale := m.Locale.ValueString()
+		out.Locale = &Locale
 	}
 	if m.Owner != nil {
 		converted, err := m.Owner.ToClientModel()
@@ -151,16 +207,20 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
 		out.Owner = converted
 	}
 	if !m.CustomerIndividualType.IsNull() && !m.CustomerIndividualType.IsUnknown() {
-		out.CustomerIndividualType = m.CustomerIndividualType.ValueString()
+		CustomerIndividualType := m.CustomerIndividualType.ValueString()
+		out.CustomerIndividualType = &CustomerIndividualType
 	}
 	if !m.CustomerTeamType.IsNull() && !m.CustomerTeamType.IsUnknown() {
-		out.CustomerTeamType = m.CustomerTeamType.ValueString()
+		CustomerTeamType := m.CustomerTeamType.ValueString()
+		out.CustomerTeamType = &CustomerTeamType
 	}
 	if !m.CustomerIndividualEmail.IsNull() && !m.CustomerIndividualEmail.IsUnknown() {
-		out.CustomerIndividualEmail = m.CustomerIndividualEmail.ValueString()
+		CustomerIndividualEmail := m.CustomerIndividualEmail.ValueString()
+		out.CustomerIndividualEmail = &CustomerIndividualEmail
 	}
 	if !m.CustomerTeamEmail.IsNull() && !m.CustomerTeamEmail.IsUnknown() {
-		out.CustomerTeamEmail = m.CustomerTeamEmail.ValueString()
+		CustomerTeamEmail := m.CustomerTeamEmail.ValueString()
+		out.CustomerTeamEmail = &CustomerTeamEmail
 	}
 	return out, nil
 }
@@ -182,10 +242,12 @@ func (m *CustomerModel) ToUpdateModel() (*client.CustomerUpdate, error) {
 		}
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		out.ExternalId = m.ExternalId.ValueString()
+		ExternalId := m.ExternalId.ValueString()
+		out.ExternalId = &ExternalId
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if m.BillingAddress != nil {
 		converted, err := m.BillingAddress.ToClientModel()
@@ -194,8 +256,13 @@ func (m *CustomerModel) ToUpdateModel() (*client.CustomerUpdate, error) {
 		}
 		out.BillingAddress = converted
 	}
+	if !m.TaxId.IsNull() && !m.TaxId.IsUnknown() {
+		TaxId := m.TaxId.ValueString()
+		out.TaxId = &TaxId
+	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		out.Locale = m.Locale.ValueString()
+		Locale := m.Locale.ValueString()
+		out.Locale = &Locale
 	}
 	return out, nil
 }
@@ -282,12 +349,21 @@ func (m *CustomerModel) fromAnswer(c *client.Customer, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		m.ExternalId = types.StringValue(c.ExternalId)
-	}
-	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ExternalId != nil {
+			m.ExternalId = types.StringValue(*c.ExternalId)
+		} else {
+			m.ExternalId = types.StringNull()
+		}
 	}
 	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		m.Locale = types.StringValue(c.Locale)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Locale != nil {
+			m.Locale = types.StringValue(*c.Locale)
+		} else {
+			m.Locale = types.StringNull()
+		}
 	}
 }

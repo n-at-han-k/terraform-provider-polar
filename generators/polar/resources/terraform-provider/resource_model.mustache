@@ -60,17 +60,35 @@ func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) 
 {{#inChildRequest}}
 {{#isString}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := m.{{goName}}.ValueString()
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = m.{{goName}}.ValueString()
+{{/isPointer}}
 	}
 {{/isString}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := {{scalarType}}(m.{{goName}}.ValueInt64())
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+{{/isPointer}}
 	}
 {{/isInt64}}
 {{#isFloat64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := {{scalarType}}(m.{{goName}}.ValueFloat64())
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+{{/isPointer}}
 	}
 {{/isFloat64}}
 {{#isBool}}
@@ -111,13 +129,46 @@ func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
 {{/nestedResponseType}}
 {{#nested}}
 {{#isString}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.StringValue(*c.{{goName}})
+	} else {
+		m.{{goName}} = types.StringNull()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
+{{/isPointer}}
 {{/isString}}
 {{#isInt64}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.Int64Value(int64(*c.{{goName}}))
+	} else {
+		m.{{goName}} = types.Int64Null()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
+{{/isPointer}}
 {{/isInt64}}
 {{#isFloat64}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.Float64Value(float64(*c.{{goName}}))
+	} else {
+		m.{{goName}} = types.Float64Null()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.Float64Value(float64(c.{{goName}}))
+{{/isPointer}}
 {{/isFloat64}}
 {{#isBool}}
 	if c.{{goName}} != nil {
@@ -146,17 +197,35 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 {{#inRequest}}
 {{#isString}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := m.{{goName}}.ValueString()
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = m.{{goName}}.ValueString()
+{{/isPointer}}
 	}
 {{/isString}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := {{scalarType}}(m.{{goName}}.ValueInt64())
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+{{/isPointer}}
 	}
 {{/isInt64}}
 {{#isFloat64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isPointer}}
+		{{goName}} := {{scalarType}}(m.{{goName}}.ValueFloat64())
+		out.{{goName}} = &{{goName}}
+{{/isPointer}}
+{{^isPointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+{{/isPointer}}
 	}
 {{/isFloat64}}
 {{#isBool}}
@@ -270,17 +339,35 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 {{#inUpdateRequest}}
 {{#isString}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isUpdatePointer}}
+		{{goName}} := m.{{goName}}.ValueString()
+		out.{{goName}} = &{{goName}}
+{{/isUpdatePointer}}
+{{^isUpdatePointer}}
 		out.{{goName}} = m.{{goName}}.ValueString()
+{{/isUpdatePointer}}
 	}
 {{/isString}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isUpdatePointer}}
+		{{goName}} := {{updateScalarType}}(m.{{goName}}.ValueInt64())
+		out.{{goName}} = &{{goName}}
+{{/isUpdatePointer}}
+{{^isUpdatePointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
+{{/isUpdatePointer}}
 	}
 {{/isInt64}}
 {{#isFloat64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
+{{#isUpdatePointer}}
+		{{goName}} := {{updateScalarType}}(m.{{goName}}.ValueFloat64())
+		out.{{goName}} = &{{goName}}
+{{/isUpdatePointer}}
+{{^isUpdatePointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
+{{/isUpdatePointer}}
 	}
 {{/isFloat64}}
 {{#isBool}}
@@ -443,13 +530,46 @@ func (m *{{resourceClassName}}Model) fromAnswer(c *client.{{responseModel}}, eve
 {{/isNested}}
 {{/isComputed}}
 {{#isString}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.StringValue(*c.{{goName}})
+	} else {
+		m.{{goName}} = types.StringNull()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.StringValue(c.{{goName}})
+{{/isPointer}}
 {{/isString}}
 {{#isInt64}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.Int64Value(int64(*c.{{goName}}))
+	} else {
+		m.{{goName}} = types.Int64Null()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.Int64Value(int64(c.{{goName}}))
+{{/isPointer}}
 {{/isInt64}}
 {{#isFloat64}}
+{{#isPointer}}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.{{goName}} != nil {
+		m.{{goName}} = types.Float64Value(float64(*c.{{goName}}))
+	} else {
+		m.{{goName}} = types.Float64Null()
+	}
+{{/isPointer}}
+{{^isPointer}}
 	m.{{goName}} = types.Float64Value(float64(c.{{goName}}))
+{{/isPointer}}
 {{/isFloat64}}
 {{#isBool}}
 	// A bool the server does not answer leaves the pointer nil, and a Computed

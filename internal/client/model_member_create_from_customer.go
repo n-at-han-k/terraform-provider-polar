@@ -4,8 +4,8 @@ package client
 
 // MemberCreateFromCustomer - Schema for creating a new member nested under a customer.  The customer is taken from the URL path, so it's not part of the body.
 type MemberCreateFromCustomer struct {
-	Email      string `json:"email,omitempty"`
-	Name       string `json:"name,omitempty"`
-	ExternalId string `json:"external_id,omitempty"`
-	Role       string `json:"role,omitempty"`
+	Email      string  `json:"email,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	ExternalId *string `json:"external_id,omitempty"`
+	Role       *string `json:"role,omitempty"`
 }

@@ -12,14 +12,14 @@ type ProductPrice struct {
 	TaxBehavior   string                       `json:"tax_behavior,omitempty"`
 	IsArchived    *bool                        `json:"is_archived,omitempty"`
 	ProductId     string                       `json:"product_id,omitempty"`
-	PriceAmount   int32                        `json:"price_amount,omitempty"`
-	MinimumAmount int32                        `json:"minimum_amount,omitempty"`
-	MaximumAmount int32                        `json:"maximum_amount,omitempty"`
-	PresetAmount  int32                        `json:"preset_amount,omitempty"`
+	PriceAmount   *int32                       `json:"price_amount,omitempty"`
+	MinimumAmount *int32                       `json:"minimum_amount,omitempty"`
+	MaximumAmount *int32                       `json:"maximum_amount,omitempty"`
+	PresetAmount  *int32                       `json:"preset_amount,omitempty"`
 	SeatTiers     *ProductPriceSeatTiersOutput `json:"seat_tiers,omitempty"`
-	UnitAmount    string                       `json:"unit_amount,omitempty"`
-	CapAmount     int32                        `json:"cap_amount,omitempty"`
-	MeterId       string                       `json:"meter_id,omitempty"`
+	UnitAmount    *string                      `json:"unit_amount,omitempty"`
+	CapAmount     *int32                       `json:"cap_amount,omitempty"`
+	MeterId       *string                      `json:"meter_id,omitempty"`
 	Meter         *ProductPriceMeter           `json:"meter,omitempty"`
 	AmountType    string                       `json:"amount_type,omitempty"`
 }

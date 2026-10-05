@@ -4,10 +4,10 @@ package client
 
 // ProductPriceCustomCreate - Schema to create a pay-what-you-want price.
 type ProductPriceCustomCreate struct {
-	AmountType    string `json:"amount_type,omitempty"`
-	PriceCurrency string `json:"price_currency,omitempty"`
-	TaxBehavior   string `json:"tax_behavior,omitempty"`
-	MinimumAmount int32  `json:"minimum_amount,omitempty"`
-	MaximumAmount int32  `json:"maximum_amount,omitempty"`
-	PresetAmount  int32  `json:"preset_amount,omitempty"`
+	AmountType    string  `json:"amount_type,omitempty"`
+	PriceCurrency *string `json:"price_currency,omitempty"`
+	TaxBehavior   *string `json:"tax_behavior,omitempty"`
+	MinimumAmount *int32  `json:"minimum_amount,omitempty"`
+	MaximumAmount *int32  `json:"maximum_amount,omitempty"`
+	PresetAmount  *int32  `json:"preset_amount,omitempty"`
 }

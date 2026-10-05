@@ -5,17 +5,17 @@ package client
 // CheckoutLinkCreate - CheckoutLinkCreate struct
 type CheckoutLinkCreate struct {
 	Metadata              map[string]string `json:"metadata,omitempty"`
-	TrialInterval         string            `json:"trial_interval,omitempty"`
-	TrialIntervalCount    int32             `json:"trial_interval_count,omitempty"`
+	TrialInterval         *string           `json:"trial_interval,omitempty"`
+	TrialIntervalCount    *int32            `json:"trial_interval_count,omitempty"`
 	PaymentProcessor      string            `json:"payment_processor,omitempty"`
-	Label                 string            `json:"label,omitempty"`
+	Label                 *string           `json:"label,omitempty"`
 	AllowDiscountCodes    *bool             `json:"allow_discount_codes,omitempty"`
 	RequireBillingAddress *bool             `json:"require_billing_address,omitempty"`
-	DiscountId            string            `json:"discount_id,omitempty"`
-	Seats                 int32             `json:"seats,omitempty"`
-	SuccessUrl            string            `json:"success_url,omitempty"`
-	ReturnUrl             string            `json:"return_url,omitempty"`
-	ProductPriceId        string            `json:"product_price_id,omitempty"`
-	ProductId             string            `json:"product_id,omitempty"`
+	DiscountId            *string           `json:"discount_id,omitempty"`
+	Seats                 *int32            `json:"seats,omitempty"`
+	SuccessUrl            *string           `json:"success_url,omitempty"`
+	ReturnUrl             *string           `json:"return_url,omitempty"`
+	ProductPriceId        *string           `json:"product_price_id,omitempty"`
+	ProductId             *string           `json:"product_id,omitempty"`
 	Products              []string          `json:"products,omitempty"`
 }

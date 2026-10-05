@@ -43,7 +43,8 @@ func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, e
 func (m *MetricDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, error) {
 	out := &client.MetricDashboardUpdate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.

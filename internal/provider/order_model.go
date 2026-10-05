@@ -48,13 +48,16 @@ func (m *OrderModel) ToClientModel() (*client.OrderCreate, error) {
 		out.ProductId = m.ProductId.ValueString()
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
+		Currency := m.Currency.ValueString()
+		out.Currency = &Currency
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
+		Amount := int32(m.Amount.ValueInt64())
+		out.Amount = &Amount
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
+		Description := m.Description.ValueString()
+		out.Description = &Description
 	}
 	return out, nil
 }
@@ -148,11 +151,5 @@ func (m *OrderModel) fromAnswer(c *client.Order, everything bool) {
 	}
 	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
 		m.ProductId = types.StringValue(c.ProductId)
-	}
-	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		m.Currency = types.StringValue(c.Currency)
-	}
-	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
-		m.Description = types.StringValue(c.Description)
 	}
 }

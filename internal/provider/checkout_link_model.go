@@ -39,16 +39,19 @@ func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkCreate, error) 
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.PaymentProcessor.IsNull() && !m.PaymentProcessor.IsUnknown() {
 		out.PaymentProcessor = m.PaymentProcessor.ValueString()
 	}
 	if !m.Label.IsNull() && !m.Label.IsUnknown() {
-		out.Label = m.Label.ValueString()
+		Label := m.Label.ValueString()
+		out.Label = &Label
 	}
 	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		// Addressed, not assigned: the client field is a *bool so that an
@@ -63,22 +66,28 @@ func (m *CheckoutLinkModel) ToClientModel() (*client.CheckoutLinkCreate, error) 
 		out.RequireBillingAddress = &RequireBillingAddress
 	}
 	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		out.DiscountId = m.DiscountId.ValueString()
+		DiscountId := m.DiscountId.ValueString()
+		out.DiscountId = &DiscountId
 	}
 	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		out.Seats = int32(m.Seats.ValueInt64())
+		Seats := int32(m.Seats.ValueInt64())
+		out.Seats = &Seats
 	}
 	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		out.SuccessUrl = m.SuccessUrl.ValueString()
+		SuccessUrl := m.SuccessUrl.ValueString()
+		out.SuccessUrl = &SuccessUrl
 	}
 	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		out.ReturnUrl = m.ReturnUrl.ValueString()
+		ReturnUrl := m.ReturnUrl.ValueString()
+		out.ReturnUrl = &ReturnUrl
 	}
 	if !m.ProductPriceId.IsNull() && !m.ProductPriceId.IsUnknown() {
-		out.ProductPriceId = m.ProductPriceId.ValueString()
+		ProductPriceId := m.ProductPriceId.ValueString()
+		out.ProductPriceId = &ProductPriceId
 	}
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
+		ProductId := m.ProductId.ValueString()
+		out.ProductId = &ProductId
 	}
 	// A SET, not a list: which webhook event types this endpoint listens to does
 	// not depend on the order they were written in, and a server that answers
@@ -109,13 +118,16 @@ func (m *CheckoutLinkModel) ToUpdateModel() (*client.CheckoutLinkUpdate, error) 
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.Label.IsNull() && !m.Label.IsUnknown() {
-		out.Label = m.Label.ValueString()
+		Label := m.Label.ValueString()
+		out.Label = &Label
 	}
 	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		AllowDiscountCodes := m.AllowDiscountCodes.ValueBool()
@@ -126,16 +138,20 @@ func (m *CheckoutLinkModel) ToUpdateModel() (*client.CheckoutLinkUpdate, error) 
 		out.RequireBillingAddress = &RequireBillingAddress
 	}
 	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		out.DiscountId = m.DiscountId.ValueString()
+		DiscountId := m.DiscountId.ValueString()
+		out.DiscountId = &DiscountId
 	}
 	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		out.Seats = int32(m.Seats.ValueInt64())
+		Seats := int32(m.Seats.ValueInt64())
+		out.Seats = &Seats
 	}
 	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		out.SuccessUrl = m.SuccessUrl.ValueString()
+		SuccessUrl := m.SuccessUrl.ValueString()
+		out.SuccessUrl = &SuccessUrl
 	}
 	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		out.ReturnUrl = m.ReturnUrl.ValueString()
+		ReturnUrl := m.ReturnUrl.ValueString()
+		out.ReturnUrl = &ReturnUrl
 	}
 	// A SET, not a list: which webhook event types this endpoint listens to does
 	// not depend on the order they were written in, and a server that answers
@@ -241,16 +257,7 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		}
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
-	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		m.TrialInterval = types.StringValue(c.TrialInterval)
-	}
-	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	}
 	m.PaymentProcessor = types.StringValue(c.PaymentProcessor)
-	if everything || !m.Label.IsNull() && !m.Label.IsUnknown() {
-		m.Label = types.StringValue(c.Label)
-	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -268,17 +275,5 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		m.RequireBillingAddress = types.BoolValue(*c.RequireBillingAddress)
 	} else if m.RequireBillingAddress.IsUnknown() {
 		m.RequireBillingAddress = types.BoolNull()
-	}
-	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		m.DiscountId = types.StringValue(c.DiscountId)
-	}
-	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		m.Seats = types.Int64Value(int64(c.Seats))
-	}
-	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		m.SuccessUrl = types.StringValue(c.SuccessUrl)
-	}
-	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		m.ReturnUrl = types.StringValue(c.ReturnUrl)
 	}
 }

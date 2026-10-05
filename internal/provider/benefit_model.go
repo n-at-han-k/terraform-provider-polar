@@ -43,7 +43,8 @@ type BenefitCustomPropertiesModel struct {
 func (m *BenefitCustomPropertiesModel) ToClientModel() (*client.BenefitCustomCreateProperties, error) {
 	out := &client.BenefitCustomCreateProperties{}
 	if !m.Note.IsNull() && !m.Note.IsUnknown() {
-		out.Note = m.Note.ValueString()
+		Note := m.Note.ValueString()
+		out.Note = &Note
 	}
 	return out, nil
 }
@@ -55,7 +56,13 @@ func (m *BenefitCustomPropertiesModel) ToClientModel() (*client.BenefitCustomCre
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitCustomPropertiesModel) FromClientModel(c *client.BenefitCustomCreateProperties) {
-	m.Note = types.StringValue(c.Note)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Note != nil {
+		m.Note = types.StringValue(*c.Note)
+	} else {
+		m.Note = types.StringNull()
+	}
 }
 
 // BenefitDiscordPropertiesModel is one `discord_properties` block.
@@ -184,10 +191,12 @@ type BenefitLicenseKeysPropertiesModel struct {
 func (m *BenefitLicenseKeysPropertiesModel) ToClientModel() (*client.BenefitLicenseKeysCreateProperties, error) {
 	out := &client.BenefitLicenseKeysCreateProperties{}
 	if !m.Prefix.IsNull() && !m.Prefix.IsUnknown() {
-		out.Prefix = m.Prefix.ValueString()
+		Prefix := m.Prefix.ValueString()
+		out.Prefix = &Prefix
 	}
 	if !m.LimitUsage.IsNull() && !m.LimitUsage.IsUnknown() {
-		out.LimitUsage = int32(m.LimitUsage.ValueInt64())
+		LimitUsage := int32(m.LimitUsage.ValueInt64())
+		out.LimitUsage = &LimitUsage
 	}
 	return out, nil
 }
@@ -199,8 +208,20 @@ func (m *BenefitLicenseKeysPropertiesModel) ToClientModel() (*client.BenefitLice
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitLicenseKeysPropertiesModel) FromClientModel(c *client.BenefitLicenseKeysCreateProperties) {
-	m.Prefix = types.StringValue(c.Prefix)
-	m.LimitUsage = types.Int64Value(int64(c.LimitUsage))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Prefix != nil {
+		m.Prefix = types.StringValue(*c.Prefix)
+	} else {
+		m.Prefix = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.LimitUsage != nil {
+		m.LimitUsage = types.Int64Value(int64(*c.LimitUsage))
+	} else {
+		m.LimitUsage = types.Int64Null()
+	}
 }
 
 // BenefitLicenseKeysPropertiesModelExpiresModel is one `expires` block.
@@ -349,7 +370,8 @@ func (m *BenefitSlackSharedChannelPropertiesModel) ToClientModel() (*client.Bene
 		out.Private = &Private
 	}
 	if !m.WelcomeMessage.IsNull() && !m.WelcomeMessage.IsUnknown() {
-		out.WelcomeMessage = m.WelcomeMessage.ValueString()
+		WelcomeMessage := m.WelcomeMessage.ValueString()
+		out.WelcomeMessage = &WelcomeMessage
 	}
 	if !m.ArchiveOnRevoke.IsNull() && !m.ArchiveOnRevoke.IsUnknown() {
 		ArchiveOnRevoke := m.ArchiveOnRevoke.ValueBool()
@@ -372,7 +394,13 @@ func (m *BenefitSlackSharedChannelPropertiesModel) FromClientModel(c *client.Ben
 	} else {
 		m.Private = types.BoolNull()
 	}
-	m.WelcomeMessage = types.StringValue(c.WelcomeMessage)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.WelcomeMessage != nil {
+		m.WelcomeMessage = types.StringValue(*c.WelcomeMessage)
+	} else {
+		m.WelcomeMessage = types.StringNull()
+	}
 	if c.ArchiveOnRevoke != nil {
 		m.ArchiveOnRevoke = types.BoolValue(*c.ArchiveOnRevoke)
 	} else {
@@ -393,7 +421,8 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitCreate, error) {
 		out.Description = m.Description.ValueString()
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
+		Visibility := m.Visibility.ValueString()
+		out.Visibility = &Visibility
 	}
 	if m.CustomProperties != nil {
 		converted, err := m.CustomProperties.ToClientModel()
@@ -475,10 +504,12 @@ func (m *BenefitModel) ToUpdateModel() (*client.BenefitUpdate, error) {
 		}
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
+		Description := m.Description.ValueString()
+		out.Description = &Description
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
+		Visibility := m.Visibility.ValueString()
+		out.Visibility = &Visibility
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -572,9 +603,6 @@ func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
 	}
 	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
 		m.Description = types.StringValue(c.Description)
-	}
-	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		m.Visibility = types.StringValue(c.Visibility)
 	}
 	if everything || !m.FeatureFlagProperties.IsNull() && !m.FeatureFlagProperties.IsUnknown() {
 		// Marshalling a Go value cannot fail in a way worth surfacing here; an

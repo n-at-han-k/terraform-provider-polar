@@ -4,8 +4,8 @@ package client
 
 // CustomFieldSelectProperties - CustomFieldSelectProperties struct
 type CustomFieldSelectProperties struct {
-	FormLabel       string                    `json:"form_label,omitempty"`
-	FormHelpText    string                    `json:"form_help_text,omitempty"`
-	FormPlaceholder string                    `json:"form_placeholder,omitempty"`
+	FormLabel       *string                   `json:"form_label,omitempty"`
+	FormHelpText    *string                   `json:"form_help_text,omitempty"`
+	FormPlaceholder *string                   `json:"form_placeholder,omitempty"`
 	Options         []CustomFieldSelectOption `json:"options,omitempty"`
 }

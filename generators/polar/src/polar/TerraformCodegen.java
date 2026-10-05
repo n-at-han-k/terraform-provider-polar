@@ -1756,6 +1756,19 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                     || writes.dataType.equals(String.valueOf(attribute.get("goType")));
             attribute.put("inRequest", writes != null);
             attribute.put("inUpdateRequest", patchable.containsKey(name));
+
+            // THE UPDATE BODY HAS ITS OWN POINTER-NESS. A property the create body
+            // REQUIRES is a plain value there, and the same property may still be
+            // optional -- and so a pointer -- in the patch body. The conversion was
+            // branching on the create field's shape while assigning into the update
+            // field, which is "cannot use m.Name.ValueString() (value of type
+            // string) as *string value in assignment", eleven times over.
+            CodegenProperty patches = patchable.get(name);
+            boolean updatePointer = patches != null && patches.dataType != null
+                    && patches.dataType.startsWith("*");
+            attribute.put("isUpdatePointer", updatePointer);
+            attribute.put("updateScalarType",
+                    updatePointer ? patches.dataType.substring(1) : "");
             // AND THE RESPONSE HAS TO ANSWER IT. A property the create body takes
             // and no response carries is write-only, and reading it back emits
             // `c.Whatever` for a field the response model does not have -- which
@@ -3063,6 +3076,11 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         attribute.put("isString", isString);
         attribute.put("terraformType", goType(pointed));
         attribute.put("terraformAttrType", goAttrType(pointed));
+        // THE SCHEMA IS UNCHANGED BY THIS -- a pointer to a scalar is still that
+        // scalar to Terraform -- but the CONVERSIONS have to take its address on
+        // the way out and check it for nil on the way back, so they need to know.
+        attribute.put("isPointer", true);
+        attribute.put("scalarType", pointed);
     }
 
     /** A list or an object travels as JSON; the templates convert those. */
@@ -3415,6 +3433,26 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 // server sees a missing field rather than the value the
                 // configuration set. `rollover = false` on a meter credit benefit
                 // is exactly that case.
+                // AND SO IS EVERY OPTIONAL SCALAR, for the read side rather than the
+                // write side. `omitempty` cannot tell absent from zero either way:
+                // a discount the server answers without `amount` leaves Go's 0,
+                // the read writes 0 into state, the configuration says nothing,
+                // and every plan then proposes `- amount = 0 -> null` forever.
+                // A nil pointer is absent and reads back as null.
+                //
+                // NOT FOR A REQUIRED ONE: the configuration always supplies it, so
+                // there is no absent case to represent, and a pointer would only
+                // add a dereference everywhere it is used.
+                //
+                // AND NOT BY SKIPPING ZEROES INSTEAD, which was the cheaper fix and
+                // the wrong one: Polar documents `price_amount = 0` as a free
+                // price, so a zero is a value and has to survive.
+                if (!property.required
+                        && Arrays.asList("string", "int32", "int64", "float32", "float64")
+                                .contains(property.dataType)) {
+                    property.dataType = "*" + property.dataType;
+                }
+
                 if ("bool".equals(property.dataType)) {
                     property.dataType = "*bool";
                 }

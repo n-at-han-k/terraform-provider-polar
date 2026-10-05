@@ -4,6 +4,6 @@ package client
 
 // OrderUpdate - Schema to update an order.
 type OrderUpdate struct {
-	BillingName    string        `json:"billing_name,omitempty"`
+	BillingName    *string       `json:"billing_name,omitempty"`
 	BillingAddress *AddressInput `json:"billing_address,omitempty"`
 }

@@ -41,29 +41,36 @@ type CustomFieldPropertiesModel struct {
 func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldCreateProperties, error) {
 	out := &client.CustomFieldCreateProperties{}
 	if !m.FormLabel.IsNull() && !m.FormLabel.IsUnknown() {
-		out.FormLabel = m.FormLabel.ValueString()
+		FormLabel := m.FormLabel.ValueString()
+		out.FormLabel = &FormLabel
 	}
 	if !m.FormHelpText.IsNull() && !m.FormHelpText.IsUnknown() {
-		out.FormHelpText = m.FormHelpText.ValueString()
+		FormHelpText := m.FormHelpText.ValueString()
+		out.FormHelpText = &FormHelpText
 	}
 	if !m.FormPlaceholder.IsNull() && !m.FormPlaceholder.IsUnknown() {
-		out.FormPlaceholder = m.FormPlaceholder.ValueString()
+		FormPlaceholder := m.FormPlaceholder.ValueString()
+		out.FormPlaceholder = &FormPlaceholder
 	}
 	if !m.Textarea.IsNull() && !m.Textarea.IsUnknown() {
 		Textarea := m.Textarea.ValueBool()
 		out.Textarea = &Textarea
 	}
 	if !m.MinLength.IsNull() && !m.MinLength.IsUnknown() {
-		out.MinLength = int32(m.MinLength.ValueInt64())
+		MinLength := int32(m.MinLength.ValueInt64())
+		out.MinLength = &MinLength
 	}
 	if !m.MaxLength.IsNull() && !m.MaxLength.IsUnknown() {
-		out.MaxLength = int32(m.MaxLength.ValueInt64())
+		MaxLength := int32(m.MaxLength.ValueInt64())
+		out.MaxLength = &MaxLength
 	}
 	if !m.Ge.IsNull() && !m.Ge.IsUnknown() {
-		out.Ge = int32(m.Ge.ValueInt64())
+		Ge := int32(m.Ge.ValueInt64())
+		out.Ge = &Ge
 	}
 	if !m.Le.IsNull() && !m.Le.IsUnknown() {
-		out.Le = int32(m.Le.ValueInt64())
+		Le := int32(m.Le.ValueInt64())
+		out.Le = &Le
 	}
 	return out, nil
 }
@@ -75,18 +82,60 @@ func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldCreateP
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldCreateProperties) {
-	m.FormLabel = types.StringValue(c.FormLabel)
-	m.FormHelpText = types.StringValue(c.FormHelpText)
-	m.FormPlaceholder = types.StringValue(c.FormPlaceholder)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormLabel != nil {
+		m.FormLabel = types.StringValue(*c.FormLabel)
+	} else {
+		m.FormLabel = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormHelpText != nil {
+		m.FormHelpText = types.StringValue(*c.FormHelpText)
+	} else {
+		m.FormHelpText = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormPlaceholder != nil {
+		m.FormPlaceholder = types.StringValue(*c.FormPlaceholder)
+	} else {
+		m.FormPlaceholder = types.StringNull()
+	}
 	if c.Textarea != nil {
 		m.Textarea = types.BoolValue(*c.Textarea)
 	} else {
 		m.Textarea = types.BoolNull()
 	}
-	m.MinLength = types.Int64Value(int64(c.MinLength))
-	m.MaxLength = types.Int64Value(int64(c.MaxLength))
-	m.Ge = types.Int64Value(int64(c.Ge))
-	m.Le = types.Int64Value(int64(c.Le))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MinLength != nil {
+		m.MinLength = types.Int64Value(int64(*c.MinLength))
+	} else {
+		m.MinLength = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MaxLength != nil {
+		m.MaxLength = types.Int64Value(int64(*c.MaxLength))
+	} else {
+		m.MaxLength = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Ge != nil {
+		m.Ge = types.Int64Value(int64(*c.Ge))
+	} else {
+		m.Ge = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Le != nil {
+		m.Le = types.Int64Value(int64(*c.Le))
+	} else {
+		m.Le = types.Int64Null()
+	}
 }
 
 // CustomFieldPropertiesModelOptionsModel is one `options` block.
@@ -168,10 +217,12 @@ func (m *CustomFieldModel) ToUpdateModel() (*client.CustomFieldUpdate, error) {
 		}
 	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
-		out.Slug = m.Slug.ValueString()
+		Slug := m.Slug.ValueString()
+		out.Slug = &Slug
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()

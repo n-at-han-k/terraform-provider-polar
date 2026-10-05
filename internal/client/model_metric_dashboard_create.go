@@ -6,5 +6,5 @@ package client
 type MetricDashboardCreate struct {
 	Name           string   `json:"name,omitempty"`
 	Metrics        []string `json:"metrics,omitempty"`
-	OrganizationId string   `json:"organization_id,omitempty"`
+	OrganizationId *string  `json:"organization_id,omitempty"`
 }

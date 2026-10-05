@@ -4,5 +4,5 @@ package client
 
 // OrganizationDisputeSettingsUpdate - OrganizationDisputeSettingsUpdate struct
 type OrganizationDisputeSettingsUpdate struct {
-	AutoAcceptBelowAmount int32 `json:"auto_accept_below_amount,omitempty"`
+	AutoAcceptBelowAmount *int32 `json:"auto_accept_below_amount,omitempty"`
 }

@@ -4,7 +4,7 @@ package client
 
 // CustomFieldCheckboxProperties - CustomFieldCheckboxProperties struct
 type CustomFieldCheckboxProperties struct {
-	FormLabel       string `json:"form_label,omitempty"`
-	FormHelpText    string `json:"form_help_text,omitempty"`
-	FormPlaceholder string `json:"form_placeholder,omitempty"`
+	FormLabel       *string `json:"form_label,omitempty"`
+	FormHelpText    *string `json:"form_help_text,omitempty"`
+	FormPlaceholder *string `json:"form_placeholder,omitempty"`
 }

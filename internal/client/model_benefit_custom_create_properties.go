@@ -4,5 +4,5 @@ package client
 
 // BenefitCustomCreateProperties - Properties for creating a benefit of type `custom`.
 type BenefitCustomCreateProperties struct {
-	Note string `json:"note,omitempty"`
+	Note *string `json:"note,omitempty"`
 }

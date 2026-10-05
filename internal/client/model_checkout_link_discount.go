@@ -6,8 +6,8 @@ package client
 type CheckoutLinkDiscount struct {
 	Duration                  string            `json:"duration,omitempty"`
 	Type                      string            `json:"type,omitempty"`
-	Amount                    int32             `json:"amount,omitempty"`
-	Currency                  string            `json:"currency,omitempty"`
+	Amount                    *int32            `json:"amount,omitempty"`
+	Currency                  *string           `json:"currency,omitempty"`
 	Amounts                   map[string]int32  `json:"amounts,omitempty"`
 	CreatedAt                 string            `json:"created_at,omitempty"`
 	ModifiedAt                string            `json:"modified_at,omitempty"`
@@ -21,6 +21,6 @@ type CheckoutLinkDiscount struct {
 	MaxRedemptionsPerCustomer int32             `json:"max_redemptions_per_customer,omitempty"`
 	RedemptionsCount          int32             `json:"redemptions_count,omitempty"`
 	OrganizationId            string            `json:"organization_id,omitempty"`
-	DurationInMonths          int32             `json:"duration_in_months,omitempty"`
-	BasisPoints               int32             `json:"basis_points,omitempty"`
+	DurationInMonths          *int32            `json:"duration_in_months,omitempty"`
+	BasisPoints               *int32            `json:"basis_points,omitempty"`
 }

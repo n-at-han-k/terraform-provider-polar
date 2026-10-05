@@ -43,7 +43,8 @@ type OrganizationLegalEntityModel struct {
 func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCreateLegalEntity, error) {
 	out := &client.OrganizationCreateLegalEntity{}
 	if !m.RegisteredName.IsNull() && !m.RegisteredName.IsUnknown() {
-		out.RegisteredName = m.RegisteredName.ValueString()
+		RegisteredName := m.RegisteredName.ValueString()
+		out.RegisteredName = &RegisteredName
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -58,7 +59,13 @@ func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCrea
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCreateLegalEntity) {
-	m.RegisteredName = types.StringValue(c.RegisteredName)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.RegisteredName != nil {
+		m.RegisteredName = types.StringValue(*c.RegisteredName)
+	} else {
+		m.RegisteredName = types.StringNull()
+	}
 	m.Type = types.StringValue(c.Type)
 }
 
@@ -119,26 +126,32 @@ type OrganizationDetailsModel struct {
 func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails, error) {
 	out := &client.OrganizationDetails{}
 	if !m.About.IsNull() && !m.About.IsUnknown() {
-		out.About = m.About.ValueString()
+		About := m.About.ValueString()
+		out.About = &About
 	}
 	if !m.ProductDescription.IsNull() && !m.ProductDescription.IsUnknown() {
-		out.ProductDescription = m.ProductDescription.ValueString()
+		ProductDescription := m.ProductDescription.ValueString()
+		out.ProductDescription = &ProductDescription
 	}
 	if !m.IntendedUse.IsNull() && !m.IntendedUse.IsUnknown() {
-		out.IntendedUse = m.IntendedUse.ValueString()
+		IntendedUse := m.IntendedUse.ValueString()
+		out.IntendedUse = &IntendedUse
 	}
 	if !m.FutureAnnualRevenue.IsNull() && !m.FutureAnnualRevenue.IsUnknown() {
-		out.FutureAnnualRevenue = int32(m.FutureAnnualRevenue.ValueInt64())
+		FutureAnnualRevenue := int32(m.FutureAnnualRevenue.ValueInt64())
+		out.FutureAnnualRevenue = &FutureAnnualRevenue
 	}
 	if !m.Switching.IsNull() && !m.Switching.IsUnknown() {
 		Switching := m.Switching.ValueBool()
 		out.Switching = &Switching
 	}
 	if !m.SwitchingFrom.IsNull() && !m.SwitchingFrom.IsUnknown() {
-		out.SwitchingFrom = m.SwitchingFrom.ValueString()
+		SwitchingFrom := m.SwitchingFrom.ValueString()
+		out.SwitchingFrom = &SwitchingFrom
 	}
 	if !m.PreviousAnnualRevenue.IsNull() && !m.PreviousAnnualRevenue.IsUnknown() {
-		out.PreviousAnnualRevenue = int32(m.PreviousAnnualRevenue.ValueInt64())
+		PreviousAnnualRevenue := int32(m.PreviousAnnualRevenue.ValueInt64())
+		out.PreviousAnnualRevenue = &PreviousAnnualRevenue
 	}
 	return out, nil
 }
@@ -150,17 +163,53 @@ func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails) {
-	m.About = types.StringValue(c.About)
-	m.ProductDescription = types.StringValue(c.ProductDescription)
-	m.IntendedUse = types.StringValue(c.IntendedUse)
-	m.FutureAnnualRevenue = types.Int64Value(int64(c.FutureAnnualRevenue))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.About != nil {
+		m.About = types.StringValue(*c.About)
+	} else {
+		m.About = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ProductDescription != nil {
+		m.ProductDescription = types.StringValue(*c.ProductDescription)
+	} else {
+		m.ProductDescription = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.IntendedUse != nil {
+		m.IntendedUse = types.StringValue(*c.IntendedUse)
+	} else {
+		m.IntendedUse = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FutureAnnualRevenue != nil {
+		m.FutureAnnualRevenue = types.Int64Value(int64(*c.FutureAnnualRevenue))
+	} else {
+		m.FutureAnnualRevenue = types.Int64Null()
+	}
 	if c.Switching != nil {
 		m.Switching = types.BoolValue(*c.Switching)
 	} else {
 		m.Switching = types.BoolNull()
 	}
-	m.SwitchingFrom = types.StringValue(c.SwitchingFrom)
-	m.PreviousAnnualRevenue = types.Int64Value(int64(c.PreviousAnnualRevenue))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.SwitchingFrom != nil {
+		m.SwitchingFrom = types.StringValue(*c.SwitchingFrom)
+	} else {
+		m.SwitchingFrom = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PreviousAnnualRevenue != nil {
+		m.PreviousAnnualRevenue = types.Int64Value(int64(*c.PreviousAnnualRevenue))
+	} else {
+		m.PreviousAnnualRevenue = types.Int64Null()
+	}
 }
 
 // OrganizationFeatureSettingsModel is one `feature_settings` block.
@@ -671,7 +720,8 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) 
 		out.Slug = m.Slug.ValueString()
 	}
 	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
-		out.AvatarUrl = m.AvatarUrl.ValueString()
+		AvatarUrl := m.AvatarUrl.ValueString()
+		out.AvatarUrl = &AvatarUrl
 	}
 	if m.LegalEntity != nil {
 		converted, err := m.LegalEntity.ToClientModel()
@@ -681,10 +731,12 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) 
 		out.LegalEntity = converted
 	}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
+		Email := m.Email.ValueString()
+		out.Email = &Email
 	}
 	if !m.Website.IsNull() && !m.Website.IsUnknown() {
-		out.Website = m.Website.ValueString()
+		Website := m.Website.ValueString()
+		out.Website = &Website
 	}
 	if len(m.Socials) > 0 {
 		out.Socials = make([]client.OrganizationSocialLink, 0, len(m.Socials))
@@ -704,7 +756,8 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) 
 		out.Details = converted
 	}
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
-		out.Country = m.Country.ValueString()
+		Country := m.Country.ValueString()
+		out.Country = &Country
 	}
 	if m.FeatureSettings != nil {
 		converted, err := m.FeatureSettings.ToClientModel()
@@ -735,10 +788,12 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) 
 		out.CustomerPortalSettings = converted
 	}
 	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
-		out.DefaultPresentmentCurrency = m.DefaultPresentmentCurrency.ValueString()
+		DefaultPresentmentCurrency := m.DefaultPresentmentCurrency.ValueString()
+		out.DefaultPresentmentCurrency = &DefaultPresentmentCurrency
 	}
 	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
-		out.DefaultTaxBehavior = m.DefaultTaxBehavior.ValueString()
+		DefaultTaxBehavior := m.DefaultTaxBehavior.ValueString()
+		out.DefaultTaxBehavior = &DefaultTaxBehavior
 	}
 	return out, nil
 }
@@ -754,16 +809,20 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) 
 func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) {
 	out := &client.OrganizationUpdate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
-		out.AvatarUrl = m.AvatarUrl.ValueString()
+		AvatarUrl := m.AvatarUrl.ValueString()
+		out.AvatarUrl = &AvatarUrl
 	}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
+		Email := m.Email.ValueString()
+		out.Email = &Email
 	}
 	if !m.Website.IsNull() && !m.Website.IsUnknown() {
-		out.Website = m.Website.ValueString()
+		Website := m.Website.ValueString()
+		out.Website = &Website
 	}
 	if len(m.Socials) > 0 {
 		out.Socials = make([]client.OrganizationSocialLink, 0, len(m.Socials))
@@ -783,7 +842,8 @@ func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) 
 		out.Details = converted
 	}
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
-		out.Country = m.Country.ValueString()
+		Country := m.Country.ValueString()
+		out.Country = &Country
 	}
 	if m.SubscriptionSettings != nil {
 		converted, err := m.SubscriptionSettings.ToClientModel()
@@ -807,10 +867,12 @@ func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) 
 		out.CustomerPortalSettings = converted
 	}
 	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
-		out.DefaultPresentmentCurrency = m.DefaultPresentmentCurrency.ValueString()
+		DefaultPresentmentCurrency := m.DefaultPresentmentCurrency.ValueString()
+		out.DefaultPresentmentCurrency = &DefaultPresentmentCurrency
 	}
 	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
-		out.DefaultTaxBehavior = m.DefaultTaxBehavior.ValueString()
+		DefaultTaxBehavior := m.DefaultTaxBehavior.ValueString()
+		out.DefaultTaxBehavior = &DefaultTaxBehavior
 	}
 	return out, nil
 }
@@ -903,15 +965,6 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.Name = types.StringValue(c.Name)
 	}
 	m.Slug = types.StringValue(c.Slug)
-	if everything || !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
-		m.AvatarUrl = types.StringValue(c.AvatarUrl)
-	}
-	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
-		m.Email = types.StringValue(c.Email)
-	}
-	if everything || !m.Website.IsNull() && !m.Website.IsUnknown() {
-		m.Website = types.StringValue(c.Website)
-	}
 	if everything || m.Socials != nil {
 		// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
 		// compares element by element, so a server that reorders or adds a price is
@@ -928,7 +981,13 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.Socials = Socials
 	}
 	if everything || !m.Country.IsNull() && !m.Country.IsUnknown() {
-		m.Country = types.StringValue(c.Country)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Country != nil {
+			m.Country = types.StringValue(*c.Country)
+		} else {
+			m.Country = types.StringNull()
+		}
 	}
 	if everything || m.SubscriptionSettings != nil {
 		// A pointer the server left nil is a block that is not there. Writing an
@@ -972,11 +1031,5 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.CustomerPortalSettings = &block
 	} else {
 		m.CustomerPortalSettings = nil
-	}
-	if everything || !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
-		m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
-	}
-	if everything || !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
-		m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
 	}
 }

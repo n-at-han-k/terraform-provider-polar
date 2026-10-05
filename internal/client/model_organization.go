@@ -28,7 +28,7 @@ type Organization struct {
 	DisputeSettings                   *OrganizationDisputeSettings        `json:"dispute_settings,omitempty"`
 	EmbedHosts                        []string                            `json:"embed_hosts,omitempty"`
 	EmbedHostsEnforced                *bool                               `json:"embed_hosts_enforced,omitempty"`
-	Country                           string                              `json:"country,omitempty"`
+	Country                           *string                             `json:"country,omitempty"`
 	AccountId                         string                              `json:"account_id,omitempty"`
 	PayoutAccountId                   string                              `json:"payout_account_id,omitempty"`
 	Capabilities                      *OrganizationCapabilities           `json:"capabilities,omitempty"`

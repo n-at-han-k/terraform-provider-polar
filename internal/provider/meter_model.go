@@ -105,7 +105,8 @@ type MeterAggregationModel struct {
 func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation, error) {
 	out := &client.MeterCreateAggregation{}
 	if !m.Property.IsNull() && !m.Property.IsUnknown() {
-		out.Property = m.Property.ValueString()
+		Property := m.Property.ValueString()
+		out.Property = &Property
 	}
 	if !m.Func.IsNull() && !m.Func.IsUnknown() {
 		out.Func = m.Func.ValueString()
@@ -120,7 +121,13 @@ func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterAggregationModel) FromClientModel(c *client.MeterCreateAggregation) {
-	m.Property = types.StringValue(c.Property)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Property != nil {
+		m.Property = types.StringValue(*c.Property)
+	} else {
+		m.Property = types.StringNull()
+	}
 	m.Func = types.StringValue(c.Func)
 }
 
@@ -137,13 +144,16 @@ func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
 		out.Name = m.Name.ValueString()
 	}
 	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
-		out.Unit = m.Unit.ValueString()
+		Unit := m.Unit.ValueString()
+		out.Unit = &Unit
 	}
 	if !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
-		out.CustomLabel = m.CustomLabel.ValueString()
+		CustomLabel := m.CustomLabel.ValueString()
+		out.CustomLabel = &CustomLabel
 	}
 	if !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
-		out.CustomMultiplier = int32(m.CustomMultiplier.ValueInt64())
+		CustomMultiplier := int32(m.CustomMultiplier.ValueInt64())
+		out.CustomMultiplier = &CustomMultiplier
 	}
 	if m.Filter != nil {
 		converted, err := m.Filter.ToClientModel()
@@ -179,16 +189,20 @@ func (m *MeterModel) ToUpdateModel() (*client.MeterUpdate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
-		out.Unit = m.Unit.ValueString()
+		Unit := m.Unit.ValueString()
+		out.Unit = &Unit
 	}
 	if !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
-		out.CustomLabel = m.CustomLabel.ValueString()
+		CustomLabel := m.CustomLabel.ValueString()
+		out.CustomLabel = &CustomLabel
 	}
 	if !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
-		out.CustomMultiplier = int32(m.CustomMultiplier.ValueInt64())
+		CustomMultiplier := int32(m.CustomMultiplier.ValueInt64())
+		out.CustomMultiplier = &CustomMultiplier
 	}
 	if m.Filter != nil {
 		converted, err := m.Filter.ToClientModel()
@@ -272,14 +286,23 @@ func (m *MeterModel) fromAnswer(c *client.Meter, everything bool) {
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
 		m.Name = types.StringValue(c.Name)
 	}
-	if everything || !m.Unit.IsNull() && !m.Unit.IsUnknown() {
-		m.Unit = types.StringValue(c.Unit)
-	}
 	if everything || !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
-		m.CustomLabel = types.StringValue(c.CustomLabel)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomLabel != nil {
+			m.CustomLabel = types.StringValue(*c.CustomLabel)
+		} else {
+			m.CustomLabel = types.StringNull()
+		}
 	}
 	if everything || !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
-		m.CustomMultiplier = types.Int64Value(int64(c.CustomMultiplier))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomMultiplier != nil {
+			m.CustomMultiplier = types.Int64Value(int64(*c.CustomMultiplier))
+		} else {
+			m.CustomMultiplier = types.Int64Null()
+		}
 	}
 	if everything || m.Filter != nil {
 		// A pointer the server left nil is a block that is not there. Writing an

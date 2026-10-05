@@ -25,13 +25,13 @@ type Order struct {
 	InvoiceNumber        string             `json:"invoice_number,omitempty"`
 	IsInvoiceGenerated   *bool              `json:"is_invoice_generated,omitempty"`
 	ReceiptNumber        string             `json:"receipt_number,omitempty"`
-	Seats                int32              `json:"seats,omitempty"`
+	Seats                *int32             `json:"seats,omitempty"`
 	CustomerId           string             `json:"customer_id,omitempty"`
 	ProductId            string             `json:"product_id,omitempty"`
 	DiscountId           string             `json:"discount_id,omitempty"`
 	SubscriptionId       string             `json:"subscription_id,omitempty"`
 	CheckoutId           string             `json:"checkout_id,omitempty"`
-	NextPaymentAttemptAt string             `json:"next_payment_attempt_at,omitempty"`
+	NextPaymentAttemptAt *string            `json:"next_payment_attempt_at,omitempty"`
 	Metadata             map[string]string  `json:"metadata,omitempty"`
 	CustomFieldData      map[string]string  `json:"custom_field_data,omitempty"`
 	PlatformFeeAmount    int32              `json:"platform_fee_amount,omitempty"`

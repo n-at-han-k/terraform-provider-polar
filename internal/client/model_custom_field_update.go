@@ -5,8 +5,8 @@ package client
 // CustomFieldUpdate - CustomFieldUpdate struct
 type CustomFieldUpdate struct {
 	Metadata   map[string]string          `json:"metadata,omitempty"`
-	Name       string                     `json:"name,omitempty"`
-	Slug       string                     `json:"slug,omitempty"`
+	Name       *string                    `json:"name,omitempty"`
+	Slug       *string                    `json:"slug,omitempty"`
 	Properties *CustomFieldTextProperties `json:"properties,omitempty"`
 	Type       string                     `json:"type,omitempty"`
 }

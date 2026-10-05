@@ -26,7 +26,8 @@ func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, e
 		out.Url = m.Url.ValueString()
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
 		out.Format = m.Format.ValueString()
@@ -58,13 +59,16 @@ func (m *WebhookEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, e
 		out.Enabled = &Enabled
 	}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
-		out.Url = m.Url.ValueString()
+		Url := m.Url.ValueString()
+		out.Url = &Url
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
-		out.Format = m.Format.ValueString()
+		Format := m.Format.ValueString()
+		out.Format = &Format
 	}
 	// A SET, not a list: which webhook event types this endpoint listens to does
 	// not depend on the order they were written in, and a server that answers
@@ -142,7 +146,13 @@ func (m *WebhookEndpointModel) fromAnswer(c *client.WebhookEndpoint, everything 
 	if everything || !m.Url.IsNull() && !m.Url.IsUnknown() {
 		m.Url = types.StringValue(c.Url)
 	}
-	m.Name = types.StringValue(c.Name)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Name != nil {
+		m.Name = types.StringValue(*c.Name)
+	} else {
+		m.Name = types.StringNull()
+	}
 	if everything || !m.Format.IsNull() && !m.Format.IsUnknown() {
 		m.Format = types.StringValue(c.Format)
 	}

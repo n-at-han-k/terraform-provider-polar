@@ -23,13 +23,16 @@ func (m *CustomerExternalMemberModel) ToClientModel() (*client.MemberCreateFromC
 		out.Email = m.Email.ValueString()
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		out.ExternalId = m.ExternalId.ValueString()
+		ExternalId := m.ExternalId.ValueString()
+		out.ExternalId = &ExternalId
 	}
 	if !m.Role.IsNull() && !m.Role.IsUnknown() {
-		out.Role = m.Role.ValueString()
+		Role := m.Role.ValueString()
+		out.Role = &Role
 	}
 	return out, nil
 }
@@ -45,13 +48,16 @@ func (m *CustomerExternalMemberModel) ToClientModel() (*client.MemberCreateFromC
 func (m *CustomerExternalMemberModel) ToUpdateModel() (*client.MemberUpdate, error) {
 	out := &client.MemberUpdate{}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
+		Email := m.Email.ValueString()
+		out.Email = &Email
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Role.IsNull() && !m.Role.IsUnknown() {
-		out.Role = m.Role.ValueString()
+		Role := m.Role.ValueString()
+		out.Role = &Role
 	}
 	return out, nil
 }
@@ -109,14 +115,5 @@ func (m *CustomerExternalMemberModel) fromAnswer(c *client.Member, everything bo
 	m.Id = types.StringValue(c.Id)
 	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
 		m.Email = types.StringValue(c.Email)
-	}
-	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
-	}
-	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		m.ExternalId = types.StringValue(c.ExternalId)
-	}
-	if everything || !m.Role.IsNull() && !m.Role.IsUnknown() {
-		m.Role = types.StringValue(c.Role)
 	}
 }

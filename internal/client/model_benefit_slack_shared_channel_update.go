@@ -5,7 +5,7 @@ package client
 // BenefitSlackSharedChannelUpdate - BenefitSlackSharedChannelUpdate struct
 type BenefitSlackSharedChannelUpdate struct {
 	Metadata    map[string]string                          `json:"metadata,omitempty"`
-	Description string                                     `json:"description,omitempty"`
+	Description *string                                    `json:"description,omitempty"`
 	Type        string                                     `json:"type,omitempty"`
 	Properties  *BenefitSlackSharedChannelCreateProperties `json:"properties,omitempty"`
 }

@@ -4,10 +4,10 @@ package client
 
 // CheckoutForbiddenError - CheckoutForbiddenError struct
 type CheckoutForbiddenError struct {
-	AlreadyActiveSubscriptionErrorError string `json:"already_active_subscription_error_error,omitempty"`
-	NotOpenCheckoutError                string `json:"not_open_checkout_error,omitempty"`
-	PaymentNotReadyError                string `json:"payment_not_ready_error,omitempty"`
-	TrialAlreadyRedeemedError           string `json:"trial_already_redeemed_error,omitempty"`
-	DiscountRedemptionLimitReachedError string `json:"discount_redemption_limit_reached_error,omitempty"`
-	Detail                              string `json:"detail,omitempty"`
+	AlreadyActiveSubscriptionErrorError *string `json:"already_active_subscription_error_error,omitempty"`
+	NotOpenCheckoutError                *string `json:"not_open_checkout_error,omitempty"`
+	PaymentNotReadyError                *string `json:"payment_not_ready_error,omitempty"`
+	TrialAlreadyRedeemedError           *string `json:"trial_already_redeemed_error,omitempty"`
+	DiscountRedemptionLimitReachedError *string `json:"discount_redemption_limit_reached_error,omitempty"`
+	Detail                              string  `json:"detail,omitempty"`
 }

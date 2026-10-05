@@ -5,14 +5,14 @@ package client
 // ProductUpdatePricesInnerAnyOf - ProductUpdatePricesInnerAnyOf struct
 type ProductUpdatePricesInnerAnyOf struct {
 	AmountType    string                      `json:"amount_type,omitempty"`
-	PriceCurrency string                      `json:"price_currency,omitempty"`
-	TaxBehavior   string                      `json:"tax_behavior,omitempty"`
+	PriceCurrency *string                     `json:"price_currency,omitempty"`
+	TaxBehavior   *string                     `json:"tax_behavior,omitempty"`
 	PriceAmount   int32                       `json:"price_amount,omitempty"`
-	MinimumAmount int32                       `json:"minimum_amount,omitempty"`
-	MaximumAmount int32                       `json:"maximum_amount,omitempty"`
-	PresetAmount  int32                       `json:"preset_amount,omitempty"`
+	MinimumAmount *int32                      `json:"minimum_amount,omitempty"`
+	MaximumAmount *int32                      `json:"maximum_amount,omitempty"`
+	PresetAmount  *int32                      `json:"preset_amount,omitempty"`
 	SeatTiers     *ProductPriceSeatTiersInput `json:"seat_tiers,omitempty"`
 	MeterId       string                      `json:"meter_id,omitempty"`
 	UnitAmount    string                      `json:"unit_amount,omitempty"`
-	CapAmount     int32                       `json:"cap_amount,omitempty"`
+	CapAmount     *int32                      `json:"cap_amount,omitempty"`
 }

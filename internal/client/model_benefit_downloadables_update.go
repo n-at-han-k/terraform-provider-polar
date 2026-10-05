@@ -5,7 +5,7 @@ package client
 // BenefitDownloadablesUpdate - BenefitDownloadablesUpdate struct
 type BenefitDownloadablesUpdate struct {
 	Metadata    map[string]string                     `json:"metadata,omitempty"`
-	Description string                                `json:"description,omitempty"`
+	Description *string                               `json:"description,omitempty"`
 	Type        string                                `json:"type,omitempty"`
 	Properties  *BenefitDownloadablesCreateProperties `json:"properties,omitempty"`
 }

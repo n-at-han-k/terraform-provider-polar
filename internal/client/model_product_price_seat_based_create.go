@@ -5,7 +5,7 @@ package client
 // ProductPriceSeatBasedCreate - Schema to create a seat-based price with volume-based tiers.
 type ProductPriceSeatBasedCreate struct {
 	AmountType    string                      `json:"amount_type,omitempty"`
-	PriceCurrency string                      `json:"price_currency,omitempty"`
-	TaxBehavior   string                      `json:"tax_behavior,omitempty"`
+	PriceCurrency *string                     `json:"price_currency,omitempty"`
+	TaxBehavior   *string                     `json:"tax_behavior,omitempty"`
 	SeatTiers     *ProductPriceSeatTiersInput `json:"seat_tiers,omitempty"`
 }

@@ -24,7 +24,7 @@ type OrderSubscription struct {
 	StartedAt                   string            `json:"started_at,omitempty"`
 	EndsAt                      string            `json:"ends_at,omitempty"`
 	EndedAt                     string            `json:"ended_at,omitempty"`
-	PastDueAt                   string            `json:"past_due_at,omitempty"`
+	PastDueAt                   *string           `json:"past_due_at,omitempty"`
 	PauseAtPeriodEnd            *bool             `json:"pause_at_period_end,omitempty"`
 	PausedAt                    string            `json:"paused_at,omitempty"`
 	ResumesAt                   string            `json:"resumes_at,omitempty"`
@@ -32,7 +32,7 @@ type OrderSubscription struct {
 	ProductId                   string            `json:"product_id,omitempty"`
 	DiscountId                  string            `json:"discount_id,omitempty"`
 	CheckoutId                  string            `json:"checkout_id,omitempty"`
-	Seats                       int32             `json:"seats,omitempty"`
+	Seats                       *int32            `json:"seats,omitempty"`
 	CustomerCancellationReason  string            `json:"customer_cancellation_reason,omitempty"`
 	CustomerCancellationComment string            `json:"customer_cancellation_comment,omitempty"`
 }

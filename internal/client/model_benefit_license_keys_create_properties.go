@@ -4,8 +4,8 @@ package client
 
 // BenefitLicenseKeysCreateProperties - BenefitLicenseKeysCreateProperties struct
 type BenefitLicenseKeysCreateProperties struct {
-	Prefix      string                                       `json:"prefix,omitempty"`
+	Prefix      *string                                      `json:"prefix,omitempty"`
 	Expires     *BenefitLicenseKeyExpirationProperties       `json:"expires,omitempty"`
 	Activations *BenefitLicenseKeyActivationCreateProperties `json:"activations,omitempty"`
-	LimitUsage  int32                                        `json:"limit_usage,omitempty"`
+	LimitUsage  *int32                                       `json:"limit_usage,omitempty"`
 }

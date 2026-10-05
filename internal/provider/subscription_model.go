@@ -49,7 +49,8 @@ func (m *SubscriptionModel) ToClientModel() (*client.SubscriptionCreate, error) 
 func (m *SubscriptionModel) ToUpdateModel() (*client.SubscriptionUpdate, error) {
 	out := &client.SubscriptionUpdate{}
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
+		ProductId := m.ProductId.ValueString()
+		out.ProductId = &ProductId
 	}
 	return out, nil
 }

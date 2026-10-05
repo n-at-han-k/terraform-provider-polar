@@ -7,7 +7,7 @@ type BenefitSlackSharedChannelProperties struct {
 	SlackIntegrationId  string   `json:"slack_integration_id,omitempty"`
 	ChannelNameTemplate string   `json:"channel_name_template,omitempty"`
 	Private             *bool    `json:"private,omitempty"`
-	WelcomeMessage      string   `json:"welcome_message,omitempty"`
+	WelcomeMessage      *string  `json:"welcome_message,omitempty"`
 	ArchiveOnRevoke     *bool    `json:"archive_on_revoke,omitempty"`
 	TeamInvitees        []string `json:"team_invitees,omitempty"`
 }

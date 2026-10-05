@@ -52,31 +52,40 @@ type ProductPricesModel struct {
 func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPrices, error) {
 	out := &client.ProductCreateRecurringPrices{}
 	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
-		out.PriceCurrency = m.PriceCurrency.ValueString()
+		PriceCurrency := m.PriceCurrency.ValueString()
+		out.PriceCurrency = &PriceCurrency
 	}
 	if !m.TaxBehavior.IsNull() && !m.TaxBehavior.IsUnknown() {
-		out.TaxBehavior = m.TaxBehavior.ValueString()
+		TaxBehavior := m.TaxBehavior.ValueString()
+		out.TaxBehavior = &TaxBehavior
 	}
 	if !m.PriceAmount.IsNull() && !m.PriceAmount.IsUnknown() {
-		out.PriceAmount = int32(m.PriceAmount.ValueInt64())
+		PriceAmount := int32(m.PriceAmount.ValueInt64())
+		out.PriceAmount = &PriceAmount
 	}
 	if !m.MinimumAmount.IsNull() && !m.MinimumAmount.IsUnknown() {
-		out.MinimumAmount = int32(m.MinimumAmount.ValueInt64())
+		MinimumAmount := int32(m.MinimumAmount.ValueInt64())
+		out.MinimumAmount = &MinimumAmount
 	}
 	if !m.MaximumAmount.IsNull() && !m.MaximumAmount.IsUnknown() {
-		out.MaximumAmount = int32(m.MaximumAmount.ValueInt64())
+		MaximumAmount := int32(m.MaximumAmount.ValueInt64())
+		out.MaximumAmount = &MaximumAmount
 	}
 	if !m.PresetAmount.IsNull() && !m.PresetAmount.IsUnknown() {
-		out.PresetAmount = int32(m.PresetAmount.ValueInt64())
+		PresetAmount := int32(m.PresetAmount.ValueInt64())
+		out.PresetAmount = &PresetAmount
 	}
 	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
-		out.MeterId = m.MeterId.ValueString()
+		MeterId := m.MeterId.ValueString()
+		out.MeterId = &MeterId
 	}
 	if !m.UnitAmount.IsNull() && !m.UnitAmount.IsUnknown() {
-		out.UnitAmount = m.UnitAmount.ValueString()
+		UnitAmount := m.UnitAmount.ValueString()
+		out.UnitAmount = &UnitAmount
 	}
 	if !m.CapAmount.IsNull() && !m.CapAmount.IsUnknown() {
-		out.CapAmount = int32(m.CapAmount.ValueInt64())
+		CapAmount := int32(m.CapAmount.ValueInt64())
+		out.CapAmount = &CapAmount
 	}
 	if !m.AmountType.IsNull() && !m.AmountType.IsUnknown() {
 		out.AmountType = m.AmountType.ValueString()
@@ -91,15 +100,69 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductPricesModel) FromClientModel(c *client.ProductCreateRecurringPrices) {
-	m.PriceCurrency = types.StringValue(c.PriceCurrency)
-	m.TaxBehavior = types.StringValue(c.TaxBehavior)
-	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
-	m.MinimumAmount = types.Int64Value(int64(c.MinimumAmount))
-	m.MaximumAmount = types.Int64Value(int64(c.MaximumAmount))
-	m.PresetAmount = types.Int64Value(int64(c.PresetAmount))
-	m.MeterId = types.StringValue(c.MeterId)
-	m.UnitAmount = types.StringValue(c.UnitAmount)
-	m.CapAmount = types.Int64Value(int64(c.CapAmount))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PriceCurrency != nil {
+		m.PriceCurrency = types.StringValue(*c.PriceCurrency)
+	} else {
+		m.PriceCurrency = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.TaxBehavior != nil {
+		m.TaxBehavior = types.StringValue(*c.TaxBehavior)
+	} else {
+		m.TaxBehavior = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PriceAmount != nil {
+		m.PriceAmount = types.Int64Value(int64(*c.PriceAmount))
+	} else {
+		m.PriceAmount = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MinimumAmount != nil {
+		m.MinimumAmount = types.Int64Value(int64(*c.MinimumAmount))
+	} else {
+		m.MinimumAmount = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MaximumAmount != nil {
+		m.MaximumAmount = types.Int64Value(int64(*c.MaximumAmount))
+	} else {
+		m.MaximumAmount = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PresetAmount != nil {
+		m.PresetAmount = types.Int64Value(int64(*c.PresetAmount))
+	} else {
+		m.PresetAmount = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MeterId != nil {
+		m.MeterId = types.StringValue(*c.MeterId)
+	} else {
+		m.MeterId = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.UnitAmount != nil {
+		m.UnitAmount = types.StringValue(*c.UnitAmount)
+	} else {
+		m.UnitAmount = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.CapAmount != nil {
+		m.CapAmount = types.Int64Value(int64(*c.CapAmount))
+	} else {
+		m.CapAmount = types.Int64Null()
+	}
 	m.AmountType = types.StringValue(c.AmountType)
 }
 
@@ -122,7 +185,8 @@ func (m *ProductPricesModelSeatTiersModel) ToClientModel() (*client.ProductPrice
 		out.MinSeats = int32(m.MinSeats.ValueInt64())
 	}
 	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
-		out.MaxSeats = int32(m.MaxSeats.ValueInt64())
+		MaxSeats := int32(m.MaxSeats.ValueInt64())
+		out.MaxSeats = &MaxSeats
 	}
 	if !m.PricePerSeat.IsNull() && !m.PricePerSeat.IsUnknown() {
 		out.PricePerSeat = int32(m.PricePerSeat.ValueInt64())
@@ -138,7 +202,13 @@ func (m *ProductPricesModelSeatTiersModel) ToClientModel() (*client.ProductPrice
 // returned invalid result object after apply".
 func (m *ProductPricesModelSeatTiersModel) FromClientModel(c *client.ProductPriceSeatTier) {
 	m.MinSeats = types.Int64Value(int64(c.MinSeats))
-	m.MaxSeats = types.Int64Value(int64(c.MaxSeats))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MaxSeats != nil {
+		m.MaxSeats = types.Int64Value(int64(*c.MaxSeats))
+	} else {
+		m.MaxSeats = types.Int64Null()
+	}
 	m.PricePerSeat = types.Int64Value(int64(c.PricePerSeat))
 }
 
@@ -194,10 +264,12 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 		out.Name = m.Name.ValueString()
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
+		Description := m.Description.ValueString()
+		out.Description = &Description
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
+		Visibility := m.Visibility.ValueString()
+		out.Visibility = &Visibility
 	}
 	if len(m.Prices) > 0 {
 		out.Prices = make([]client.ProductCreateRecurringPrices, 0, len(m.Prices))
@@ -228,22 +300,28 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
+		RecurringInterval := m.RecurringInterval.ValueString()
+		out.RecurringInterval = &RecurringInterval
 	}
 	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
+		RecurringIntervalCount := int32(m.RecurringIntervalCount.ValueInt64())
+		out.RecurringIntervalCount = &RecurringIntervalCount
 	}
 	if !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
-		out.MeterInterval = m.MeterInterval.ValueString()
+		MeterInterval := m.MeterInterval.ValueString()
+		out.MeterInterval = &MeterInterval
 	}
 	if !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
-		out.MeterIntervalCount = int32(m.MeterIntervalCount.ValueInt64())
+		MeterIntervalCount := int32(m.MeterIntervalCount.ValueInt64())
+		out.MeterIntervalCount = &MeterIntervalCount
 	}
 	return out, nil
 }
@@ -269,13 +347,16 @@ func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
+		Description := m.Description.ValueString()
+		out.Description = &Description
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
+		Visibility := m.Visibility.ValueString()
+		out.Visibility = &Visibility
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.
@@ -296,16 +377,20 @@ func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
 		}
 	}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
+		RecurringInterval := m.RecurringInterval.ValueString()
+		out.RecurringInterval = &RecurringInterval
 	}
 	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
+		RecurringIntervalCount := int32(m.RecurringIntervalCount.ValueInt64())
+		out.RecurringIntervalCount = &RecurringIntervalCount
 	}
 	return out, nil
 }
@@ -409,12 +494,6 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
 		m.Name = types.StringValue(c.Name)
 	}
-	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
-		m.Description = types.StringValue(c.Description)
-	}
-	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		m.Visibility = types.StringValue(c.Visibility)
-	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
@@ -422,23 +501,5 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.Medias.IsUnknown() {
 		m.Medias = types.ListNull(types.StringType)
-	}
-	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		m.TrialInterval = types.StringValue(c.TrialInterval)
-	}
-	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	}
-	if everything || !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	}
-	if everything || !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	}
-	if everything || !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
-		m.MeterInterval = types.StringValue(c.MeterInterval)
-	}
-	if everything || !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
-		m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
 	}
 }

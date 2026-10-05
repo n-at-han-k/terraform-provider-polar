@@ -4,6 +4,6 @@ package client
 
 // MeterUpdateAggregation - The aggregation to apply on the filtered events to calculate the meter.
 type MeterUpdateAggregation struct {
-	Property string `json:"property,omitempty"`
-	Func     string `json:"func,omitempty"`
+	Property *string `json:"property,omitempty"`
+	Func     string  `json:"func,omitempty"`
 }

@@ -6,8 +6,8 @@ package client
 type BenefitCreate struct {
 	Metadata                     map[string]string                          `json:"metadata,omitempty"`
 	Description                  string                                     `json:"description,omitempty"`
-	OrganizationId               string                                     `json:"organization_id,omitempty"`
-	Visibility                   string                                     `json:"visibility,omitempty"`
+	OrganizationId               *string                                    `json:"organization_id,omitempty"`
+	Visibility                   *string                                    `json:"visibility,omitempty"`
 	CustomProperties             *BenefitCustomCreateProperties             `json:"custom_properties,omitempty"`
 	DiscordProperties            *BenefitDiscordCreateProperties            `json:"discord_properties,omitempty"`
 	GithubRepositoryProperties   *BenefitGitHubRepositoryCreateProperties   `json:"github_repository_properties,omitempty"`

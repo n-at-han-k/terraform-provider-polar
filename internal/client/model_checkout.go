@@ -17,9 +17,9 @@ type Checkout struct {
 	ReturnUrl                string                                `json:"return_url,omitempty"`
 	EmbedOrigin              string                                `json:"embed_origin,omitempty"`
 	Amount                   int32                                 `json:"amount,omitempty"`
-	Seats                    int32                                 `json:"seats,omitempty"`
-	MinSeats                 int32                                 `json:"min_seats,omitempty"`
-	MaxSeats                 int32                                 `json:"max_seats,omitempty"`
+	Seats                    *int32                                `json:"seats,omitempty"`
+	MinSeats                 *int32                                `json:"min_seats,omitempty"`
+	MaxSeats                 *int32                                `json:"max_seats,omitempty"`
 	DiscountAmount           int32                                 `json:"discount_amount,omitempty"`
 	NetAmount                int32                                 `json:"net_amount,omitempty"`
 	TaxAmount                int32                                 `json:"tax_amount,omitempty"`
@@ -49,7 +49,7 @@ type Checkout struct {
 	CustomerBillingName      string                                `json:"customer_billing_name,omitempty"`
 	CustomerBillingAddress   *Address                              `json:"customer_billing_address,omitempty"`
 	CustomerTaxId            string                                `json:"customer_tax_id,omitempty"`
-	Locale                   string                                `json:"locale,omitempty"`
+	Locale                   *string                               `json:"locale,omitempty"`
 	PaymentMethodType        string                                `json:"payment_method_type,omitempty"`
 	PaymentProcessorMetadata map[string]string                     `json:"payment_processor_metadata,omitempty"`
 	BillingAddressFields     *CheckoutBillingAddressFields         `json:"billing_address_fields,omitempty"`

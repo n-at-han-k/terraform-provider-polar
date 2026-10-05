@@ -6,10 +6,10 @@ package client
 type MeterCreate struct {
 	Metadata         map[string]string       `json:"metadata,omitempty"`
 	Name             string                  `json:"name,omitempty"`
-	Unit             string                  `json:"unit,omitempty"`
-	CustomLabel      string                  `json:"custom_label,omitempty"`
-	CustomMultiplier int32                   `json:"custom_multiplier,omitempty"`
+	Unit             *string                 `json:"unit,omitempty"`
+	CustomLabel      *string                 `json:"custom_label,omitempty"`
+	CustomMultiplier *int32                  `json:"custom_multiplier,omitempty"`
 	Filter           *Filter                 `json:"filter,omitempty"`
 	Aggregation      *MeterCreateAggregation `json:"aggregation,omitempty"`
-	OrganizationId   string                  `json:"organization_id,omitempty"`
+	OrganizationId   *string                 `json:"organization_id,omitempty"`
 }

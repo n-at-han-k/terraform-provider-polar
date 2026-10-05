@@ -66,19 +66,24 @@ type CheckoutCustomerBillingAddressModel struct {
 func (m *CheckoutCustomerBillingAddressModel) ToClientModel() (*client.AddressInput, error) {
 	out := &client.AddressInput{}
 	if !m.Line1.IsNull() && !m.Line1.IsUnknown() {
-		out.Line1 = m.Line1.ValueString()
+		Line1 := m.Line1.ValueString()
+		out.Line1 = &Line1
 	}
 	if !m.Line2.IsNull() && !m.Line2.IsUnknown() {
-		out.Line2 = m.Line2.ValueString()
+		Line2 := m.Line2.ValueString()
+		out.Line2 = &Line2
 	}
 	if !m.PostalCode.IsNull() && !m.PostalCode.IsUnknown() {
-		out.PostalCode = m.PostalCode.ValueString()
+		PostalCode := m.PostalCode.ValueString()
+		out.PostalCode = &PostalCode
 	}
 	if !m.City.IsNull() && !m.City.IsUnknown() {
-		out.City = m.City.ValueString()
+		City := m.City.ValueString()
+		out.City = &City
 	}
 	if !m.State.IsNull() && !m.State.IsUnknown() {
-		out.State = m.State.ValueString()
+		State := m.State.ValueString()
+		out.State = &State
 	}
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
 		out.Country = m.Country.ValueString()
@@ -93,11 +98,41 @@ func (m *CheckoutCustomerBillingAddressModel) ToClientModel() (*client.AddressIn
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CheckoutCustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
-	m.Line1 = types.StringValue(c.Line1)
-	m.Line2 = types.StringValue(c.Line2)
-	m.PostalCode = types.StringValue(c.PostalCode)
-	m.City = types.StringValue(c.City)
-	m.State = types.StringValue(c.State)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line1 != nil {
+		m.Line1 = types.StringValue(*c.Line1)
+	} else {
+		m.Line1 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line2 != nil {
+		m.Line2 = types.StringValue(*c.Line2)
+	} else {
+		m.Line2 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PostalCode != nil {
+		m.PostalCode = types.StringValue(*c.PostalCode)
+	} else {
+		m.PostalCode = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.City != nil {
+		m.City = types.StringValue(*c.City)
+	} else {
+		m.City = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.State != nil {
+		m.State = types.StringValue(*c.State)
+	} else {
+		m.State = types.StringNull()
+	}
 	m.Country = types.StringValue(c.Country)
 }
 
@@ -105,10 +140,12 @@ func (m *CheckoutCustomerBillingAddressModel) FromClientModel(c *client.AddressI
 func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) {
 	out := &client.CheckoutProductsCreate{}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
 		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
@@ -125,7 +162,8 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		}
 	}
 	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		out.DiscountId = m.DiscountId.ValueString()
+		DiscountId := m.DiscountId.ValueString()
+		out.DiscountId = &DiscountId
 	}
 	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		// Addressed, not assigned: the client field is a *bool so that an
@@ -140,16 +178,20 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		out.RequireBillingAddress = &RequireBillingAddress
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
+		Amount := int32(m.Amount.ValueInt64())
+		out.Amount = &Amount
 	}
 	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		out.Seats = int32(m.Seats.ValueInt64())
+		Seats := int32(m.Seats.ValueInt64())
+		out.Seats = &Seats
 	}
 	if !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
-		out.MinSeats = int32(m.MinSeats.ValueInt64())
+		MinSeats := int32(m.MinSeats.ValueInt64())
+		out.MinSeats = &MinSeats
 	}
 	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
-		out.MaxSeats = int32(m.MaxSeats.ValueInt64())
+		MaxSeats := int32(m.MaxSeats.ValueInt64())
+		out.MaxSeats = &MaxSeats
 	}
 	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
 		// Addressed, not assigned: the client field is a *bool so that an
@@ -158,7 +200,8 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		out.AllowTrial = &AllowTrial
 	}
 	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		out.CustomerId = m.CustomerId.ValueString()
+		CustomerId := m.CustomerId.ValueString()
+		out.CustomerId = &CustomerId
 	}
 	if !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		// Addressed, not assigned: the client field is a *bool so that an
@@ -167,19 +210,24 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		out.IsBusinessCustomer = &IsBusinessCustomer
 	}
 	if !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
-		out.ExternalCustomerId = m.ExternalCustomerId.ValueString()
+		ExternalCustomerId := m.ExternalCustomerId.ValueString()
+		out.ExternalCustomerId = &ExternalCustomerId
 	}
 	if !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
-		out.CustomerName = m.CustomerName.ValueString()
+		CustomerName := m.CustomerName.ValueString()
+		out.CustomerName = &CustomerName
 	}
 	if !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
-		out.CustomerEmail = m.CustomerEmail.ValueString()
+		CustomerEmail := m.CustomerEmail.ValueString()
+		out.CustomerEmail = &CustomerEmail
 	}
 	if !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
-		out.CustomerIpAddress = m.CustomerIpAddress.ValueString()
+		CustomerIpAddress := m.CustomerIpAddress.ValueString()
+		out.CustomerIpAddress = &CustomerIpAddress
 	}
 	if !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
-		out.CustomerBillingName = m.CustomerBillingName.ValueString()
+		CustomerBillingName := m.CustomerBillingName.ValueString()
+		out.CustomerBillingName = &CustomerBillingName
 	}
 	if m.CustomerBillingAddress != nil {
 		converted, err := m.CustomerBillingAddress.ToClientModel()
@@ -189,7 +237,8 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		out.CustomerBillingAddress = converted
 	}
 	if !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
-		out.CustomerTaxId = m.CustomerTaxId.ValueString()
+		CustomerTaxId := m.CustomerTaxId.ValueString()
+		out.CustomerTaxId = &CustomerTaxId
 	}
 	if !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
 		out.CustomerMetadata = make(map[string]string, len(m.CustomerMetadata.Elements()))
@@ -198,22 +247,28 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 		}
 	}
 	if !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
-		out.SubscriptionId = m.SubscriptionId.ValueString()
+		SubscriptionId := m.SubscriptionId.ValueString()
+		out.SubscriptionId = &SubscriptionId
 	}
 	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		out.SuccessUrl = m.SuccessUrl.ValueString()
+		SuccessUrl := m.SuccessUrl.ValueString()
+		out.SuccessUrl = &SuccessUrl
 	}
 	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		out.ReturnUrl = m.ReturnUrl.ValueString()
+		ReturnUrl := m.ReturnUrl.ValueString()
+		out.ReturnUrl = &ReturnUrl
 	}
 	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
-		out.EmbedOrigin = m.EmbedOrigin.ValueString()
+		EmbedOrigin := m.EmbedOrigin.ValueString()
+		out.EmbedOrigin = &EmbedOrigin
 	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		out.Locale = m.Locale.ValueString()
+		Locale := m.Locale.ValueString()
+		out.Locale = &Locale
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
+		Currency := m.Currency.ValueString()
+		out.Currency = &Currency
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.
@@ -245,10 +300,12 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) 
 func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 	out := &client.CheckoutUpdate{}
 	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
+		TrialInterval := m.TrialInterval.ValueString()
+		out.TrialInterval = &TrialInterval
 	}
 	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+		TrialIntervalCount := int32(m.TrialIntervalCount.ValueInt64())
+		out.TrialIntervalCount = &TrialIntervalCount
 	}
 	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
 		out.Metadata = make(map[string]string, len(m.Metadata.Elements()))
@@ -262,7 +319,8 @@ func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 		}
 	}
 	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		out.DiscountId = m.DiscountId.ValueString()
+		DiscountId := m.DiscountId.ValueString()
+		out.DiscountId = &DiscountId
 	}
 	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		AllowDiscountCodes := m.AllowDiscountCodes.ValueBool()
@@ -273,10 +331,12 @@ func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 		out.RequireBillingAddress = &RequireBillingAddress
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
+		Amount := int32(m.Amount.ValueInt64())
+		out.Amount = &Amount
 	}
 	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		out.Seats = int32(m.Seats.ValueInt64())
+		Seats := int32(m.Seats.ValueInt64())
+		out.Seats = &Seats
 	}
 	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
 		AllowTrial := m.AllowTrial.ValueBool()
@@ -287,16 +347,20 @@ func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 		out.IsBusinessCustomer = &IsBusinessCustomer
 	}
 	if !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
-		out.CustomerName = m.CustomerName.ValueString()
+		CustomerName := m.CustomerName.ValueString()
+		out.CustomerName = &CustomerName
 	}
 	if !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
-		out.CustomerEmail = m.CustomerEmail.ValueString()
+		CustomerEmail := m.CustomerEmail.ValueString()
+		out.CustomerEmail = &CustomerEmail
 	}
 	if !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
-		out.CustomerIpAddress = m.CustomerIpAddress.ValueString()
+		CustomerIpAddress := m.CustomerIpAddress.ValueString()
+		out.CustomerIpAddress = &CustomerIpAddress
 	}
 	if !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
-		out.CustomerBillingName = m.CustomerBillingName.ValueString()
+		CustomerBillingName := m.CustomerBillingName.ValueString()
+		out.CustomerBillingName = &CustomerBillingName
 	}
 	if m.CustomerBillingAddress != nil {
 		converted, err := m.CustomerBillingAddress.ToClientModel()
@@ -306,7 +370,8 @@ func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 		out.CustomerBillingAddress = converted
 	}
 	if !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
-		out.CustomerTaxId = m.CustomerTaxId.ValueString()
+		CustomerTaxId := m.CustomerTaxId.ValueString()
+		out.CustomerTaxId = &CustomerTaxId
 	}
 	if !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
 		out.CustomerMetadata = make(map[string]string, len(m.CustomerMetadata.Elements()))
@@ -315,19 +380,24 @@ func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
 		}
 	}
 	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		out.SuccessUrl = m.SuccessUrl.ValueString()
+		SuccessUrl := m.SuccessUrl.ValueString()
+		out.SuccessUrl = &SuccessUrl
 	}
 	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		out.ReturnUrl = m.ReturnUrl.ValueString()
+		ReturnUrl := m.ReturnUrl.ValueString()
+		out.ReturnUrl = &ReturnUrl
 	}
 	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
-		out.EmbedOrigin = m.EmbedOrigin.ValueString()
+		EmbedOrigin := m.EmbedOrigin.ValueString()
+		out.EmbedOrigin = &EmbedOrigin
 	}
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		out.Locale = m.Locale.ValueString()
+		Locale := m.Locale.ValueString()
+		out.Locale = &Locale
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
+		Currency := m.Currency.ValueString()
+		out.Currency = &Currency
 	}
 	return out, nil
 }
@@ -461,12 +531,6 @@ func (m *CheckoutModel) FromAnswer(c *client.Checkout) {
 
 func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 	m.Id = types.StringValue(c.Id)
-	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		m.TrialInterval = types.StringValue(c.TrialInterval)
-	}
-	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -491,9 +555,6 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			}
 		}
 	}
-	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
-		m.DiscountId = types.StringValue(c.DiscountId)
-	}
 	if everything || !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -516,17 +577,32 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.RequireBillingAddress = types.BoolNull()
 		}
 	}
-	if everything || !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		m.Amount = types.Int64Value(int64(c.Amount))
-	}
 	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		m.Seats = types.Int64Value(int64(c.Seats))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Seats != nil {
+			m.Seats = types.Int64Value(int64(*c.Seats))
+		} else {
+			m.Seats = types.Int64Null()
+		}
 	}
 	if everything || !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
-		m.MinSeats = types.Int64Value(int64(c.MinSeats))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MinSeats != nil {
+			m.MinSeats = types.Int64Value(int64(*c.MinSeats))
+		} else {
+			m.MinSeats = types.Int64Null()
+		}
 	}
 	if everything || !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
-		m.MaxSeats = types.Int64Value(int64(c.MaxSeats))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MaxSeats != nil {
+			m.MaxSeats = types.Int64Value(int64(*c.MaxSeats))
+		} else {
+			m.MaxSeats = types.Int64Null()
+		}
 	}
 	if everything || !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
@@ -539,9 +615,6 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.AllowTrial = types.BoolNull()
 		}
 	}
-	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		m.CustomerId = types.StringValue(c.CustomerId)
-	}
 	if everything || !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -552,24 +625,6 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 		} else if m.IsBusinessCustomer.IsUnknown() {
 			m.IsBusinessCustomer = types.BoolNull()
 		}
-	}
-	if everything || !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
-		m.ExternalCustomerId = types.StringValue(c.ExternalCustomerId)
-	}
-	if everything || !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
-		m.CustomerName = types.StringValue(c.CustomerName)
-	}
-	if everything || !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
-		m.CustomerEmail = types.StringValue(c.CustomerEmail)
-	}
-	if everything || !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
-		m.CustomerIpAddress = types.StringValue(c.CustomerIpAddress)
-	}
-	if everything || !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
-		m.CustomerBillingName = types.StringValue(c.CustomerBillingName)
-	}
-	if everything || !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
-		m.CustomerTaxId = types.StringValue(c.CustomerTaxId)
 	}
 	if everything || !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
 		if c.CustomerMetadata == nil {
@@ -582,22 +637,13 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.CustomerMetadata = types.MapValueMust(types.StringType, CustomerMetadata)
 		}
 	}
-	if everything || !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
-		m.SubscriptionId = types.StringValue(c.SubscriptionId)
-	}
-	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		m.SuccessUrl = types.StringValue(c.SuccessUrl)
-	}
-	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		m.ReturnUrl = types.StringValue(c.ReturnUrl)
-	}
-	if everything || !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
-		m.EmbedOrigin = types.StringValue(c.EmbedOrigin)
-	}
 	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		m.Locale = types.StringValue(c.Locale)
-	}
-	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		m.Currency = types.StringValue(c.Currency)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Locale != nil {
+			m.Locale = types.StringValue(*c.Locale)
+		} else {
+			m.Locale = types.StringNull()
+		}
 	}
 }

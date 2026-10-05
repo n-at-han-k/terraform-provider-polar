@@ -4,7 +4,7 @@ package client
 
 // ProductPriceSeatTiersOutput - List of pricing tiers for seat-based pricing.  The minimum and maximum seat limits are derived from the tiers: - minimum_seats = first tier's min_seats - maximum_seats = last tier's max_seats (None for unlimited)
 type ProductPriceSeatTiersOutput struct {
-	SeatTierType string                 `json:"seat_tier_type,omitempty"`
+	SeatTierType *string                `json:"seat_tier_type,omitempty"`
 	Tiers        []ProductPriceSeatTier `json:"tiers,omitempty"`
 	MinimumSeats int32                  `json:"minimum_seats,omitempty"`
 	MaximumSeats int32                  `json:"maximum_seats,omitempty"`

@@ -41,19 +41,24 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		out.Name = m.Name.ValueString()
 	}
 	if !m.Code.IsNull() && !m.Code.IsUnknown() {
-		out.Code = m.Code.ValueString()
+		Code := m.Code.ValueString()
+		out.Code = &Code
 	}
 	if !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
-		out.StartsAt = m.StartsAt.ValueString()
+		StartsAt := m.StartsAt.ValueString()
+		out.StartsAt = &StartsAt
 	}
 	if !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
-		out.EndsAt = m.EndsAt.ValueString()
+		EndsAt := m.EndsAt.ValueString()
+		out.EndsAt = &EndsAt
 	}
 	if !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
-		out.MaxRedemptions = int32(m.MaxRedemptions.ValueInt64())
+		MaxRedemptions := int32(m.MaxRedemptions.ValueInt64())
+		out.MaxRedemptions = &MaxRedemptions
 	}
 	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
-		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+		MaxRedemptionsPerCustomer := int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+		out.MaxRedemptionsPerCustomer = &MaxRedemptionsPerCustomer
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.
@@ -67,13 +72,16 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		out.Duration = m.Duration.ValueString()
 	}
 	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
-		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
+		DurationInMonths := int32(m.DurationInMonths.ValueInt64())
+		out.DurationInMonths = &DurationInMonths
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
+		Amount := int32(m.Amount.ValueInt64())
+		out.Amount = &Amount
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
+		Currency := m.Currency.ValueString()
+		out.Currency = &Currency
 	}
 	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
 		out.Amounts = make(map[string]int32, len(m.Amounts.Elements()))
@@ -82,7 +90,8 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		}
 	}
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
-		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
+		BasisPoints := int32(m.BasisPoints.ValueInt64())
+		out.BasisPoints = &BasisPoints
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
 		out.Type = m.Type.ValueString()
@@ -107,22 +116,28 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Code.IsNull() && !m.Code.IsUnknown() {
-		out.Code = m.Code.ValueString()
+		Code := m.Code.ValueString()
+		out.Code = &Code
 	}
 	if !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
-		out.StartsAt = m.StartsAt.ValueString()
+		StartsAt := m.StartsAt.ValueString()
+		out.StartsAt = &StartsAt
 	}
 	if !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
-		out.EndsAt = m.EndsAt.ValueString()
+		EndsAt := m.EndsAt.ValueString()
+		out.EndsAt = &EndsAt
 	}
 	if !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
-		out.MaxRedemptions = int32(m.MaxRedemptions.ValueInt64())
+		MaxRedemptions := int32(m.MaxRedemptions.ValueInt64())
+		out.MaxRedemptions = &MaxRedemptions
 	}
 	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
-		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+		MaxRedemptionsPerCustomer := int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+		out.MaxRedemptionsPerCustomer = &MaxRedemptionsPerCustomer
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.
@@ -133,16 +148,20 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 		}
 	}
 	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
-		out.Duration = m.Duration.ValueString()
+		Duration := m.Duration.ValueString()
+		out.Duration = &Duration
 	}
 	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
-		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
+		DurationInMonths := int32(m.DurationInMonths.ValueInt64())
+		out.DurationInMonths = &DurationInMonths
 	}
 	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
+		Amount := int32(m.Amount.ValueInt64())
+		out.Amount = &Amount
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
+		Currency := m.Currency.ValueString()
+		out.Currency = &Currency
 	}
 	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
 		out.Amounts = make(map[string]int32, len(m.Amounts.Elements()))
@@ -151,10 +170,12 @@ func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
 		}
 	}
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
-		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
+		BasisPoints := int32(m.BasisPoints.ValueInt64())
+		out.BasisPoints = &BasisPoints
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -255,32 +276,35 @@ func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
 		m.Name = types.StringValue(c.Name)
 	}
-	if everything || !m.Code.IsNull() && !m.Code.IsUnknown() {
-		m.Code = types.StringValue(c.Code)
-	}
-	if everything || !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
-		m.StartsAt = types.StringValue(c.StartsAt)
-	}
-	if everything || !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
-		m.EndsAt = types.StringValue(c.EndsAt)
-	}
-	if everything || !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
-		m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
-	}
-	if everything || !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
-		m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
-	}
 	if everything || !m.Duration.IsNull() && !m.Duration.IsUnknown() {
 		m.Duration = types.StringValue(c.Duration)
 	}
 	if everything || !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
-		m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.DurationInMonths != nil {
+			m.DurationInMonths = types.Int64Value(int64(*c.DurationInMonths))
+		} else {
+			m.DurationInMonths = types.Int64Null()
+		}
 	}
 	if everything || !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		m.Amount = types.Int64Value(int64(c.Amount))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Amount != nil {
+			m.Amount = types.Int64Value(int64(*c.Amount))
+		} else {
+			m.Amount = types.Int64Null()
+		}
 	}
 	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		m.Currency = types.StringValue(c.Currency)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Currency != nil {
+			m.Currency = types.StringValue(*c.Currency)
+		} else {
+			m.Currency = types.StringNull()
+		}
 	}
 	if everything || !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
 		if c.Amounts == nil {
@@ -294,7 +318,13 @@ func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 		}
 	}
 	if everything || !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
-		m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.BasisPoints != nil {
+			m.BasisPoints = types.Int64Value(int64(*c.BasisPoints))
+		} else {
+			m.BasisPoints = types.Int64Null()
+		}
 	}
 	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
 		m.Type = types.StringValue(c.Type)

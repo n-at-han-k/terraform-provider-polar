@@ -4,7 +4,7 @@ package client
 
 // ProductPriceSeatTier - A pricing tier for seat-based pricing.
 type ProductPriceSeatTier struct {
-	MinSeats     int32 `json:"min_seats,omitempty"`
-	MaxSeats     int32 `json:"max_seats,omitempty"`
-	PricePerSeat int32 `json:"price_per_seat,omitempty"`
+	MinSeats     int32  `json:"min_seats,omitempty"`
+	MaxSeats     *int32 `json:"max_seats,omitempty"`
+	PricePerSeat int32  `json:"price_per_seat,omitempty"`
 }
