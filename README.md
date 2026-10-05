@@ -37,6 +37,29 @@ result and **knows nothing about Polar**.
 | `reference/polar-pruned.json` | what the generator is given |
 | `reference/resources.md` | what was kept and dropped, and why |
 
+`bin/derive` also **flattens every discriminated union of objects**, because HCL
+has no union and a Terraform attribute has to be one concrete shape:
+
+- a property every variant agrees on is emitted once, as itself;
+- a property whose schema **differs** between variants is emitted once per
+  variant, named for the discriminator value that selects it — all eight benefit
+  variants have a `properties`, so they become `meter_credit_properties`,
+  `feature_flag_properties` and six more;
+- a property appearing in only **one** variant keeps its own name, because it is
+  already unambiguous: `meter_id` belongs to a metered price and nothing else;
+- **required means required in every variant**, since a configuration filling one
+  variant must not be invalid for the fields of the others;
+- the discriminator becomes a plain string carrying the mapping's keys as its
+  enum, so a typo is refused by the schema rather than by the API;
+- a **recursive** union is left alone. A meter's `Filter` has
+  `clauses.items.anyOf = [FilterClause, Filter]`, and flattening that inlines
+  `Filter` into itself — the document becomes a cyclic object graph and the next
+  thing to walk it dies 10,907 frames deep.
+
+`ProductCreate.prices[]` and `BenefitCreate` come out field-for-field identical
+to what `sjkchang/polar` accepts, which is what the catalogue in
+`ns/crossplane-system` is already written against.
+
 That is the point of deriving rather than deciding at generate time. Polar
 versions its description and ships a new one without asking; a rule that runs
 inside the generator answers differently on the new document and says nothing
@@ -123,11 +146,14 @@ from.
 
 ## What it does not do yet
 
-- **Nested objects and arrays become a `schema.StringAttribute` holding JSON.**
-  This is the one that matters: a product's `prices` is a discriminated `oneOf`
-  on `amount_type`, and a benefit's `*_properties` one on `type`, so both come
-  out as JSON strings rather than typed blocks. Until that union is expanded,
-  this provider is not a drop-in for a catalogue written against typed `prices`.
+- **Nested objects and arrays still become a `schema.StringAttribute` holding
+  JSON.** This is the one that matters, and the union half of it is done: the
+  schemas are now concrete and correctly named (see below), but the generator
+  collapses every nested object or array to a JSON string regardless of how well
+  described it is. Typed blocks need `schema.ListNestedAttribute` emitted by
+  `resource.mustache`, nested `tfsdk` structs in the model, and conversions that
+  walk them — template work, not spec work, and the last thing standing between
+  this and a drop-in replacement for a catalogue written against typed `prices`.
 - **Polar's six overlays are not applied.** `sdk/overlays/*.yml` in
   `polarsource/polar` is what Polar itself layers on before generating its SDKs,
   and `read_only.yml` is exactly the input the Optional-vs-Computed inference

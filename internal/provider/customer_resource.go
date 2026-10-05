@@ -65,19 +65,17 @@ func (r *CustomerResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "The ID of the customer in your system. This must be unique within the organization. Once set, it can't be updated.",
 			},
-			"email": schema.StringAttribute{
+			"individual_email": schema.StringAttribute{
 				Computed:    true,
-				Optional:    true,
+				Description: "The email address of the customer. This must be unique within the organization.",
+			},
+			"team_email": schema.StringAttribute{
+				Computed:    true,
 				Description: "The email address of the customer. This must be unique within the organization.",
 			},
 			"email_verified": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the customer email address is verified. The address is automatically verified when the customer accesses the customer portal using their email address.",
-			},
-			"type": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The type of customer.",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -124,6 +122,15 @@ func (r *CustomerResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"avatar_url": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
+			},
+			"type": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "Which variant this is. Selects which of the optional blocks above applies.",
+			},
+			"email": schema.StringAttribute{
+				Optional:    true,
+				Description: "The email address of the customer. This must be unique within the organization.",
 			},
 		},
 	}

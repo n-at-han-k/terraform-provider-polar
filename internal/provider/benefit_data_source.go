@@ -46,10 +46,6 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"type": schema.StringAttribute{
-				Required:    true,
-				Description: "",
-			},
 			"description": schema.StringAttribute{
 				Computed:    true,
 				Description: "The description of the benefit.",
@@ -79,12 +75,123 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "The visibility of the benefit in the customer portal.",
 			},
-			"properties": schema.StringAttribute{
+			"custom_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"discord_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"github_repository_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"downloadables_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"license_keys_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"meter_credit_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"feature_flag_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "Properties for a benefit of type `feature_flag`.",
+			},
+			"slack_shared_channel_properties": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"visibility_configurable": schema.BoolAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"type": schema.StringAttribute{
+				Computed:    true,
+				Description: "Which variant this is. Selects which of the optional blocks above applies.",
+			},
+			"benefit_custom_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_discord_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_git_hub_repository_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_downloadables_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_license_keys_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_meter_credit_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_feature_flag_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_slack_shared_channel_update_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_custom_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_discord_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_git_hub_repository_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_downloadables_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_license_keys_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_meter_credit_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
+			"benefit_feature_flag_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "Properties for a benefit of type `feature_flag`.",
+			},
+			"benefit_slack_shared_channel_update_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},

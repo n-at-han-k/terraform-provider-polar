@@ -2,17 +2,26 @@
 
 package client
 
-// ProductPriceMeteredUnit - A metered, usage-based, price for a product, with a fixed unit price.
-type ProductPriceMeteredUnit struct {
+// PricesInner - PricesInner struct
+type PricesInner struct {
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`
 	Source string `json:"source,omitempty"`
-	AmountType string `json:"amount_type,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
 	TaxBehavior string `json:"tax_behavior,omitempty"`
 	IsArchived *bool `json:"is_archived,omitempty"`
 	ProductId string `json:"product_id,omitempty"`
+	Type string `json:"type,omitempty"`
+	RecurringInterval string `json:"recurring_interval,omitempty"`
+	PriceAmount int32 `json:"price_amount,omitempty"`
+	Legacy *bool `json:"legacy,omitempty"`
+	MinimumAmount int32 `json:"minimum_amount,omitempty"`
+	MaximumAmount int32 `json:"maximum_amount,omitempty"`
+	PresetAmount int32 `json:"preset_amount,omitempty"`
+	LegacyRecurringProductPriceAmountType string `json:"legacy_recurring_product_price_amount_type,omitempty"`
+	ProductPriceAmountType string `json:"product_price_amount_type,omitempty"`
+	SeatTiers *ProductPriceSeatTiersOutput `json:"seat_tiers,omitempty"`
 	UnitAmount string `json:"unit_amount,omitempty"`
 	CapAmount int32 `json:"cap_amount,omitempty"`
 	MeterId string `json:"meter_id,omitempty"`

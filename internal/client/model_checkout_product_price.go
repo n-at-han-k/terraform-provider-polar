@@ -8,7 +8,6 @@ type CheckoutProductPrice struct {
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`
 	Source string `json:"source,omitempty"`
-	AmountType string `json:"amount_type,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
 	TaxBehavior string `json:"tax_behavior,omitempty"`
 	IsArchived *bool `json:"is_archived,omitempty"`
@@ -20,6 +19,7 @@ type CheckoutProductPrice struct {
 	MinimumAmount int32 `json:"minimum_amount,omitempty"`
 	MaximumAmount int32 `json:"maximum_amount,omitempty"`
 	PresetAmount int32 `json:"preset_amount,omitempty"`
+	AmountType string `json:"amount_type,omitempty"`
 	SeatTiers *ProductPriceSeatTiersOutput `json:"seat_tiers,omitempty"`
 	UnitAmount string `json:"unit_amount,omitempty"`
 	CapAmount int32 `json:"cap_amount,omitempty"`

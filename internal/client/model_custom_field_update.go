@@ -4,9 +4,13 @@ package client
 
 // CustomFieldUpdate - CustomFieldUpdate struct
 type CustomFieldUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	Name string `json:"name,omitempty"`
 	Slug string `json:"slug,omitempty"`
+	TextProperties *CustomFieldTextProperties `json:"text_properties,omitempty"`
+	NumberProperties *CustomFieldNumberProperties `json:"number_properties,omitempty"`
+	DateProperties *CustomFieldDateProperties `json:"date_properties,omitempty"`
+	CheckboxProperties *CustomFieldCheckboxProperties `json:"checkbox_properties,omitempty"`
+	SelectProperties *CustomFieldSelectProperties `json:"select_properties,omitempty"`
 	Type string `json:"type,omitempty"`
-	Properties *CustomFieldSelectProperties `json:"properties,omitempty"`
 }

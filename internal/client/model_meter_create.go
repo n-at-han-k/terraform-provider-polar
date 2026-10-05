@@ -4,7 +4,7 @@ package client
 
 // MeterCreate - MeterCreate struct
 type MeterCreate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	Name string `json:"name,omitempty"`
 	Unit string `json:"unit,omitempty"`
 	CustomLabel string `json:"custom_label,omitempty"`

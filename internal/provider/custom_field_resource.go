@@ -60,10 +60,6 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Description: "",
 			},
-			"type": schema.StringAttribute{
-				Required:    true,
-				Description: "",
-			},
 			"slug": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
@@ -78,11 +74,39 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "The ID of the organization owning the custom field.",
 			},
-			"properties": schema.StringAttribute{
+			"text_properties": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
 				Description: "",
+			},
+			"number_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"date_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"checkbox_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"select_properties": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"type": schema.StringAttribute{
+				Required:    true,
+				Description: "Which variant this is. Selects which of the optional blocks above applies.",
 			},
 		},
 	}

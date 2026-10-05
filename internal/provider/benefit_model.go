@@ -16,7 +16,6 @@ type BenefitModel struct {
 	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Type types.String `tfsdk:"type"`
 	Description types.String `tfsdk:"description"`
 	Selectable types.Bool `tfsdk:"selectable"`
 	Deletable types.Bool `tfsdk:"deletable"`
@@ -24,16 +23,37 @@ type BenefitModel struct {
 	OrganizationId types.String `tfsdk:"organization_id"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	Visibility types.String `tfsdk:"visibility"`
-	Properties jsontypes.Normalized `tfsdk:"properties"`
+	CustomProperties jsontypes.Normalized `tfsdk:"custom_properties"`
+	DiscordProperties jsontypes.Normalized `tfsdk:"discord_properties"`
+	GithubRepositoryProperties jsontypes.Normalized `tfsdk:"github_repository_properties"`
+	DownloadablesProperties jsontypes.Normalized `tfsdk:"downloadables_properties"`
+	LicenseKeysProperties jsontypes.Normalized `tfsdk:"license_keys_properties"`
+	MeterCreditProperties jsontypes.Normalized `tfsdk:"meter_credit_properties"`
+	FeatureFlagProperties jsontypes.Normalized `tfsdk:"feature_flag_properties"`
+	SlackSharedChannelProperties jsontypes.Normalized `tfsdk:"slack_shared_channel_properties"`
 	VisibilityConfigurable types.Bool `tfsdk:"visibility_configurable"`
+	Type types.String `tfsdk:"type"`
+	BenefitCustomUpdateType types.String `tfsdk:"benefit_custom_update_type"`
+	BenefitDiscordUpdateType types.String `tfsdk:"benefit_discord_update_type"`
+	BenefitGitHubRepositoryUpdateType types.String `tfsdk:"benefit_git_hub_repository_update_type"`
+	BenefitDownloadablesUpdateType types.String `tfsdk:"benefit_downloadables_update_type"`
+	BenefitLicenseKeysUpdateType types.String `tfsdk:"benefit_license_keys_update_type"`
+	BenefitMeterCreditUpdateType types.String `tfsdk:"benefit_meter_credit_update_type"`
+	BenefitFeatureFlagUpdateType types.String `tfsdk:"benefit_feature_flag_update_type"`
+	BenefitSlackSharedChannelUpdateType types.String `tfsdk:"benefit_slack_shared_channel_update_type"`
+	BenefitCustomUpdateProperties jsontypes.Normalized `tfsdk:"benefit_custom_update_properties"`
+	BenefitDiscordUpdateProperties jsontypes.Normalized `tfsdk:"benefit_discord_update_properties"`
+	BenefitGitHubRepositoryUpdateProperties jsontypes.Normalized `tfsdk:"benefit_git_hub_repository_update_properties"`
+	BenefitDownloadablesUpdateProperties jsontypes.Normalized `tfsdk:"benefit_downloadables_update_properties"`
+	BenefitLicenseKeysUpdateProperties jsontypes.Normalized `tfsdk:"benefit_license_keys_update_properties"`
+	BenefitMeterCreditUpdateProperties jsontypes.Normalized `tfsdk:"benefit_meter_credit_update_properties"`
+	BenefitFeatureFlagUpdateProperties jsontypes.Normalized `tfsdk:"benefit_feature_flag_update_properties"`
+	BenefitSlackSharedChannelUpdateProperties jsontypes.Normalized `tfsdk:"benefit_slack_shared_channel_update_properties"`
 }
 
 // ToClientModel converts a Terraform model to a client model.
 func (m *BenefitModel) ToClientModel() (*client.BenefitUpdate, error) {
 	out := &client.BenefitUpdate{}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
 		out.Description = m.Description.ValueString()
 	}
@@ -48,12 +68,92 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitUpdate, error) {
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		out.Visibility = m.Visibility.ValueString()
 	}
+	if !m.BenefitCustomUpdateType.IsNull() && !m.BenefitCustomUpdateType.IsUnknown() {
+		out.BenefitCustomUpdateType = m.BenefitCustomUpdateType.ValueString()
+	}
+	if !m.BenefitDiscordUpdateType.IsNull() && !m.BenefitDiscordUpdateType.IsUnknown() {
+		out.BenefitDiscordUpdateType = m.BenefitDiscordUpdateType.ValueString()
+	}
+	if !m.BenefitGitHubRepositoryUpdateType.IsNull() && !m.BenefitGitHubRepositoryUpdateType.IsUnknown() {
+		out.BenefitGitHubRepositoryUpdateType = m.BenefitGitHubRepositoryUpdateType.ValueString()
+	}
+	if !m.BenefitDownloadablesUpdateType.IsNull() && !m.BenefitDownloadablesUpdateType.IsUnknown() {
+		out.BenefitDownloadablesUpdateType = m.BenefitDownloadablesUpdateType.ValueString()
+	}
+	if !m.BenefitLicenseKeysUpdateType.IsNull() && !m.BenefitLicenseKeysUpdateType.IsUnknown() {
+		out.BenefitLicenseKeysUpdateType = m.BenefitLicenseKeysUpdateType.ValueString()
+	}
+	if !m.BenefitMeterCreditUpdateType.IsNull() && !m.BenefitMeterCreditUpdateType.IsUnknown() {
+		out.BenefitMeterCreditUpdateType = m.BenefitMeterCreditUpdateType.ValueString()
+	}
+	if !m.BenefitFeatureFlagUpdateType.IsNull() && !m.BenefitFeatureFlagUpdateType.IsUnknown() {
+		out.BenefitFeatureFlagUpdateType = m.BenefitFeatureFlagUpdateType.ValueString()
+	}
+	if !m.BenefitSlackSharedChannelUpdateType.IsNull() && !m.BenefitSlackSharedChannelUpdateType.IsUnknown() {
+		out.BenefitSlackSharedChannelUpdateType = m.BenefitSlackSharedChannelUpdateType.ValueString()
+	}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
-	if !m.Properties.IsNull() && !m.Properties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Properties.ValueString()), &out.Properties); err != nil {
-			return out, fmt.Errorf("properties: %w", err)
+	if !m.BenefitCustomUpdateProperties.IsNull() && !m.BenefitCustomUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitCustomUpdateProperties.ValueString()), &out.BenefitCustomUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_custom_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitDiscordUpdateProperties.IsNull() && !m.BenefitDiscordUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitDiscordUpdateProperties.ValueString()), &out.BenefitDiscordUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_discord_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitGitHubRepositoryUpdateProperties.IsNull() && !m.BenefitGitHubRepositoryUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitGitHubRepositoryUpdateProperties.ValueString()), &out.BenefitGitHubRepositoryUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_git_hub_repository_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitDownloadablesUpdateProperties.IsNull() && !m.BenefitDownloadablesUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitDownloadablesUpdateProperties.ValueString()), &out.BenefitDownloadablesUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_downloadables_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitLicenseKeysUpdateProperties.IsNull() && !m.BenefitLicenseKeysUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitLicenseKeysUpdateProperties.ValueString()), &out.BenefitLicenseKeysUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_license_keys_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitMeterCreditUpdateProperties.IsNull() && !m.BenefitMeterCreditUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitMeterCreditUpdateProperties.ValueString()), &out.BenefitMeterCreditUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_meter_credit_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitFeatureFlagUpdateProperties.IsNull() && !m.BenefitFeatureFlagUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitFeatureFlagUpdateProperties.ValueString()), &out.BenefitFeatureFlagUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_feature_flag_update_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.BenefitSlackSharedChannelUpdateProperties.IsNull() && !m.BenefitSlackSharedChannelUpdateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.BenefitSlackSharedChannelUpdateProperties.ValueString()), &out.BenefitSlackSharedChannelUpdateProperties); err != nil {
+			return out, fmt.Errorf("benefit_slack_shared_channel_update_properties: %w", err)
 		}
 	}
 	return out, nil
@@ -65,7 +165,6 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 	m.Id = types.StringValue(string(c.Id))
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Type = types.StringValue(c.Type)
 	m.Description = types.StringValue(c.Description)
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -104,13 +203,109 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.Visibility = types.StringValue(c.Visibility)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Properties.IsUnknown() {
-		m.Properties = jsontypes.NewNormalizedNull()
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.CustomProperties); err == nil {
+		if m.CustomProperties.IsNull() || m.CustomProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.CustomProperties.ValueString()) {
+			m.CustomProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.DiscordProperties); err == nil {
+		if m.DiscordProperties.IsNull() || m.DiscordProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.DiscordProperties.ValueString()) {
+			m.DiscordProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.GithubRepositoryProperties); err == nil {
+		if m.GithubRepositoryProperties.IsNull() || m.GithubRepositoryProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.GithubRepositoryProperties.ValueString()) {
+			m.GithubRepositoryProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.DownloadablesProperties); err == nil {
+		if m.DownloadablesProperties.IsNull() || m.DownloadablesProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.DownloadablesProperties.ValueString()) {
+			m.DownloadablesProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.LicenseKeysProperties); err == nil {
+		if m.LicenseKeysProperties.IsNull() || m.LicenseKeysProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.LicenseKeysProperties.ValueString()) {
+			m.LicenseKeysProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.MeterCreditProperties); err == nil {
+		if m.MeterCreditProperties.IsNull() || m.MeterCreditProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.MeterCreditProperties.ValueString()) {
+			m.MeterCreditProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.FeatureFlagProperties); err == nil {
+		if m.FeatureFlagProperties.IsNull() || m.FeatureFlagProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.FeatureFlagProperties.ValueString()) {
+			m.FeatureFlagProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.SlackSharedChannelProperties); err == nil {
+		if m.SlackSharedChannelProperties.IsNull() || m.SlackSharedChannelProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.SlackSharedChannelProperties.ValueString()) {
+			m.SlackSharedChannelProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
 	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -121,4 +316,5 @@ func (m *BenefitModel) FromClientModel(c *client.Benefit) {
 	} else if m.VisibilityConfigurable.IsUnknown() {
 		m.VisibilityConfigurable = types.BoolNull()
 	}
+	m.Type = types.StringValue(c.Type)
 }

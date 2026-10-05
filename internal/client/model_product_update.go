@@ -4,7 +4,7 @@ package client
 
 // ProductUpdate - Schema to update a product.
 type ProductUpdate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
 	Name string `json:"name,omitempty"`

@@ -7,7 +7,6 @@ type Benefit struct {
 	Id RTID `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Type string `json:"type,omitempty"`
 	Description string `json:"description,omitempty"`
 	Selectable *bool `json:"selectable,omitempty"`
 	Deletable *bool `json:"deletable,omitempty"`
@@ -15,6 +14,14 @@ type Benefit struct {
 	OrganizationId string `json:"organization_id,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
-	Properties *BenefitSlackSharedChannelProperties `json:"properties,omitempty"`
+	CustomProperties *BenefitCustomProperties `json:"custom_properties,omitempty"`
+	DiscordProperties *BenefitDiscordProperties `json:"discord_properties,omitempty"`
+	GithubRepositoryProperties *BenefitGitHubRepositoryProperties `json:"github_repository_properties,omitempty"`
+	DownloadablesProperties *BenefitDownloadablesProperties `json:"downloadables_properties,omitempty"`
+	LicenseKeysProperties *BenefitLicenseKeysProperties `json:"license_keys_properties,omitempty"`
+	MeterCreditProperties *BenefitMeterCreditProperties `json:"meter_credit_properties,omitempty"`
+	FeatureFlagProperties map[string]interface{} `json:"feature_flag_properties,omitempty"`
+	SlackSharedChannelProperties *BenefitSlackSharedChannelProperties `json:"slack_shared_channel_properties,omitempty"`
 	VisibilityConfigurable *bool `json:"visibility_configurable,omitempty"`
+	Type string `json:"type,omitempty"`
 }

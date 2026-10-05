@@ -91,7 +91,7 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "The end timestamp of the trial period, if any.",
 			},
 			"cancel_at_period_end": schema.BoolAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Whether the subscription will be canceled at the end of the current period.",
 			},
 			"canceled_at": schema.StringAttribute{
@@ -115,7 +115,7 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "The timestamp when the subscription entered `past_due` status.",
 			},
 			"pause_at_period_end": schema.BoolAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Whether the subscription will be paused at the end of the current period.",
 			},
 			"paused_at": schema.StringAttribute{
@@ -143,7 +143,7 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "",
 			},
 			"seats": schema.Int64Attribute{
-				Required:    true,
+				Computed:    true,
 				Description: "The number of seats for seat-based subscriptions. None for non-seat subscriptions.",
 			},
 			"customer_cancellation_reason": schema.StringAttribute{
@@ -199,15 +199,15 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Description: "Determine how to handle the proration billing. If not provided, will use the default organization setting.",
 			},
 			"current_billing_period_end": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Set a new date for the end of the current billing period. The subscription will renew on this date. The new date can be earlier or later than the current period end, as long as it's in the future.  It is not possible to update the current billing period on a canceled subscription.",
 			},
 			"revoke": schema.BoolAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Cancel and revoke an active subscription immediately",
 			},
 			"resume": schema.BoolAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Resume a paused subscription immediately, starting a new billing period and charging the customer.",
 			},
 		},

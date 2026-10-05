@@ -8,9 +8,13 @@ type CustomField struct {
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
-	Type string `json:"type,omitempty"`
 	Slug string `json:"slug,omitempty"`
 	Name string `json:"name,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
-	Properties *CustomFieldSelectProperties `json:"properties,omitempty"`
+	TextProperties *CustomFieldTextProperties `json:"text_properties,omitempty"`
+	NumberProperties *CustomFieldNumberProperties `json:"number_properties,omitempty"`
+	DateProperties *CustomFieldDateProperties `json:"date_properties,omitempty"`
+	CheckboxProperties *CustomFieldCheckboxProperties `json:"checkbox_properties,omitempty"`
+	SelectProperties *CustomFieldSelectProperties `json:"select_properties,omitempty"`
+	Type string `json:"type,omitempty"`
 }

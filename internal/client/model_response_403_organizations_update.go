@@ -4,6 +4,7 @@ package client
 
 // Response403OrganizationsUpdate - Response403OrganizationsUpdate struct
 type Response403OrganizationsUpdate struct {
-	Error string `json:"error,omitempty"`
+	NotPermittedError string `json:"not_permitted_error,omitempty"`
+	DisputeAutoAcceptNotEnabledError string `json:"dispute_auto_accept_not_enabled_error,omitempty"`
 	Detail string `json:"detail,omitempty"`
 }

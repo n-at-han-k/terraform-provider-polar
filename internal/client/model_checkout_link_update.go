@@ -6,7 +6,7 @@ package client
 type CheckoutLinkUpdate struct {
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	Products []string `json:"products,omitempty"`
 	Label string `json:"label,omitempty"`
 	AllowDiscountCodes *bool `json:"allow_discount_codes,omitempty"`

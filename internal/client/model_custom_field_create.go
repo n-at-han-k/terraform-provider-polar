@@ -4,10 +4,14 @@ package client
 
 // CustomFieldCreate - CustomFieldCreate struct
 type CustomFieldCreate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Type string `json:"type,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	Slug string `json:"slug,omitempty"`
 	Name string `json:"name,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
-	Properties *CustomFieldSelectProperties `json:"properties,omitempty"`
+	TextProperties *CustomFieldTextProperties `json:"text_properties,omitempty"`
+	NumberProperties *CustomFieldNumberProperties `json:"number_properties,omitempty"`
+	DateProperties *CustomFieldDateProperties `json:"date_properties,omitempty"`
+	CheckboxProperties *CustomFieldCheckboxProperties `json:"checkbox_properties,omitempty"`
+	SelectProperties *CustomFieldSelectProperties `json:"select_properties,omitempty"`
+	Type string `json:"type,omitempty"`
 }

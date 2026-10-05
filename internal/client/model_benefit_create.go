@@ -4,10 +4,17 @@ package client
 
 // BenefitCreate - BenefitCreate struct
 type BenefitCreate struct {
-	Metadata map[string]MetadataValue `json:"metadata,omitempty"`
-	Type string `json:"type,omitempty"`
+	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
 	Description string `json:"description,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
-	Properties *BenefitSlackSharedChannelCreateProperties `json:"properties,omitempty"`
+	CustomProperties *BenefitCustomCreateProperties `json:"custom_properties,omitempty"`
+	DiscordProperties *BenefitDiscordCreateProperties `json:"discord_properties,omitempty"`
+	GithubRepositoryProperties *BenefitGitHubRepositoryCreateProperties `json:"github_repository_properties,omitempty"`
+	DownloadablesProperties *BenefitDownloadablesCreateProperties `json:"downloadables_properties,omitempty"`
+	LicenseKeysProperties *BenefitLicenseKeysCreateProperties `json:"license_keys_properties,omitempty"`
+	MeterCreditProperties *BenefitMeterCreditCreateProperties `json:"meter_credit_properties,omitempty"`
+	FeatureFlagProperties map[string]interface{} `json:"feature_flag_properties,omitempty"`
+	SlackSharedChannelProperties *BenefitSlackSharedChannelCreateProperties `json:"slack_shared_channel_properties,omitempty"`
+	Type string `json:"type,omitempty"`
 }

@@ -17,11 +17,15 @@ type CustomFieldModel struct {
 	ModifiedAt types.String `tfsdk:"modified_at"`
 	Id types.String `tfsdk:"id"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Type types.String `tfsdk:"type"`
 	Slug types.String `tfsdk:"slug"`
 	Name types.String `tfsdk:"name"`
 	OrganizationId types.String `tfsdk:"organization_id"`
-	Properties jsontypes.Normalized `tfsdk:"properties"`
+	TextProperties jsontypes.Normalized `tfsdk:"text_properties"`
+	NumberProperties jsontypes.Normalized `tfsdk:"number_properties"`
+	DateProperties jsontypes.Normalized `tfsdk:"date_properties"`
+	CheckboxProperties jsontypes.Normalized `tfsdk:"checkbox_properties"`
+	SelectProperties jsontypes.Normalized `tfsdk:"select_properties"`
+	Type types.String `tfsdk:"type"`
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -35,9 +39,6 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldUpdate, error) {
 			return out, fmt.Errorf("metadata: %w", err)
 		}
 	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
 		out.Slug = m.Slug.ValueString()
 	}
@@ -47,10 +48,45 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldUpdate, error) {
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
-	if !m.Properties.IsNull() && !m.Properties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Properties.ValueString()), &out.Properties); err != nil {
-			return out, fmt.Errorf("properties: %w", err)
+	if !m.TextProperties.IsNull() && !m.TextProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.TextProperties.ValueString()), &out.TextProperties); err != nil {
+			return out, fmt.Errorf("text_properties: %w", err)
 		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.NumberProperties.IsNull() && !m.NumberProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.NumberProperties.ValueString()), &out.NumberProperties); err != nil {
+			return out, fmt.Errorf("number_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.DateProperties.IsNull() && !m.DateProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.DateProperties.ValueString()), &out.DateProperties); err != nil {
+			return out, fmt.Errorf("date_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.CheckboxProperties.IsNull() && !m.CheckboxProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.CheckboxProperties.ValueString()), &out.CheckboxProperties); err != nil {
+			return out, fmt.Errorf("checkbox_properties: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.SelectProperties.IsNull() && !m.SelectProperties.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.SelectProperties.ValueString()), &out.SelectProperties); err != nil {
+			return out, fmt.Errorf("select_properties: %w", err)
+		}
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
 	}
 	return out, nil
 }
@@ -69,7 +105,6 @@ func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
 	if m.Metadata.IsUnknown() {
 		m.Metadata = jsontypes.NewNormalizedNull()
 	}
-	m.Type = types.StringValue(c.Type)
 	m.Slug = types.StringValue(c.Slug)
 	m.Name = types.StringValue(c.Name)
 	m.OrganizationId = types.StringValue(c.OrganizationId)
@@ -80,10 +115,63 @@ func (m *CustomFieldModel) FromClientModel(c *client.CustomField) {
 	// not already say -- see jsonSupersetOf. A server that merely filled in its
 	// own defaults has told us nothing, and recording it would fail the apply
 	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Properties); err == nil {
-		if m.Properties.IsNull() || m.Properties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Properties.ValueString()) {
-			m.Properties = jsontypes.NewNormalizedValue(string(encoded))
+	if encoded, err := json.Marshal(c.TextProperties); err == nil {
+		if m.TextProperties.IsNull() || m.TextProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.TextProperties.ValueString()) {
+			m.TextProperties = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.NumberProperties); err == nil {
+		if m.NumberProperties.IsNull() || m.NumberProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.NumberProperties.ValueString()) {
+			m.NumberProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.DateProperties); err == nil {
+		if m.DateProperties.IsNull() || m.DateProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.DateProperties.ValueString()) {
+			m.DateProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.CheckboxProperties); err == nil {
+		if m.CheckboxProperties.IsNull() || m.CheckboxProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.CheckboxProperties.ValueString()) {
+			m.CheckboxProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.SelectProperties); err == nil {
+		if m.SelectProperties.IsNull() || m.SelectProperties.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.SelectProperties.ValueString()) {
+			m.SelectProperties = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.Type = types.StringValue(c.Type)
 }

@@ -18,9 +18,9 @@ type CustomerModel struct {
 	ModifiedAt types.String `tfsdk:"modified_at"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	ExternalId types.String `tfsdk:"external_id"`
-	Email types.String `tfsdk:"email"`
+	IndividualEmail types.String `tfsdk:"individual_email"`
+	TeamEmail types.String `tfsdk:"team_email"`
 	EmailVerified types.Bool `tfsdk:"email_verified"`
-	Type types.String `tfsdk:"type"`
 	Name types.String `tfsdk:"name"`
 	BillingName types.String `tfsdk:"billing_name"`
 	BillingAddress jsontypes.Normalized `tfsdk:"billing_address"`
@@ -31,6 +31,8 @@ type CustomerModel struct {
 	DeletedAt types.String `tfsdk:"deleted_at"`
 	FirstUserEventAt types.String `tfsdk:"first_user_event_at"`
 	AvatarUrl types.String `tfsdk:"avatar_url"`
+	Type types.String `tfsdk:"type"`
+	Email types.String `tfsdk:"email"`
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -46,12 +48,6 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
 	}
 	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
 		out.ExternalId = m.ExternalId.ValueString()
-	}
-	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
-	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
@@ -75,6 +71,12 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		out.Locale = m.Locale.ValueString()
 	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
+	if !m.Email.IsNull() && !m.Email.IsUnknown() {
+		out.Email = m.Email.ValueString()
+	}
 	return out, nil
 }
 
@@ -93,7 +95,8 @@ func (m *CustomerModel) FromClientModel(c *client.Customer) {
 		m.Metadata = jsontypes.NewNormalizedNull()
 	}
 	m.ExternalId = types.StringValue(c.ExternalId)
-	m.Email = types.StringValue(c.Email)
+	m.IndividualEmail = types.StringValue(c.IndividualEmail)
+	m.TeamEmail = types.StringValue(c.TeamEmail)
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -103,7 +106,6 @@ func (m *CustomerModel) FromClientModel(c *client.Customer) {
 	} else if m.EmailVerified.IsUnknown() {
 		m.EmailVerified = types.BoolNull()
 	}
-	m.Type = types.StringValue(c.Type)
 	m.Name = types.StringValue(c.Name)
 	m.BillingName = types.StringValue(c.BillingName)
 	// The create body takes this and no response of the same shape answers it --
@@ -128,4 +130,5 @@ func (m *CustomerModel) FromClientModel(c *client.Customer) {
 	m.DeletedAt = types.StringValue(c.DeletedAt)
 	m.FirstUserEventAt = types.StringValue(c.FirstUserEventAt)
 	m.AvatarUrl = types.StringValue(c.AvatarUrl)
+	m.Type = types.StringValue(c.Type)
 }

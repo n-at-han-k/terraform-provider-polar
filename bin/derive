@@ -142,6 +142,179 @@ def drop_null_properties!(node, dropped)
   dropped
 end
 
+# Every schema a named schema reaches, transitively, including itself if it is
+# recursive. Memoised because the union check below asks this per variant and
+# the document is 1010 schemas deep in places.
+def closure_of(name, schemas, cache = ($closures ||= {}))
+  return cache[name] if cache.key?(name)
+
+  cache[name] = []
+  frontier = refs_in(schemas[name] || {})
+  seen = {}
+
+  until frontier.empty?
+    reached = frontier.pop
+    next if seen[reached]
+
+    seen[reached] = true
+    frontier.concat(refs_in(schemas[reached] || {}))
+  end
+
+  cache[name] = seen.keys
+end
+
+# A DISCRIMINATED UNION IS ONE TERRAFORM BLOCK WITH OPTIONAL HALVES.
+#
+# Polar describes a product's `prices` as a oneOf on `amount_type` and a benefit
+# as a oneOf on `type`, which is the correct way to describe an API and an
+# impossible way to describe a Terraform attribute: HCL has no union, so there
+# is nothing for a schema to be. Left alone the generator renders the whole
+# position as one opaque blob and the configuration carries JSON in a string.
+#
+# So the union is flattened HERE, into a single object schema:
+#
+#   * a property every variant agrees on is emitted once, as itself. All four
+#     price variants carry `price_currency` and `tax_behavior`; all eight
+#     benefit variants carry `description`, `metadata` and `visibility`.
+#
+#   * a property whose SCHEMA DIFFERS between variants is emitted once PER
+#     VARIANT, named for the discriminator value that selects it. Every benefit
+#     variant has a `properties`, and all eight are different, so they become
+#     `meter_credit_properties`, `feature_flag_properties`, `custom_properties`
+#     and so on -- which is both unambiguous and the spelling the catalogue in
+#     ns/crossplane-system already uses.
+#
+#   * REQUIRED MEANS REQUIRED IN EVERY VARIANT. `meter_id` is required of a
+#     metered price and meaningless to a fixed one; marking it Required because
+#     one variant insists would make every fixed price invalid. The
+#     discriminator itself stays required -- it is what picks the variant -- and
+#     carries the mapping's keys as its enum, so a typo is refused by the schema
+#     rather than by the API.
+#
+# ONLY A UNION OF OBJECTS. A two-member anyOf whose other member is
+# `{"type": "null"}` is nullability, not a union, and `tax_behavior`,
+# `cap_amount` and `unit_amount` are all spelled that way; flattening those
+# would be rewriting "optional integer" into something else entirely. Every
+# member must be a $ref to an object for this to fire.
+def flatten_unions!(node, schemas, flattened)
+  case node
+  when Hash
+    node.each_value { |value| flatten_unions!(value, schemas, flattened) }
+
+    union = node["oneOf"] || node["anyOf"]
+    return flattened unless union.is_a?(Array) && union.size > 1
+
+    refs = union.map { |member| member.is_a?(Hash) ? member["$ref"] : nil }
+    return flattened unless refs.all? { |ref| ref.to_s.start_with?("#/components/schemas/") }
+
+    variants = refs.to_h do |ref|
+      name = ref.split("/").last
+      [name, schemas[name]]
+    end
+    return flattened unless variants.values.all? { |v| v.is_a?(Hash) && v["type"] == "object" && v["properties"] }
+
+    # NEVER A RECURSIVE UNION. A meter's `Filter` has
+    # `clauses.items.anyOf = [FilterClause, Filter]` -- a clause, or another
+    # whole filter, which is how a nested group of conditions is described.
+    # Flattening that inlines Filter's own properties into a position inside
+    # Filter, and the document becomes a cyclic object graph: the first thing to
+    # walk it afterwards died with "stack level too deep" 10,907 frames in.
+    #
+    # Terraform cannot express arbitrary nesting as a typed attribute anyway, so
+    # a recursive union stays a union and the generator renders that position as
+    # JSON -- which is the right answer for it, and the shape the hand-written
+    # catalogue already uses (a flat list of clauses).
+    names = variants.keys
+    recursive = names.any? { |name| (closure_of(name, schemas) & names).any? }
+    return flattened if recursive
+
+    # The discriminator value that selects each variant, so a renamed property
+    # is named for what a configuration actually writes. Without a discriminator
+    # the variant's own schema name is all there is to go on.
+    label = {}
+    mapping = node.dig("discriminator", "mapping") || {}
+    variants.each_key do |name|
+      key = mapping.find { |_, ref| ref.split("/").last == name }&.first
+      label[name] = key || name.sub(/Create\z/, "").gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+    end
+
+    merged = {}
+    owners = {}
+    discriminator = node.dig("discriminator", "propertyName")
+
+    variants.each do |name, variant|
+      variant["properties"].each do |property, schema|
+        # THE DISCRIMINATOR IS NOT A COLLIDING PROPERTY, it is the choice
+        # itself. Every variant pins it to a different constant -- a meter
+        # credit benefit declares `const: "meter_credit"` -- so by the rule
+        # below its schemas "differ" and it would be split into
+        # `meter_credit_type`, `custom_type`, `discord_type` and five more:
+        # eight attributes for one answer, none of them the `type` the API
+        # takes. Held out here and emitted once, as the enum of what it may be.
+        next if property == discriminator
+
+        (owners[property] ||= {})[name] = schema
+      end
+    end
+
+    owners.each do |property, by_variant|
+      # AMBIGUITY IS THE TEST, NOT UBIQUITY. A property only has to be renamed
+      # when two variants spell the SAME NAME DIFFERENTLY -- `properties` on all
+      # eight benefit variants. One that appears in a single variant is already
+      # unambiguous: `meter_id` belongs to a metered price and to nothing else,
+      # so `metered_unit_meter_id` would be a rename for no reason, and it is
+      # not what `prices = [{ amount_type = "metered_unit", meter_id = ... }]`
+      # in ns/crossplane-system/kubernetes/polar.tf writes.
+      agreed = by_variant.values.uniq.size == 1
+
+      if agreed
+        merged[property] = by_variant.values.first
+      else
+        by_variant.each do |name, schema|
+          merged["#{label[name]}_#{property}"] = schema
+        end
+      end
+    end
+
+    # Required of EVERY variant, else a configuration picking one variant is
+    # invalid for the fields of the others.
+    required = variants.values
+                       .map { |variant| Array(variant["required"]) }
+                       .reduce { |a, b| a & b } || []
+
+    # A NAME THAT WAS RENAMED IS NOT REQUIRED UNDER ITS OLD SPELLING. Every
+    # benefit variant requires `properties`, so the intersection kept it -- and
+    # all eight differ, so there is no `properties` any more, only
+    # `meter_credit_properties` and its seven siblings. Left in, `required`
+    # named a property the schema does not have, and nothing can satisfy it.
+    # Which ONE of the renamed halves is required depends on the discriminator's
+    # value, which a Terraform schema cannot express, so none of them is.
+    required = required.select { |name| merged.key?(name) }
+
+    if discriminator && !mapping.empty?
+      merged[discriminator] = { "type" => "string", "enum" => mapping.keys.sort,
+                                "title" => discriminator,
+                                "description" => "Which variant this is. " \
+                                                 "Selects which of the optional blocks above applies." }
+      required |= [discriminator]
+    end
+
+    title = node["title"] || variants.keys.first
+    flattened << "#{title} (#{variants.size} variants, #{merged.size} properties)"
+
+    node.delete("oneOf")
+    node.delete("anyOf")
+    node.delete("discriminator")
+    node["type"] = "object"
+    node["properties"] = merged
+    node["required"] = required unless required.empty?
+  when Array
+    node.each { |value| flatten_unions!(value, schemas, flattened) }
+  end
+
+  flattened
+end
+
 # Every $ref under a node, by schema name.
 def refs_in(node, found = [])
   case node
@@ -216,6 +389,13 @@ end
 
 nulls = drop_null_properties!(spec, [])
 
+# AFTER the null pass, and the order is load-bearing: a one-time product's
+# `recurring_interval` is pinned to null, so dropping it first means the union
+# below sees only the recurring variant's enum and merges to a plain optional
+# string. Flattened first, the two would have "collided" and produced a
+# `recurring_recurring_interval` nobody wants.
+unions = flatten_unions!(spec, spec["components"]["schemas"], [])
+
 reachable = reachable_schemas(spec["paths"], spec["components"]["schemas"])
 before    = spec["components"]["schemas"].size
 spec["components"]["schemas"] = spec["components"]["schemas"].select { |name, _| reachable.include?(name) }
@@ -271,5 +451,7 @@ end
 
 warn("kept #{kept.size} collections, dropped #{dropped_collections.size}")
 warn("dropped #{nulls.size} null-typed properties: #{nulls.uniq.sort.join(', ')}")
+warn("flattened #{unions.size} unions of objects")
+unions.uniq.sort.each { |line| warn("  #{line}") }
 warn("schemas #{before} -> #{spec['components']['schemas'].size}")
 warn("wrote #{PRUNED.sub("#{ROOT}/", '')} and #{MANIFEST.sub("#{ROOT}/", '')}")

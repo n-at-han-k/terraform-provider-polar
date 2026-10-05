@@ -8,7 +8,6 @@ type ProductPrice struct {
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Id RTID `json:"id,omitempty"`
 	Source string `json:"source,omitempty"`
-	AmountType string `json:"amount_type,omitempty"`
 	PriceCurrency string `json:"price_currency,omitempty"`
 	TaxBehavior string `json:"tax_behavior,omitempty"`
 	IsArchived *bool `json:"is_archived,omitempty"`
@@ -22,4 +21,5 @@ type ProductPrice struct {
 	CapAmount int32 `json:"cap_amount,omitempty"`
 	MeterId string `json:"meter_id,omitempty"`
 	Meter *ProductPriceMeter `json:"meter,omitempty"`
+	AmountType string `json:"amount_type,omitempty"`
 }

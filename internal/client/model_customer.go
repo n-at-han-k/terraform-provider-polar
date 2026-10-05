@@ -9,9 +9,9 @@ type Customer struct {
 	ModifiedAt string `json:"modified_at,omitempty"`
 	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
 	ExternalId string `json:"external_id,omitempty"`
-	Email string `json:"email,omitempty"`
+	IndividualEmail string `json:"individual_email,omitempty"`
+	TeamEmail string `json:"team_email,omitempty"`
 	EmailVerified *bool `json:"email_verified,omitempty"`
-	Type string `json:"type,omitempty"`
 	Name string `json:"name,omitempty"`
 	BillingName string `json:"billing_name,omitempty"`
 	BillingAddress *Address `json:"billing_address,omitempty"`
@@ -22,4 +22,5 @@ type Customer struct {
 	DeletedAt string `json:"deleted_at,omitempty"`
 	FirstUserEventAt string `json:"first_user_event_at,omitempty"`
 	AvatarUrl string `json:"avatar_url,omitempty"`
+	Type string `json:"type,omitempty"`
 }
