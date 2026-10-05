@@ -90,6 +90,11 @@ jobs:
         run: |
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" dist/* --clobber
+            # DELETING A TAG TURNS ITS RELEASE BACK INTO A DRAFT, and a draft's
+            # assets are not publicly downloadable -- so a retag leaves a release
+            # that looks fine in the UI and 404s for fetchurl. Undraft on every
+            # re-run rather than only on creation.
+            gh release edit "$VERSION" --draft=false
           else
             gh release create "$VERSION" dist/* --title "$VERSION" --generate-notes
           fi
