@@ -19,7 +19,7 @@ type Product struct {
 	IsRecurring *bool `json:"is_recurring,omitempty"`
 	IsArchived *bool `json:"is_archived,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	Prices []ProductPricesItem `json:"prices,omitempty"`
 	Benefits []Benefit `json:"benefits,omitempty"`
 	Medias []ProductMediaFileRead `json:"medias,omitempty"`

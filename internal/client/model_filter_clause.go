@@ -6,5 +6,5 @@ package client
 type FilterClause struct {
 	Property string `json:"property,omitempty"`
 	Operator string `json:"operator,omitempty"`
-	Value interface{} `json:"value,omitempty"`
+	Value string `json:"value,omitempty"`
 }

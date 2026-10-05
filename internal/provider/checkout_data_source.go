@@ -46,42 +46,35 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
+			"trial_interval": schema.StringAttribute{
+				Computed:    true,
+				Description: "The interval unit for the trial period.",
+			},
+			"trial_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Description: "The number of interval units for the trial period.",
+			},
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
 			"custom_field_data": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "Key-value object storing custom field values.",
 			},
-			"payment_processor": schema.StringAttribute{
+			"discount_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Payment processor used.",
+				Description: "ID of the discount applied to the checkout.",
 			},
-			"status": schema.StringAttribute{
+			"allow_discount_codes": schema.BoolAttribute{
 				Computed:    true,
-				Description: "         Status of the checkout session.          - Open: the checkout session was opened.         - Expired: the checkout session was expired and is no more accessible.         - Confirmed: the user on the checkout session clicked Pay. This is not indicative of the payment's success status.         - Failed: the checkout definitely failed for technical reasons and cannot be retried. In most cases, this state is never reached.         - Succeeded: the payment on the checkout was performed successfully.         ",
+				Description: "Whether to allow the customer to apply discount codes. If you apply a discount through `discount_id`, it'll still be applied, but the customer won't be able to change it.",
 			},
-			"client_secret": schema.StringAttribute{
+			"require_billing_address": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Client secret used to update and complete the checkout session from the client.",
-			},
-			"url": schema.StringAttribute{
-				Computed:    true,
-				Description: "URL where the customer can access the checkout session.",
-			},
-			"expires_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Expiration date and time of the checkout session.",
-			},
-			"success_url": schema.StringAttribute{
-				Computed:    true,
-				Description: "URL where the customer will be redirected after a successful payment.",
-			},
-			"return_url": schema.StringAttribute{
-				Computed:    true,
-				Description: "When set, a back button will be shown in the checkout to return to this URL.",
-			},
-			"embed_origin": schema.StringAttribute{
-				Computed:    true,
-				Description: "When checkout is embedded, represents the Origin of the page embedding the checkout. Used as a security measure to send messages only to the embedding page.",
+				Description: "Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.",
 			},
 			"amount": schema.Int64Attribute{
 				Computed:    true,
@@ -99,89 +92,9 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "Maximum number of seats (works with seat-based pricing only)",
 			},
-			"discount_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Discount amount in cents.",
-			},
-			"net_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts but before taxes.",
-			},
-			"tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax amount in cents. If `null`, it means there is no enough information yet to calculate it.",
-			},
-			"tax_behavior": schema.StringAttribute{
-				Computed:    true,
-				Description: "Tax behavior of the checkout. `inclusive` means the price includes tax, `exclusive` means tax is added on top. If `null`, tax is not yet calculated.",
-			},
-			"total_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts and taxes.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "Currency code of the checkout session.",
-			},
 			"allow_trial": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.",
-			},
-			"active_trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "Interval unit of the trial period, if any. This value is either set from the checkout, if `trial_interval` is set, or from the selected product.",
-			},
-			"active_trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of interval units of the trial period, if any. This value is either set from the checkout, if `trial_interval_count` is set, or from the selected product.",
-			},
-			"trial_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "End date and time of the trial period, if any.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the organization owning the checkout session.",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the product to checkout.",
-			},
-			"product_price_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the product price to checkout.",
-			},
-			"discount_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the discount applied to the checkout.",
-			},
-			"allow_discount_codes": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether to allow the customer to apply discount codes. If you apply a discount through `discount_id`, it'll still be applied, but the customer won't be able to change it.",
-			},
-			"require_billing_address": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.",
-			},
-			"is_discount_applicable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the discount is applicable to the checkout. Typically, free and custom prices are not discountable.",
-			},
-			"is_free_product_price": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the product price is free, regardless of discounts.",
-			},
-			"is_payment_required": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the checkout requires payment, e.g. in case of free products or discounts that cover the total amount.",
-			},
-			"is_payment_setup_required": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the checkout requires setting up a payment method, regardless of the amount, e.g. subscriptions that have first free cycles.",
-			},
-			"is_payment_form_required": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the checkout requires a payment form, whether because of a payment or payment method setup.",
 			},
 			"customer_id": schema.StringAttribute{
 				Computed:    true,
@@ -190,6 +103,10 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 			"is_business_customer": schema.BoolAttribute{
 				Computed:    true,
 				Description: "Whether the customer is a business or an individual. If `true`, the customer will be required to fill their full billing address and billing name.",
+			},
+			"external_customer_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.",
 			},
 			"customer_name": schema.StringAttribute{
 				Computed:    true,
@@ -215,58 +132,8 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "",
 			},
-			"locale": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"payment_method_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "Payment method type selected by the customer in the checkout form, e.g. `card`, `apple_pay` or `upi`.",
-			},
-			"payment_processor_metadata": schema.StringAttribute{
+			"customer_metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
-			"billing_address_fields": schema.StringAttribute{
-				Computed:    true,
-				Description: "Determine which billing address fields should be disabled, optional or required in the checkout form.",
-			},
-			"trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "The interval unit for the trial period.",
-			},
-			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of interval units for the trial period.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
-			"external_customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.",
-			},
-			"products": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of products available to select.",
-			},
-			"product": schema.StringAttribute{
-				Computed:    true,
-				Description: "Product selected to checkout.",
-			},
-			"product_price": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"prices": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Mapping of product IDs to their list of prices.",
-			},
-			"discount": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},
@@ -274,14 +141,35 @@ func (d *CheckoutDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "",
 			},
-			"attached_custom_fields": schema.StringAttribute{
+			"success_url": schema.StringAttribute{
+				Computed:    true,
+				Description: "URL where the customer will be redirected after a successful payment.",
+			},
+			"return_url": schema.StringAttribute{
+				Computed:    true,
+				Description: "When set, a back button will be shown in the checkout to return to this URL.",
+			},
+			"embed_origin": schema.StringAttribute{
+				Computed:    true,
+				Description: "When checkout is embedded, represents the Origin of the page embedding the checkout. Used as a security measure to send messages only to the embedding page.",
+			},
+			"locale": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},
-			"customer_metadata": schema.StringAttribute{
+			"currency": schema.StringAttribute{
+				Computed:    true,
+				Description: "Currency code of the checkout session.",
+			},
+			"products": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Required:    true,
+				Description: "List of products available to select.",
+			},
+			"prices": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
-				Description: "",
+				Description: "Mapping of product IDs to their list of prices.",
 			},
 		},
 	}

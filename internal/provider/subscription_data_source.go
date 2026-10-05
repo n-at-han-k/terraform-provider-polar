@@ -34,6 +34,10 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = schema.Schema{
 		Description: "Fetches a subscription data source.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -42,167 +46,22 @@ func (d *SubscriptionDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
-			"amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The amount of the subscription.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "The currency of the subscription.",
-			},
-			"recurring_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "The interval at which the subscription recurs.",
-			},
-			"recurring_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on.",
-			},
-			"status": schema.StringAttribute{
-				Computed:    true,
-				Description: "The status of the subscription.",
-			},
-			"current_period_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the current billing period.",
-			},
-			"current_period_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "The end timestamp of the current billing period.",
-			},
-			"current_meter_period_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the current meter period, if the product has a meter cycle set. Metered credits are granted and overage is settled on this cadence.",
-			},
-			"current_meter_period_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "The end timestamp of the current meter period, if the product has a meter cycle set. This is when credits next renew.",
-			},
-			"trial_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the trial period, if any.",
-			},
-			"trial_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "The end timestamp of the trial period, if any.",
-			},
-			"cancel_at_period_end": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the subscription will be canceled at the end of the current period.",
-			},
-			"canceled_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription was canceled. The subscription might still be active if `cancel_at_period_end` is `true`.",
-			},
-			"started_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription started.",
-			},
-			"ends_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription will end.",
-			},
-			"ended_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription ended.",
-			},
-			"past_due_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription entered `past_due` status.",
-			},
-			"pause_at_period_end": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the subscription will be paused at the end of the current period.",
-			},
-			"paused_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription was paused.",
-			},
-			"resumes_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when a paused subscription is scheduled to automatically resume, if set.",
-			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the subscribed customer.",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the subscribed product.",
-			},
-			"discount_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the applied discount, if any.",
-			},
-			"checkout_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"seats": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of seats for seat-based subscriptions. None for non-seat subscriptions.",
-			},
-			"customer_cancellation_reason": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"customer_cancellation_comment": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
-			"custom_field_data": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Key-value object storing custom field values.",
+			"product_id": schema.StringAttribute{
+				Required:    true,
+				Description: "The ID of the subscribed product.",
 			},
-			"customer": schema.StringAttribute{
+			"customer_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "",
+				Description: "The ID of the subscribed customer.",
 			},
-			"product": schema.StringAttribute{
+			"external_customer_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "",
-			},
-			"discount": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"prices": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of enabled prices for the subscription.",
-			},
-			"meters": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of meters associated with the subscription.",
-			},
-			"pending_update": schema.StringAttribute{
-				Computed:    true,
-				Description: "Pending subscription update that will be applied at the beginning of the next period. If `null`, there is no pending update.",
-			},
-			"proration_behavior": schema.StringAttribute{
-				Computed:    true,
-				Description: "Determine how to handle the proration billing. If not provided, will use the default organization setting.",
-			},
-			"current_billing_period_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "Set a new date for the end of the current billing period. The subscription will renew on this date. The new date can be earlier or later than the current period end, as long as it's in the future.  It is not possible to update the current billing period on a canceled subscription.",
-			},
-			"revoke": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Cancel and revoke an active subscription immediately",
-			},
-			"resume": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Resume a paused subscription immediately, starting a new billing period and charging the customer.",
+				Description: "The ID of the customer in your system to create the subscription for. It must already exist in Polar.",
 			},
 		},
 	}

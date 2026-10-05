@@ -34,10 +34,9 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 	resp.Schema = schema.Schema{
 		Description: "Fetches a meter data source.",
 		Attributes: map[string]schema.Attribute{
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "",
+				Description: "The ID of the object.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -47,12 +46,13 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
-				Description: "The ID of the object.",
+				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "The name of the meter. Will be shown on customer's invoices and usage.",
 			},
 			"unit": schema.StringAttribute{
@@ -68,24 +68,16 @@ func (d *MeterDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
 			"filter": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
 			"aggregation": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "",
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The ID of the organization owning the meter.",
-			},
-			"archived_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Whether the meter is archived and the time it was archived.",
-			},
-			"is_archived": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the meter is archived. Archived meters are no longer used for billing.",
 			},
 		},
 	}

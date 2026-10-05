@@ -117,16 +117,16 @@ func (p *polarProvider) Resources(_ context.Context) []func() resource.Resource 
 		NewCheckoutResource,
 		NewCustomFieldResource,
 		NewCustomerResource,
-		NewCustomersExternalMemberResource,
+		NewCustomerExternalMemberResource,
 		NewCustomerMemberResource,
 		NewDiscountResource,
 		NewMeterResource,
-		NewMetricsDashboardResource,
+		NewMetricDashboardResource,
 		NewOrderResource,
 		NewOrganizationResource,
 		NewProductResource,
 		NewSubscriptionResource,
-		NewWebhooksEndpointResource,
+		NewWebhookEndpointResource,
 	}
 }
 
@@ -137,15 +137,15 @@ func (p *polarProvider) DataSources(_ context.Context) []func() datasource.DataS
 		NewCheckoutDataSource,
 		NewCustomFieldDataSource,
 		NewCustomerDataSource,
-		NewCustomersExternalMemberDataSource,
+		NewCustomerExternalMemberDataSource,
 		NewCustomerMemberDataSource,
 		NewDiscountDataSource,
 		NewMeterDataSource,
-		NewMetricsDashboardDataSource,
+		NewMetricDashboardDataSource,
 		NewOrderDataSource,
 		NewOrganizationDataSource,
 		NewProductDataSource,
 		NewSubscriptionDataSource,
-		NewWebhooksEndpointDataSource,
+		NewWebhookEndpointDataSource,
 	}
 }

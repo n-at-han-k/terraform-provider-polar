@@ -34,8 +34,8 @@ type Subscription struct {
 	Seats int32 `json:"seats,omitempty"`
 	CustomerCancellationReason string `json:"customer_cancellation_reason,omitempty"`
 	CustomerCancellationComment string `json:"customer_cancellation_comment,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
-	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
 	Customer *SubscriptionCustomer `json:"customer,omitempty"`
 	Product *Product `json:"product,omitempty"`
 	Discount *SubscriptionDiscount `json:"discount,omitempty"`

@@ -46,6 +46,11 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "",
+			},
 			"trial_interval": schema.StringAttribute{
 				Computed:    true,
 				Description: "The interval unit for the trial period.",
@@ -54,26 +59,9 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "The number of interval units for the trial period.",
 			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
 			"payment_processor": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Payment processor used.",
-			},
-			"client_secret": schema.StringAttribute{
-				Computed:    true,
-				Description: "Client secret used to access the checkout link.",
-			},
-			"success_url": schema.StringAttribute{
-				Computed:    true,
-				Description: "URL where the customer will be redirected after a successful payment.",
-			},
-			"return_url": schema.StringAttribute{
-				Computed:    true,
-				Description: "When set, a back button will be shown in the checkout to return to this URL.",
 			},
 			"label": schema.StringAttribute{
 				Computed:    true,
@@ -95,20 +83,24 @@ func (d *CheckoutLinkDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Preconfigured number of seats for seat-based pricing. When set, checkout sessions created from this link are locked to this number of seats and the customer won't be able to change it. All products on the link must use seat-based pricing and allow this number of seats. If the products no longer accommodate this value when the link is opened, it'll be ignored.",
 			},
-			"organization_id": schema.StringAttribute{
+			"success_url": schema.StringAttribute{
 				Computed:    true,
-				Description: "The organization ID.",
+				Description: "URL where the customer will be redirected after a successful payment.",
+			},
+			"return_url": schema.StringAttribute{
+				Computed:    true,
+				Description: "When set, a back button will be shown in the checkout to return to this URL.",
+			},
+			"product_price_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"product_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
 			},
 			"products": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
-			"discount": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"url": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},

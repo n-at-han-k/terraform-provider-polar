@@ -13,37 +13,59 @@ import (
 
 // OrganizationModel is the Terraform model for organization.
 type OrganizationModel struct {
+	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Slug types.String `tfsdk:"slug"`
 	AvatarUrl types.String `tfsdk:"avatar_url"`
-	ProrationBehavior types.String `tfsdk:"proration_behavior"`
-	AllowCustomerUpdates types.Bool `tfsdk:"allow_customer_updates"`
+	LegalEntity *OrganizationLegalEntityModel `tfsdk:"legal_entity"`
 	Email types.String `tfsdk:"email"`
 	Website types.String `tfsdk:"website"`
 	Socials []OrganizationSocialsModel `tfsdk:"socials"`
-	Status types.String `tfsdk:"status"`
-	DetailsSubmittedAt types.String `tfsdk:"details_submitted_at"`
-	OnboardingResubmissionRequestedAt types.String `tfsdk:"onboarding_resubmission_requested_at"`
-	SsoEnforced types.Bool `tfsdk:"sso_enforced"`
-	DefaultPresentmentCurrency types.String `tfsdk:"default_presentment_currency"`
-	DefaultTaxBehavior types.String `tfsdk:"default_tax_behavior"`
+	Details *OrganizationDetailsModel `tfsdk:"details"`
+	Country types.String `tfsdk:"country"`
 	FeatureSettings *OrganizationFeatureSettingsModel `tfsdk:"feature_settings"`
 	SubscriptionSettings *OrganizationSubscriptionSettingsModel `tfsdk:"subscription_settings"`
 	CustomerEmailSettings *OrganizationCustomerEmailSettingsModel `tfsdk:"customer_email_settings"`
 	CustomerPortalSettings *OrganizationCustomerPortalSettingsModel `tfsdk:"customer_portal_settings"`
-	DisputeSettings *OrganizationDisputeSettingsModel `tfsdk:"dispute_settings"`
-	EmbedHosts jsontypes.Normalized `tfsdk:"embed_hosts"`
-	EmbedHostsEnforced types.Bool `tfsdk:"embed_hosts_enforced"`
-	Country types.String `tfsdk:"country"`
-	AccountId types.String `tfsdk:"account_id"`
-	PayoutAccountId types.String `tfsdk:"payout_account_id"`
-	Capabilities *OrganizationCapabilitiesModel `tfsdk:"capabilities"`
-	Details *OrganizationDetailsModel `tfsdk:"details"`
+	DefaultPresentmentCurrency types.String `tfsdk:"default_presentment_currency"`
+	DefaultTaxBehavior types.String `tfsdk:"default_tax_behavior"`
 }
 
+// OrganizationLegalEntityModel is one `legal_entity` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type OrganizationLegalEntityModel struct {
+	RegisteredName types.String `tfsdk:"registered_name"`
+	Type types.String `tfsdk:"type"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCreateLegalEntity, error) {
+	out := &client.OrganizationCreateLegalEntity{}
+	if !m.RegisteredName.IsNull() && !m.RegisteredName.IsUnknown() {
+		out.RegisteredName = m.RegisteredName.ValueString()
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCreateLegalEntity) {
+	m.RegisteredName = types.StringValue(c.RegisteredName)
+	m.Type = types.StringValue(c.Type)
+}
 // OrganizationSocialsModel is one `socials` block.
 //
 // A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
@@ -76,6 +98,108 @@ func (m *OrganizationSocialsModel) ToClientModel() (*client.OrganizationSocialLi
 func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialLink) {
 	m.Platform = types.StringValue(c.Platform)
 	m.Url = types.StringValue(c.Url)
+}
+// OrganizationDetailsModel is one `details` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type OrganizationDetailsModel struct {
+	About types.String `tfsdk:"about"`
+	ProductDescription types.String `tfsdk:"product_description"`
+	SellingCategories jsontypes.Normalized `tfsdk:"selling_categories"`
+	PricingModels jsontypes.Normalized `tfsdk:"pricing_models"`
+	IntendedUse types.String `tfsdk:"intended_use"`
+	CustomerAcquisition jsontypes.Normalized `tfsdk:"customer_acquisition"`
+	FutureAnnualRevenue types.Int64 `tfsdk:"future_annual_revenue"`
+	Switching types.Bool `tfsdk:"switching"`
+	SwitchingFrom types.String `tfsdk:"switching_from"`
+	PreviousAnnualRevenue types.Int64 `tfsdk:"previous_annual_revenue"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails, error) {
+	out := &client.OrganizationDetails{}
+	if !m.About.IsNull() && !m.About.IsUnknown() {
+		out.About = m.About.ValueString()
+	}
+	if !m.ProductDescription.IsNull() && !m.ProductDescription.IsUnknown() {
+		out.ProductDescription = m.ProductDescription.ValueString()
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.SellingCategories.IsNull() && !m.SellingCategories.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.SellingCategories.ValueString()), &out.SellingCategories); err != nil {
+			return out, fmt.Errorf("selling_categories: %w", err)
+		}
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.PricingModels.IsNull() && !m.PricingModels.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.PricingModels.ValueString()), &out.PricingModels); err != nil {
+			return out, fmt.Errorf("pricing_models: %w", err)
+		}
+	}
+	if !m.IntendedUse.IsNull() && !m.IntendedUse.IsUnknown() {
+		out.IntendedUse = m.IntendedUse.ValueString()
+	}
+	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
+	if !m.CustomerAcquisition.IsNull() && !m.CustomerAcquisition.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.CustomerAcquisition.ValueString()), &out.CustomerAcquisition); err != nil {
+			return out, fmt.Errorf("customer_acquisition: %w", err)
+		}
+	}
+	if !m.FutureAnnualRevenue.IsNull() && !m.FutureAnnualRevenue.IsUnknown() {
+		out.FutureAnnualRevenue = int32(m.FutureAnnualRevenue.ValueInt64())
+	}
+	if !m.Switching.IsNull() && !m.Switching.IsUnknown() {
+		Switching := m.Switching.ValueBool()
+		out.Switching = &Switching
+	}
+	if !m.SwitchingFrom.IsNull() && !m.SwitchingFrom.IsUnknown() {
+		out.SwitchingFrom = m.SwitchingFrom.ValueString()
+	}
+	if !m.PreviousAnnualRevenue.IsNull() && !m.PreviousAnnualRevenue.IsUnknown() {
+		out.PreviousAnnualRevenue = int32(m.PreviousAnnualRevenue.ValueInt64())
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails) {
+	m.About = types.StringValue(c.About)
+	m.ProductDescription = types.StringValue(c.ProductDescription)
+	if encoded, err := json.Marshal(c.SellingCategories); err == nil {
+		if m.SellingCategories.IsNull() || m.SellingCategories.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.SellingCategories.ValueString()) {
+			m.SellingCategories = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	if encoded, err := json.Marshal(c.PricingModels); err == nil {
+		if m.PricingModels.IsNull() || m.PricingModels.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.PricingModels.ValueString()) {
+			m.PricingModels = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.IntendedUse = types.StringValue(c.IntendedUse)
+	if encoded, err := json.Marshal(c.CustomerAcquisition); err == nil {
+		if m.CustomerAcquisition.IsNull() || m.CustomerAcquisition.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.CustomerAcquisition.ValueString()) {
+			m.CustomerAcquisition = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.FutureAnnualRevenue = types.Int64Value(int64(c.FutureAnnualRevenue))
+	if c.Switching != nil {
+		m.Switching = types.BoolValue(*c.Switching)
+	} else {
+		m.Switching = types.BoolNull()
+	}
+	m.SwitchingFrom = types.StringValue(c.SwitchingFrom)
+	m.PreviousAnnualRevenue = types.Int64Value(int64(c.PreviousAnnualRevenue))
 }
 // OrganizationFeatureSettingsModel is one `feature_settings` block.
 //
@@ -395,228 +519,25 @@ func (m *OrganizationCustomerPortalSettingsModel) ToClientModel() (*client.Organ
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModel) FromClientModel(c *client.OrganizationCustomerPortalSettings) {
 }
-// OrganizationDisputeSettingsModel is one `dispute_settings` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type OrganizationDisputeSettingsModel struct {
-	AutoAcceptBelowAmount types.Int64 `tfsdk:"auto_accept_below_amount"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *OrganizationDisputeSettingsModel) ToClientModel() (*client.OrganizationDisputeSettingsUpdate, error) {
-	out := &client.OrganizationDisputeSettingsUpdate{}
-	if !m.AutoAcceptBelowAmount.IsNull() && !m.AutoAcceptBelowAmount.IsUnknown() {
-		out.AutoAcceptBelowAmount = int32(m.AutoAcceptBelowAmount.ValueInt64())
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *OrganizationDisputeSettingsModel) FromClientModel(c *client.OrganizationDisputeSettingsUpdate) {
-	m.AutoAcceptBelowAmount = types.Int64Value(int64(c.AutoAcceptBelowAmount))
-}
-// OrganizationCapabilitiesModel is one `capabilities` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type OrganizationCapabilitiesModel struct {
-	CheckoutPayments types.Bool `tfsdk:"checkout_payments"`
-	SubscriptionRenewals types.Bool `tfsdk:"subscription_renewals"`
-	Payouts types.Bool `tfsdk:"payouts"`
-	Refunds types.Bool `tfsdk:"refunds"`
-	ApiAccess types.Bool `tfsdk:"api_access"`
-	DashboardAccess types.Bool `tfsdk:"dashboard_access"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *OrganizationCapabilitiesModel) ToClientModel() (*client.OrganizationCapabilities, error) {
-	out := &client.OrganizationCapabilities{}
-	if !m.CheckoutPayments.IsNull() && !m.CheckoutPayments.IsUnknown() {
-		CheckoutPayments := m.CheckoutPayments.ValueBool()
-		out.CheckoutPayments = &CheckoutPayments
-	}
-	if !m.SubscriptionRenewals.IsNull() && !m.SubscriptionRenewals.IsUnknown() {
-		SubscriptionRenewals := m.SubscriptionRenewals.ValueBool()
-		out.SubscriptionRenewals = &SubscriptionRenewals
-	}
-	if !m.Payouts.IsNull() && !m.Payouts.IsUnknown() {
-		Payouts := m.Payouts.ValueBool()
-		out.Payouts = &Payouts
-	}
-	if !m.Refunds.IsNull() && !m.Refunds.IsUnknown() {
-		Refunds := m.Refunds.ValueBool()
-		out.Refunds = &Refunds
-	}
-	if !m.ApiAccess.IsNull() && !m.ApiAccess.IsUnknown() {
-		ApiAccess := m.ApiAccess.ValueBool()
-		out.ApiAccess = &ApiAccess
-	}
-	if !m.DashboardAccess.IsNull() && !m.DashboardAccess.IsUnknown() {
-		DashboardAccess := m.DashboardAccess.ValueBool()
-		out.DashboardAccess = &DashboardAccess
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *OrganizationCapabilitiesModel) FromClientModel(c *client.OrganizationCapabilities) {
-	if c.CheckoutPayments != nil {
-		m.CheckoutPayments = types.BoolValue(*c.CheckoutPayments)
-	} else {
-		m.CheckoutPayments = types.BoolNull()
-	}
-	if c.SubscriptionRenewals != nil {
-		m.SubscriptionRenewals = types.BoolValue(*c.SubscriptionRenewals)
-	} else {
-		m.SubscriptionRenewals = types.BoolNull()
-	}
-	if c.Payouts != nil {
-		m.Payouts = types.BoolValue(*c.Payouts)
-	} else {
-		m.Payouts = types.BoolNull()
-	}
-	if c.Refunds != nil {
-		m.Refunds = types.BoolValue(*c.Refunds)
-	} else {
-		m.Refunds = types.BoolNull()
-	}
-	if c.ApiAccess != nil {
-		m.ApiAccess = types.BoolValue(*c.ApiAccess)
-	} else {
-		m.ApiAccess = types.BoolNull()
-	}
-	if c.DashboardAccess != nil {
-		m.DashboardAccess = types.BoolValue(*c.DashboardAccess)
-	} else {
-		m.DashboardAccess = types.BoolNull()
-	}
-}
-// OrganizationDetailsModel is one `details` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type OrganizationDetailsModel struct {
-	About types.String `tfsdk:"about"`
-	ProductDescription types.String `tfsdk:"product_description"`
-	SellingCategories jsontypes.Normalized `tfsdk:"selling_categories"`
-	PricingModels jsontypes.Normalized `tfsdk:"pricing_models"`
-	IntendedUse types.String `tfsdk:"intended_use"`
-	CustomerAcquisition jsontypes.Normalized `tfsdk:"customer_acquisition"`
-	FutureAnnualRevenue types.Int64 `tfsdk:"future_annual_revenue"`
-	Switching types.Bool `tfsdk:"switching"`
-	SwitchingFrom types.String `tfsdk:"switching_from"`
-	PreviousAnnualRevenue types.Int64 `tfsdk:"previous_annual_revenue"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails, error) {
-	out := &client.OrganizationDetails{}
-	if !m.About.IsNull() && !m.About.IsUnknown() {
-		out.About = m.About.ValueString()
-	}
-	if !m.ProductDescription.IsNull() && !m.ProductDescription.IsUnknown() {
-		out.ProductDescription = m.ProductDescription.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.SellingCategories.IsNull() && !m.SellingCategories.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.SellingCategories.ValueString()), &out.SellingCategories); err != nil {
-			return out, fmt.Errorf("selling_categories: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.PricingModels.IsNull() && !m.PricingModels.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.PricingModels.ValueString()), &out.PricingModels); err != nil {
-			return out, fmt.Errorf("pricing_models: %w", err)
-		}
-	}
-	if !m.IntendedUse.IsNull() && !m.IntendedUse.IsUnknown() {
-		out.IntendedUse = m.IntendedUse.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.CustomerAcquisition.IsNull() && !m.CustomerAcquisition.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.CustomerAcquisition.ValueString()), &out.CustomerAcquisition); err != nil {
-			return out, fmt.Errorf("customer_acquisition: %w", err)
-		}
-	}
-	if !m.FutureAnnualRevenue.IsNull() && !m.FutureAnnualRevenue.IsUnknown() {
-		out.FutureAnnualRevenue = int32(m.FutureAnnualRevenue.ValueInt64())
-	}
-	if !m.Switching.IsNull() && !m.Switching.IsUnknown() {
-		Switching := m.Switching.ValueBool()
-		out.Switching = &Switching
-	}
-	if !m.SwitchingFrom.IsNull() && !m.SwitchingFrom.IsUnknown() {
-		out.SwitchingFrom = m.SwitchingFrom.ValueString()
-	}
-	if !m.PreviousAnnualRevenue.IsNull() && !m.PreviousAnnualRevenue.IsUnknown() {
-		out.PreviousAnnualRevenue = int32(m.PreviousAnnualRevenue.ValueInt64())
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails) {
-	m.About = types.StringValue(c.About)
-	m.ProductDescription = types.StringValue(c.ProductDescription)
-	if encoded, err := json.Marshal(c.SellingCategories); err == nil {
-		if m.SellingCategories.IsNull() || m.SellingCategories.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.SellingCategories.ValueString()) {
-			m.SellingCategories = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.PricingModels); err == nil {
-		if m.PricingModels.IsNull() || m.PricingModels.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.PricingModels.ValueString()) {
-			m.PricingModels = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	m.IntendedUse = types.StringValue(c.IntendedUse)
-	if encoded, err := json.Marshal(c.CustomerAcquisition); err == nil {
-		if m.CustomerAcquisition.IsNull() || m.CustomerAcquisition.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.CustomerAcquisition.ValueString()) {
-			m.CustomerAcquisition = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	m.FutureAnnualRevenue = types.Int64Value(int64(c.FutureAnnualRevenue))
-	if c.Switching != nil {
-		m.Switching = types.BoolValue(*c.Switching)
-	} else {
-		m.Switching = types.BoolNull()
-	}
-	m.SwitchingFrom = types.StringValue(c.SwitchingFrom)
-	m.PreviousAnnualRevenue = types.Int64Value(int64(c.PreviousAnnualRevenue))
-}
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *OrganizationModel) ToClientModel() (*client.OrganizationUpdate, error) {
-	out := &client.OrganizationUpdate{}
+func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) {
+	out := &client.OrganizationCreate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
 	}
+	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
+		out.Slug = m.Slug.ValueString()
+	}
 	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
 		out.AvatarUrl = m.AvatarUrl.ValueString()
+	}
+	if m.LegalEntity != nil {
+		converted, err := m.LegalEntity.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("legal_entity: %w", err)
+		}
+		out.LegalEntity = converted
 	}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
 		out.Email = m.Email.ValueString()
@@ -634,17 +555,15 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationUpdate, error) 
 			out.Socials = append(out.Socials, *converted)
 		}
 	}
-	if !m.SsoEnforced.IsNull() && !m.SsoEnforced.IsUnknown() {
-		// Addressed, not assigned: the client field is a *bool so that an
-		// explicit false is sent rather than dropped by `omitempty`.
-		SsoEnforced := m.SsoEnforced.ValueBool()
-		out.SsoEnforced = &SsoEnforced
+	if m.Details != nil {
+		converted, err := m.Details.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("details: %w", err)
+		}
+		out.Details = converted
 	}
-	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
-		out.DefaultPresentmentCurrency = m.DefaultPresentmentCurrency.ValueString()
-	}
-	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
-		out.DefaultTaxBehavior = m.DefaultTaxBehavior.ValueString()
+	if !m.Country.IsNull() && !m.Country.IsUnknown() {
+		out.Country = m.Country.ValueString()
 	}
 	if m.FeatureSettings != nil {
 		converted, err := m.FeatureSettings.ToClientModel()
@@ -674,23 +593,46 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationUpdate, error) 
 		}
 		out.CustomerPortalSettings = converted
 	}
-	if m.DisputeSettings != nil {
-		converted, err := m.DisputeSettings.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("dispute_settings: %w", err)
-		}
-		out.DisputeSettings = converted
+	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
+		out.DefaultPresentmentCurrency = m.DefaultPresentmentCurrency.ValueString()
 	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.EmbedHosts.IsNull() && !m.EmbedHosts.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.EmbedHosts.ValueString()), &out.EmbedHosts); err != nil {
-			return out, fmt.Errorf("embed_hosts: %w", err)
-		}
+	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
+		out.DefaultTaxBehavior = m.DefaultTaxBehavior.ValueString()
 	}
-	if !m.Country.IsNull() && !m.Country.IsUnknown() {
-		out.Country = m.Country.ValueString()
+	return out, nil
+}
+
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *OrganizationModel) ToUpdateModel() (*client.OrganizationUpdate, error) {
+	out := &client.OrganizationUpdate{}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
+		out.AvatarUrl = m.AvatarUrl.ValueString()
+	}
+	if !m.Email.IsNull() && !m.Email.IsUnknown() {
+		out.Email = m.Email.ValueString()
+	}
+	if !m.Website.IsNull() && !m.Website.IsUnknown() {
+		out.Website = m.Website.ValueString()
+	}
+	if len(m.Socials) > 0 {
+		out.Socials = make([]client.OrganizationSocialLink, 0, len(m.Socials))
+		for index := range m.Socials {
+			converted, err := m.Socials[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("socials[%d]: %w", index, err)
+			}
+			out.Socials = append(out.Socials, *converted)
+		}
 	}
 	if m.Details != nil {
 		converted, err := m.Details.ToClientModel()
@@ -699,28 +641,54 @@ func (m *OrganizationModel) ToClientModel() (*client.OrganizationUpdate, error) 
 		}
 		out.Details = converted
 	}
+	if !m.Country.IsNull() && !m.Country.IsUnknown() {
+		out.Country = m.Country.ValueString()
+	}
+	if m.FeatureSettings != nil {
+		converted, err := m.FeatureSettings.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("feature_settings: %w", err)
+		}
+		out.FeatureSettings = converted
+	}
+	if m.SubscriptionSettings != nil {
+		converted, err := m.SubscriptionSettings.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("subscription_settings: %w", err)
+		}
+		out.SubscriptionSettings = converted
+	}
+	if m.CustomerEmailSettings != nil {
+		converted, err := m.CustomerEmailSettings.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("customer_email_settings: %w", err)
+		}
+		out.CustomerEmailSettings = converted
+	}
+	if m.CustomerPortalSettings != nil {
+		converted, err := m.CustomerPortalSettings.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("customer_portal_settings: %w", err)
+		}
+		out.CustomerPortalSettings = converted
+	}
+	if !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
+		out.DefaultPresentmentCurrency = m.DefaultPresentmentCurrency.ValueString()
+	}
+	if !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
+		out.DefaultTaxBehavior = m.DefaultTaxBehavior.ValueString()
+	}
 	return out, nil
 }
 
-
 // FromClientModel updates the Terraform model from a client model.
 func (m *OrganizationModel) FromClientModel(c *client.Organization) {
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
 	m.Name = types.StringValue(c.Name)
 	m.Slug = types.StringValue(c.Slug)
 	m.AvatarUrl = types.StringValue(c.AvatarUrl)
-	m.ProrationBehavior = types.StringValue(c.ProrationBehavior)
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.AllowCustomerUpdates != nil {
-		m.AllowCustomerUpdates = types.BoolValue(*c.AllowCustomerUpdates)
-	} else if m.AllowCustomerUpdates.IsUnknown() {
-		m.AllowCustomerUpdates = types.BoolNull()
-	}
 	m.Email = types.StringValue(c.Email)
 	m.Website = types.StringValue(c.Website)
 	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
@@ -736,20 +704,7 @@ func (m *OrganizationModel) FromClientModel(c *client.Organization) {
 		Socials = append(Socials, block)
 	}
 	m.Socials = Socials
-	m.Status = types.StringValue(c.Status)
-	m.DetailsSubmittedAt = types.StringValue(c.DetailsSubmittedAt)
-	m.OnboardingResubmissionRequestedAt = types.StringValue(c.OnboardingResubmissionRequestedAt)
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.SsoEnforced != nil {
-		m.SsoEnforced = types.BoolValue(*c.SsoEnforced)
-	} else if m.SsoEnforced.IsUnknown() {
-		m.SsoEnforced = types.BoolNull()
-	}
-	m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
-	m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
+	m.Country = types.StringValue(c.Country)
 	// A pointer the server left nil is a block that is not there. Writing an
 	// empty one instead would be a diff against a configuration that correctly
 	// omitted it.
@@ -789,42 +744,6 @@ func (m *OrganizationModel) FromClientModel(c *client.Organization) {
 	} else {
 		m.CustomerPortalSettings = nil
 	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.EmbedHosts); err == nil {
-		if m.EmbedHosts.IsNull() || m.EmbedHosts.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.EmbedHosts.ValueString()) {
-			m.EmbedHosts = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.EmbedHostsEnforced != nil {
-		m.EmbedHostsEnforced = types.BoolValue(*c.EmbedHostsEnforced)
-	} else if m.EmbedHostsEnforced.IsUnknown() {
-		m.EmbedHostsEnforced = types.BoolNull()
-	}
-	m.Country = types.StringValue(c.Country)
-	m.AccountId = types.StringValue(c.AccountId)
-	m.PayoutAccountId = types.StringValue(c.PayoutAccountId)
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.Capabilities != nil {
-		block := OrganizationCapabilitiesModel{}
-		if m.Capabilities != nil {
-			block = *m.Capabilities
-		}
-		block.FromClientModel(c.Capabilities)
-		m.Capabilities = &block
-	} else {
-		m.Capabilities = nil
-	}
+	m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
+	m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
 }

@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -42,31 +43,9 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 	resp.Schema = schema.Schema{
 		Description: "Manages a discount resource.",
 		Attributes: map[string]schema.Attribute{
-			"duration": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"type": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"amount": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"amounts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Optional:    true,
-				Description: "Map of currency to fixed amount to discount from the total.",
+				Description: "The ID of the object.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -76,10 +55,6 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
@@ -87,8 +62,7 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
 			},
 			"code": schema.StringAttribute{
@@ -116,18 +90,19 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "Maximum number of times the discount can be redeemed by a single customer.",
 			},
-			"redemptions_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of times the discount has been redeemed.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The organization ID.",
-			},
 			"products": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
+				Description: "",
+			},
+			"organization_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The organization ID.",
+			},
+			"duration": schema.StringAttribute{
+				Required:    true,
 				Description: "",
 			},
 			"duration_in_months": schema.Int64Attribute{
@@ -135,10 +110,30 @@ func (r *DiscountResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "",
 			},
+			"amount": schema.Int64Attribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"currency": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"amounts": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "Map of currency to fixed amount to discount from the total.",
+			},
 			"basis_points": schema.Int64Attribute{
 				Computed:    true,
 				Optional:    true,
 				Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
+			},
+			"type": schema.StringAttribute{
+				Required:    true,
+				Description: "",
 			},
 		},
 	}
@@ -162,7 +157,52 @@ func (r *DiscountResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *DiscountResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for discount")
+	var plan DiscountModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid discount configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/discounts/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating discount", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/discounts/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created discount", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Discount
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created discount resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *DiscountResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -231,7 +271,8 @@ func (r *DiscountResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid discount configuration", err.Error())
 		return

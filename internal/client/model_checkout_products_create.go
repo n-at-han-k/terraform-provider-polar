@@ -6,8 +6,8 @@ package client
 type CheckoutProductsCreate struct {
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
-	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
+	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
 	DiscountId string `json:"discount_id,omitempty"`
 	AllowDiscountCodes *bool `json:"allow_discount_codes,omitempty"`
 	RequireBillingAddress *bool `json:"require_billing_address,omitempty"`
@@ -25,7 +25,7 @@ type CheckoutProductsCreate struct {
 	CustomerBillingName string `json:"customer_billing_name,omitempty"`
 	CustomerBillingAddress *AddressInput `json:"customer_billing_address,omitempty"`
 	CustomerTaxId string `json:"customer_tax_id,omitempty"`
-	CustomerMetadata map[string]MetadataValue1 `json:"customer_metadata,omitempty"`
+	CustomerMetadata map[string]string `json:"customer_metadata,omitempty"`
 	SubscriptionId string `json:"subscription_id,omitempty"`
 	SuccessUrl string `json:"success_url,omitempty"`
 	ReturnUrl string `json:"return_url,omitempty"`

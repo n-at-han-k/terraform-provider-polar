@@ -21,9 +21,9 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-{{#hasJsonAttributes}}
+{{#hasFlatJsonAttributes}}
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
-{{/hasJsonAttributes}}
+{{/hasFlatJsonAttributes}}
 {{#hasRead}}
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 {{/hasRead}}

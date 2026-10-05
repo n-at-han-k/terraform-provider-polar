@@ -34,26 +34,9 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 	resp.Schema = schema.Schema{
 		Description: "Fetches a discount data source.",
 		Attributes: map[string]schema.Attribute{
-			"duration": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "",
-			},
-			"type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"amounts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Map of currency to fixed amount to discount from the total.",
+				Description: "The ID of the object.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -63,17 +46,13 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
 			},
 			"code": schema.StringAttribute{
@@ -96,26 +75,43 @@ func (d *DiscountDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "Maximum number of times the discount can be redeemed by a single customer.",
 			},
-			"redemptions_count": schema.Int64Attribute{
+			"products": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
-				Description: "Number of times the discount has been redeemed.",
+				Description: "",
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The organization ID.",
 			},
-			"products": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
+			"duration": schema.StringAttribute{
+				Required:    true,
 				Description: "",
 			},
 			"duration_in_months": schema.Int64Attribute{
 				Computed:    true,
 				Description: "",
 			},
+			"amount": schema.Int64Attribute{
+				Computed:    true,
+				Description: "",
+			},
+			"currency": schema.StringAttribute{
+				Computed:    true,
+				Description: "",
+			},
+			"amounts": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "Map of currency to fixed amount to discount from the total.",
+			},
 			"basis_points": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
+			},
+			"type": schema.StringAttribute{
+				Required:    true,
+				Description: "",
 			},
 		},
 	}

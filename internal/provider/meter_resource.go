@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -42,11 +43,9 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 	resp.Schema = schema.Schema{
 		Description: "Manages a meter resource.",
 		Attributes: map[string]schema.Attribute{
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"id": schema.StringAttribute{
 				Computed:    true,
-				Optional:    true,
-				Description: "",
+				Description: "The ID of the object.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -56,13 +55,14 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
-			"name": schema.StringAttribute{
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
+				Description: "",
+			},
+			"name": schema.StringAttribute{
+				Required:    true,
 				Description: "The name of the meter. Will be shown on customer's invoices and usage.",
 			},
 			"unit": schema.StringAttribute{
@@ -81,23 +81,37 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Description: "The multiplier to convert from base unit to display scale.",
 			},
 			"filter": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"conjunction": schema.StringAttribute{
 						Required:    true,
 						Description: "",
 					},
-					"clauses": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"clauses": schema.ListNestedAttribute{
 						Required:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"property": schema.StringAttribute{
+							Required:    true,
+							Description: "",
+						},
+						"operator": schema.StringAttribute{
+							Required:    true,
+							Description: "",
+						},
+						"value": schema.StringAttribute{
+							Required:    true,
+							Description: "",
+						},
+					},
+				},
 						Description: "",
 					},
 				},
 				Description: "The filter to apply on events that'll be used to calculate the meter.",
 			},
 			"aggregation": schema.SingleNestedAttribute{
-				Optional:    true,
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"property": schema.StringAttribute{
 						Computed:    true,
@@ -113,15 +127,8 @@ func (r *MeterResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the organization owning the meter.",
-			},
-			"archived_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Whether the meter is archived and the time it was archived.",
-			},
-			"is_archived": schema.BoolAttribute{
 				Optional:    true,
-				Description: "Whether the meter is archived. Archived meters are no longer used for billing.",
+				Description: "The ID of the organization owning the meter.",
 			},
 		},
 	}
@@ -145,7 +152,52 @@ func (r *MeterResource) Configure(_ context.Context, req resource.ConfigureReque
 }
 
 func (r *MeterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for meter")
+	var plan MeterModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid meter configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/meters/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating meter", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/meters/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created meter", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Meter
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created meter resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *MeterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -214,7 +266,8 @@ func (r *MeterResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid meter configuration", err.Error())
 		return

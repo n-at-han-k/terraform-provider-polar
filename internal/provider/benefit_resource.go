@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -54,32 +55,20 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"description": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The description of the benefit.",
-			},
-			"selectable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is selectable when creating a product.",
-			},
-			"deletable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is deletable.",
-			},
-			"is_deleted": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is deleted.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the benefit.",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
 				Description: "",
+			},
+			"description": schema.StringAttribute{
+				Required:    true,
+				Description: "The description of the benefit.",
+			},
+			"organization_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The ID of the organization owning the benefit.",
 			},
 			"visibility": schema.StringAttribute{
 				Computed:    true,
@@ -87,23 +76,22 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "The visibility of the benefit in the customer portal.",
 			},
 			"custom_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"note": schema.StringAttribute{
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "Private note to be shared with customers who have this benefit granted.",
 					},
 				},
 				Description: "",
 			},
 			"discord_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
-					"guild_id": schema.StringAttribute{
+					"guild_token": schema.StringAttribute{
 						Required:    true,
-						Description: "The ID of the Discord server.",
+						Description: "",
 					},
 					"role_id": schema.StringAttribute{
 						Required:    true,
@@ -113,15 +101,10 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 						Required:    true,
 						Description: "Whether to kick the member from the Discord server on revocation.",
 					},
-					"guild_token": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
 				},
 				Description: "",
 			},
 			"github_repository_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"repository_owner": schema.StringAttribute{
@@ -140,12 +123,12 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"downloadables_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"archived": schema.StringAttribute{
 						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "",
 					},
 					"files": schema.StringAttribute{
@@ -157,30 +140,32 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Description: "",
 			},
 			"license_keys_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"prefix": schema.StringAttribute{
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "",
 					},
 					"expires": schema.StringAttribute{
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "",
 					},
 					"activations": schema.StringAttribute{
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "",
 					},
 					"limit_usage": schema.Int64Attribute{
-						Required:    true,
+						Computed:    true,
+						Optional:    true,
 						Description: "",
 					},
 				},
 				Description: "",
 			},
 			"meter_credit_properties": schema.SingleNestedAttribute{
-				Computed:    true,
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"units": schema.Int64Attribute{
@@ -201,197 +186,10 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"feature_flag_properties": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
+				Optional:    true,
 				Description: "Properties for a benefit of type `feature_flag`.",
 			},
 			"slack_shared_channel_properties": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"slack_integration_id": schema.StringAttribute{
-						Required:    true,
-						Description: "Polar Slack integration linked to this benefit.",
-					},
-					"channel_name_template": schema.StringAttribute{
-						Required:    true,
-						Description: "Template for the channel name. Supports placeholders: {customer_name}, {customer_email_local}, and {metadata.<key>} for any value stored in customer user metadata.",
-					},
-					"private": schema.BoolAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Create the channel as private (recommended).",
-					},
-					"welcome_message": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Optional message posted to the channel right after creation.",
-					},
-					"archive_on_revoke": schema.BoolAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Archive the channel when the benefit is revoked.",
-					},
-					"team_invitees": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Slack user IDs from the merchant workspace to invite to every channel created for this benefit.",
-					},
-				},
-				Description: "",
-			},
-			"visibility_configurable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"type": schema.StringAttribute{
-				Computed:    true,
-				Description: "Which variant this is. Selects which of the optional blocks above applies.",
-			},
-			"benefit_custom_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_discord_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_git_hub_repository_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_downloadables_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_license_keys_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_meter_credit_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_feature_flag_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_slack_shared_channel_update_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "",
-			},
-			"benefit_custom_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"note": schema.StringAttribute{
-						Required:    true,
-						Description: "Private note to be shared with customers who have this benefit granted.",
-					},
-				},
-				Description: "",
-			},
-			"benefit_discord_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"guild_token": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"role_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the Discord role to grant.",
-					},
-					"kick_member": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether to kick the member from the Discord server on revocation.",
-					},
-				},
-				Description: "",
-			},
-			"benefit_git_hub_repository_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"repository_owner": schema.StringAttribute{
-						Required:    true,
-						Description: "The owner of the repository.",
-					},
-					"repository_name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the repository.",
-					},
-					"permission": schema.StringAttribute{
-						Required:    true,
-						Description: "The permission level to grant. Read more about roles and their permissions on [GitHub documentation](https://docs.github.com/en/organizations/managing-user-access-to-your-organizations-repositories/managing-repository-roles/repository-roles-for-an-organization#permissions-for-each-role).",
-					},
-				},
-				Description: "",
-			},
-			"benefit_downloadables_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"archived": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"files": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"benefit_license_keys_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"prefix": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"expires": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"activations": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"limit_usage": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"benefit_meter_credit_update_properties": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"units": schema.Int64Attribute{
-						Required:    true,
-						Description: "",
-					},
-					"rollover": schema.BoolAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"meter_id": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"benefit_feature_flag_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Optional:    true,
-				Description: "Properties for a benefit of type `feature_flag`.",
-			},
-			"benefit_slack_shared_channel_update_properties": schema.SingleNestedAttribute{
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"slack_integration_id": schema.StringAttribute{
@@ -426,6 +224,10 @@ func (r *BenefitResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 				Description: "",
 			},
+			"type": schema.StringAttribute{
+				Required:    true,
+				Description: "Which variant this is. Selects which of the optional blocks above applies.",
+			},
 		},
 	}
 }
@@ -448,7 +250,52 @@ func (r *BenefitResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 func (r *BenefitResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for benefit")
+	var plan BenefitModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid benefit configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/benefits/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating benefit", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/benefits/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created benefit", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Benefit
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created benefit resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *BenefitResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -517,7 +364,8 @@ func (r *BenefitResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid benefit configuration", err.Error())
 		return

@@ -4,8 +4,8 @@ package client
 
 // OrderCreate - Schema to create a draft order for an off-session charge.
 type OrderCreate struct {
-	CustomFieldData map[string]CustomFieldDataValue `json:"custom_field_data,omitempty"`
-	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
+	CustomFieldData map[string]string `json:"custom_field_data,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
 	CustomerId string `json:"customer_id,omitempty"`
 	ProductId string `json:"product_id,omitempty"`

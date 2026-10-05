@@ -12,7 +12,6 @@ type CustomerMemberModel struct {
 	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	CustomerId types.String `tfsdk:"customer_id"`
 	Email types.String `tfsdk:"email"`
 	Name types.String `tfsdk:"name"`
 	ExternalId types.String `tfsdk:"external_id"`
@@ -65,7 +64,6 @@ func (m *CustomerMemberModel) FromClientModel(c *client.Member) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.CustomerId = types.StringValue(c.CustomerId)
 	m.Email = types.StringValue(c.Email)
 	m.Name = types.StringValue(c.Name)
 	m.ExternalId = types.StringValue(c.ExternalId)

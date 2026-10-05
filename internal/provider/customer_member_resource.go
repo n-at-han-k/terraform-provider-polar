@@ -56,10 +56,6 @@ func (r *CustomerMemberResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the customer this member belongs to.",
-			},
 			"email": schema.StringAttribute{
 				Required:    true,
 				Description: "The email address of the member.",

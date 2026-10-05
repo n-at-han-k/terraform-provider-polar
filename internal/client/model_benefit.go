@@ -12,7 +12,7 @@ type Benefit struct {
 	Deletable *bool `json:"deletable,omitempty"`
 	IsDeleted *bool `json:"is_deleted,omitempty"`
 	OrganizationId string `json:"organization_id,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
 	CustomProperties *BenefitCustomProperties `json:"custom_properties,omitempty"`
 	DiscordProperties *BenefitDiscordProperties `json:"discord_properties,omitempty"`

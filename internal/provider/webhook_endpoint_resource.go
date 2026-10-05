@@ -24,25 +24,29 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ resource.Resource = &MetricsDashboardResource{}
-var _ resource.ResourceWithImportState = &MetricsDashboardResource{}
+var _ resource.Resource = &WebhookEndpointResource{}
+var _ resource.ResourceWithImportState = &WebhookEndpointResource{}
 
-func NewMetricsDashboardResource() resource.Resource {
-	return &MetricsDashboardResource{}
+func NewWebhookEndpointResource() resource.Resource {
+	return &WebhookEndpointResource{}
 }
 
-type MetricsDashboardResource struct {
+type WebhookEndpointResource struct {
 	client *client.Client
 }
 
-func (r *MetricsDashboardResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_metrics_dashboard"
+func (r *WebhookEndpointResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_webhook_endpoint"
 }
 
-func (r *MetricsDashboardResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *WebhookEndpointResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a metrics_dashboard resource.",
+		Description: "Manages a webhook_endpoint resource.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -51,30 +55,34 @@ func (r *MetricsDashboardResource) Schema(_ context.Context, _ resource.SchemaRe
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
+			"url": schema.StringAttribute{
+				Required:    true,
+				Description: "The URL where the webhook events will be sent.",
 			},
 			"name": schema.StringAttribute{
-				Required:    true,
-				Description: "Display name for the dashboard.",
-			},
-			"metrics": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
-				Description: "List of metric slugs displayed in this dashboard.",
+				Description: "An optional name for the webhook endpoint to help organize and identify it.",
+			},
+			"format": schema.StringAttribute{
+				Required:    true,
+				Description: "The format of the webhook payload.",
+			},
+			"events": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Required:    true,
+				Description: "The events that will trigger the webhook.",
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "The ID of the organization owning this dashboard.",
+				Description: "The organization ID associated with the webhook endpoint.",
 			},
 		},
 	}
 }
 
-func (r *MetricsDashboardResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *WebhookEndpointResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -91,8 +99,8 @@ func (r *MetricsDashboardResource) Configure(_ context.Context, req resource.Con
 	r.client = c
 }
 
-func (r *MetricsDashboardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan MetricsDashboardModel
+func (r *WebhookEndpointResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan WebhookEndpointModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -101,13 +109,13 @@ func (r *MetricsDashboardResource) Create(ctx context.Context, req resource.Crea
 
 	reqBody, err := plan.ToClientModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid metrics_dashboard configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid webhook_endpoint configuration", err.Error())
 		return
 	}
 
-	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/metrics/dashboards", reqBody)
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/webhooks/endpoints", reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error creating webhook_endpoint", err.Error())
 		return
 	}
 
@@ -120,14 +128,14 @@ func (r *MetricsDashboardResource) Create(ctx context.Context, req resource.Crea
 		plan.Id = types.StringValue(created)
 	}
 
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", plan.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", plan.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the created metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error reading back the created webhook_endpoint", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.MetricDashboardSchema
+		var result client.WebhookEndpoint
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -136,12 +144,12 @@ func (r *MetricsDashboardResource) Create(ctx context.Context, req resource.Crea
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "created metrics_dashboard resource")
+	tflog.Trace(ctx, "created webhook_endpoint resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *MetricsDashboardResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state MetricsDashboardModel
+func (r *WebhookEndpointResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state WebhookEndpointModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -157,7 +165,7 @@ func (r *MetricsDashboardResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
+	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
 	if err != nil {
 		// GONE IS NOT BROKEN. A 404 here means the resource this state row
 		// describes no longer exists -- deleted by hand, or by something else
@@ -174,11 +182,11 @@ func (r *MetricsDashboardResource) Read(ctx context.Context, req resource.ReadRe
 			return
 		}
 
-		resp.Diagnostics.AddError("Error reading metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error reading webhook_endpoint", err.Error())
 		return
 	}
 
-	var result client.MetricDashboardSchema
+	var result client.WebhookEndpoint
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		resp.Diagnostics.AddError("Error parsing response", err.Error())
 		return
@@ -189,8 +197,8 @@ func (r *MetricsDashboardResource) Read(ctx context.Context, req resource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *MetricsDashboardResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan MetricsDashboardModel
+func (r *WebhookEndpointResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan WebhookEndpointModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -200,7 +208,7 @@ func (r *MetricsDashboardResource) Update(ctx context.Context, req resource.Upda
 	// The identifiers come off state: they cannot change on an update, and the
 	// plan's copy of a Computed one is unknown -- which is also the only place
 	// an imported nested resource's parents live.
-	var state MetricsDashboardModel
+	var state WebhookEndpointModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -209,13 +217,13 @@ func (r *MetricsDashboardResource) Update(ctx context.Context, req resource.Upda
 	// The UPDATE model, not the create one -- see ToUpdateModel.
 	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid metrics_dashboard configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid webhook_endpoint configuration", err.Error())
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), reqBody)
+	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error updating webhook_endpoint", err.Error())
 		return
 	}
 
@@ -224,14 +232,14 @@ func (r *MetricsDashboardResource) Update(ctx context.Context, req resource.Upda
 	// updates answer nothing at all; neither is the resource, and
 	// unmarshalling either one is "Error parsing response" AFTER the server
 	// has already accepted the change. What it now looks like is read back.
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the updated metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error reading back the updated webhook_endpoint", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.MetricDashboardSchema
+		var result client.WebhookEndpoint
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -240,27 +248,27 @@ func (r *MetricsDashboardResource) Update(ctx context.Context, req resource.Upda
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "updated metrics_dashboard resource")
+	tflog.Trace(ctx, "updated webhook_endpoint resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *MetricsDashboardResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state MetricsDashboardModel
+func (r *WebhookEndpointResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state WebhookEndpointModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
+	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error deleting webhook_endpoint", err.Error())
 		return
 	}
 
-	tflog.Trace(ctx, "deleted metrics_dashboard resource")
+	tflog.Trace(ctx, "deleted webhook_endpoint resource")
 }
 
-func (r *MetricsDashboardResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *WebhookEndpointResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

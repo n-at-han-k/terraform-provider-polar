@@ -7,17 +7,18 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# NOT the published document -- the PRUNED one. bin/derive fetches Polar's,
-# makes every Polar-specific decision against it (which collections are
-# resources, which paths are reports or verbs, the customer portal, the version
-# prefix, OpenAPI 3.1's pinned nulls) and writes this beside a manifest of what
-# it kept. The generator below knows nothing about Polar and is pointed at the
-# result; `reference/resources.md` is the thing to read on a spec bump.
+# THE DOCUMENT AS THE GENERATOR SHOULD SEE IT, written by bin/generate-config
+# from the vendored one along with the configuration values the generator is told
+# (reference/generator-config.yaml). Those are the answers the generator cannot
+# work out accurately for itself -- which collections are resources, how each
+# union maps onto attributes, which positions cannot be a typed block.
+# reference/resources.md is the thing to read when Polar publishes a new
+# description.
 SPEC=reference/polar-pruned.json
 
-bin/derive
+bin/generate-config
 
-test -f "$SPEC" || { echo "missing $SPEC -- bin/derive did not write it"; exit 1; }
+test -f "$SPEC" || { echo "missing $SPEC -- bin/generate-config did not write it"; exit 1; }
 
 # Everything under internal/ is generated, and a rename leaves the old file
 # behind -- a stale resource compiles just as well as the new one.
@@ -25,7 +26,7 @@ rm -rf internal/provider internal/client
 
 # -c, not --additional-properties: the configuration is DERIVED too, and the
 # list of positions that cannot be a typed block is longer than a command line
-# should carry. reference/generator-config.yaml is written by bin/derive from the
+# should carry. reference/generator-config.yaml is written by bin/generate-config from the
 # document, so the generator's settings cannot drift from what the document says.
 openapi-generator-polar generate \
   -i "$SPEC" \

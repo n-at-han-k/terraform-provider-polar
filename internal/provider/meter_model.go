@@ -13,10 +13,10 @@ import (
 
 // MeterModel is the Terraform model for meter.
 type MeterModel struct {
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
+	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
+	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	Name types.String `tfsdk:"name"`
 	Unit types.String `tfsdk:"unit"`
 	CustomLabel types.String `tfsdk:"custom_label"`
@@ -24,8 +24,6 @@ type MeterModel struct {
 	Filter *MeterFilterModel `tfsdk:"filter"`
 	Aggregation *MeterAggregationModel `tfsdk:"aggregation"`
 	OrganizationId types.String `tfsdk:"organization_id"`
-	ArchivedAt types.String `tfsdk:"archived_at"`
-	IsArchived types.Bool `tfsdk:"is_archived"`
 }
 
 // MeterFilterModel is one `filter` block.
@@ -36,7 +34,7 @@ type MeterModel struct {
 // in step with the fields by hand.
 type MeterFilterModel struct {
 	Conjunction types.String `tfsdk:"conjunction"`
-	Clauses jsontypes.Normalized `tfsdk:"clauses"`
+	Clauses []MeterFilterModelClausesModel `tfsdk:"clauses"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -44,12 +42,6 @@ func (m *MeterFilterModel) ToClientModel() (*client.Filter, error) {
 	out := &client.Filter{}
 	if !m.Conjunction.IsNull() && !m.Conjunction.IsUnknown() {
 		out.Conjunction = m.Conjunction.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Clauses.IsNull() && !m.Clauses.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Clauses.ValueString()), &out.Clauses); err != nil {
-			return out, fmt.Errorf("clauses: %w", err)
-		}
 	}
 	return out, nil
 }
@@ -62,12 +54,44 @@ func (m *MeterFilterModel) ToClientModel() (*client.Filter, error) {
 // returned invalid result object after apply".
 func (m *MeterFilterModel) FromClientModel(c *client.Filter) {
 	m.Conjunction = types.StringValue(c.Conjunction)
-	if encoded, err := json.Marshal(c.Clauses); err == nil {
-		if m.Clauses.IsNull() || m.Clauses.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Clauses.ValueString()) {
-			m.Clauses = jsontypes.NewNormalizedValue(string(encoded))
-		}
+}
+// MeterFilterModelClausesModel is one `clauses` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type MeterFilterModelClausesModel struct {
+	Property types.String `tfsdk:"property"`
+	Operator types.String `tfsdk:"operator"`
+	Value types.String `tfsdk:"value"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClause, error) {
+	out := &client.FilterClause{}
+	if !m.Property.IsNull() && !m.Property.IsUnknown() {
+		out.Property = m.Property.ValueString()
 	}
+	if !m.Operator.IsNull() && !m.Operator.IsUnknown() {
+		out.Operator = m.Operator.ValueString()
+	}
+	if !m.Value.IsNull() && !m.Value.IsUnknown() {
+		out.Value = m.Value.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClause) {
+	m.Property = types.StringValue(c.Property)
+	m.Operator = types.StringValue(c.Operator)
+	m.Value = types.StringValue(c.Value)
 }
 // MeterAggregationModel is one `aggregation` block.
 //
@@ -81,8 +105,8 @@ type MeterAggregationModel struct {
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *MeterAggregationModel) ToClientModel() (*client.MeterUpdateAggregation, error) {
-	out := &client.MeterUpdateAggregation{}
+func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation, error) {
+	out := &client.MeterCreateAggregation{}
 	if !m.Property.IsNull() && !m.Property.IsUnknown() {
 		out.Property = m.Property.ValueString()
 	}
@@ -98,14 +122,14 @@ func (m *MeterAggregationModel) ToClientModel() (*client.MeterUpdateAggregation,
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *MeterAggregationModel) FromClientModel(c *client.MeterUpdateAggregation) {
+func (m *MeterAggregationModel) FromClientModel(c *client.MeterCreateAggregation) {
 	m.Property = types.StringValue(c.Property)
 	m.Func = types.StringValue(c.Func)
 }
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *MeterModel) ToClientModel() (*client.MeterUpdate, error) {
-	out := &client.MeterUpdate{}
+func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
+	out := &client.MeterCreate{}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
@@ -140,29 +164,67 @@ func (m *MeterModel) ToClientModel() (*client.MeterUpdate, error) {
 		}
 		out.Aggregation = converted
 	}
-	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
-		// Addressed, not assigned: the client field is a *bool so that an
-		// explicit false is sent rather than dropped by `omitempty`.
-		IsArchived := m.IsArchived.ValueBool()
-		out.IsArchived = &IsArchived
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	return out, nil
 }
 
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *MeterModel) ToUpdateModel() (*client.MeterUpdate, error) {
+	out := &client.MeterUpdate{}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
+		out.Unit = m.Unit.ValueString()
+	}
+	if !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
+		out.CustomLabel = m.CustomLabel.ValueString()
+	}
+	if !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
+		out.CustomMultiplier = int32(m.CustomMultiplier.ValueInt64())
+	}
+	if m.Filter != nil {
+		converted, err := m.Filter.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("filter: %w", err)
+		}
+		out.Filter = converted
+	}
+	return out, nil
+}
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *MeterModel) FromClientModel(c *client.Meter) {
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
-	}
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
 	m.Name = types.StringValue(c.Name)
 	m.Unit = types.StringValue(c.Unit)
 	m.CustomLabel = types.StringValue(c.CustomLabel)
@@ -181,5 +243,4 @@ func (m *MeterModel) FromClientModel(c *client.Meter) {
 		m.Filter = nil
 	}
 	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.ArchivedAt = types.StringValue(c.ArchivedAt)
 }

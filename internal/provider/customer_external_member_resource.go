@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 
 
+	"strings"
+
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,7 +18,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -24,25 +25,29 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ resource.Resource = &WebhooksEndpointResource{}
-var _ resource.ResourceWithImportState = &WebhooksEndpointResource{}
+var _ resource.Resource = &CustomerExternalMemberResource{}
+var _ resource.ResourceWithImportState = &CustomerExternalMemberResource{}
 
-func NewWebhooksEndpointResource() resource.Resource {
-	return &WebhooksEndpointResource{}
+func NewCustomerExternalMemberResource() resource.Resource {
+	return &CustomerExternalMemberResource{}
 }
 
-type WebhooksEndpointResource struct {
+type CustomerExternalMemberResource struct {
 	client *client.Client
 }
 
-func (r *WebhooksEndpointResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_webhooks_endpoint"
+func (r *CustomerExternalMemberResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_customer_external_member"
 }
 
-func (r *WebhooksEndpointResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *CustomerExternalMemberResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a webhooks_endpoint resource.",
+		Description: "Manages a customer_external_member resource.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the member.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -51,46 +56,30 @@ func (r *WebhooksEndpointResource) Schema(_ context.Context, _ resource.SchemaRe
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
-			"url": schema.StringAttribute{
+			"email": schema.StringAttribute{
 				Required:    true,
-				Description: "The URL where the webhook events will be sent.",
+				Description: "The email address of the member.",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "An optional name for the webhook endpoint to help organize and identify it.",
+				Description: "The name of the member.",
 			},
-			"format": schema.StringAttribute{
-				Required:    true,
-				Description: "The format of the webhook payload.",
-			},
-			"secret": schema.StringAttribute{
-				Computed:    true,
-				Description: "The secret used to sign the webhook events.",
-			},
-			"organization_id": schema.StringAttribute{
+			"external_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "The organization ID associated with the webhook endpoint.",
+				Description: "The ID of the member in your system. This must be unique within the customer. ",
 			},
-			"events": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Required:    true,
-				Description: "The events that will trigger the webhook.",
-			},
-			"enabled": schema.BoolAttribute{
+			"role": schema.StringAttribute{
 				Computed:    true,
-				Description: "Whether the webhook endpoint is enabled and will receive events.",
+				Optional:    true,
+				Description: "The role of the member within the customer.",
 			},
 		},
 	}
 }
 
-func (r *WebhooksEndpointResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *CustomerExternalMemberResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -107,8 +96,8 @@ func (r *WebhooksEndpointResource) Configure(_ context.Context, req resource.Con
 	r.client = c
 }
 
-func (r *WebhooksEndpointResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan WebhooksEndpointModel
+func (r *CustomerExternalMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan CustomerExternalMemberModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -117,13 +106,13 @@ func (r *WebhooksEndpointResource) Create(ctx context.Context, req resource.Crea
 
 	reqBody, err := plan.ToClientModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid webhooks_endpoint configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid customer_external_member configuration", err.Error())
 		return
 	}
 
-	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/webhooks/endpoints", reqBody)
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", fmt.Sprintf("/customers/external/%v/members", plan.ExternalId.ValueString()), reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error creating customer_external_member", err.Error())
 		return
 	}
 
@@ -136,14 +125,14 @@ func (r *WebhooksEndpointResource) Create(ctx context.Context, req resource.Crea
 		plan.Id = types.StringValue(created)
 	}
 
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", plan.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", plan.ExternalId.ValueString(), plan.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the created webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error reading back the created customer_external_member", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.WebhookEndpoint
+		var result client.Member
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -152,12 +141,12 @@ func (r *WebhooksEndpointResource) Create(ctx context.Context, req resource.Crea
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "created webhooks_endpoint resource")
+	tflog.Trace(ctx, "created customer_external_member resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *WebhooksEndpointResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state WebhooksEndpointModel
+func (r *CustomerExternalMemberResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state CustomerExternalMemberModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -173,7 +162,7 @@ func (r *WebhooksEndpointResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
+	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
 	if err != nil {
 		// GONE IS NOT BROKEN. A 404 here means the resource this state row
 		// describes no longer exists -- deleted by hand, or by something else
@@ -190,11 +179,11 @@ func (r *WebhooksEndpointResource) Read(ctx context.Context, req resource.ReadRe
 			return
 		}
 
-		resp.Diagnostics.AddError("Error reading webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error reading customer_external_member", err.Error())
 		return
 	}
 
-	var result client.WebhookEndpoint
+	var result client.Member
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		resp.Diagnostics.AddError("Error parsing response", err.Error())
 		return
@@ -205,8 +194,8 @@ func (r *WebhooksEndpointResource) Read(ctx context.Context, req resource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan WebhooksEndpointModel
+func (r *CustomerExternalMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan CustomerExternalMemberModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -216,7 +205,7 @@ func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.Upda
 	// The identifiers come off state: they cannot change on an update, and the
 	// plan's copy of a Computed one is unknown -- which is also the only place
 	// an imported nested resource's parents live.
-	var state WebhooksEndpointModel
+	var state CustomerExternalMemberModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -225,13 +214,13 @@ func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.Upda
 	// The UPDATE model, not the create one -- see ToUpdateModel.
 	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid webhooks_endpoint configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid customer_external_member configuration", err.Error())
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), reqBody)
+	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error updating customer_external_member", err.Error())
 		return
 	}
 
@@ -240,14 +229,14 @@ func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.Upda
 	// updates answer nothing at all; neither is the resource, and
 	// unmarshalling either one is "Error parsing response" AFTER the server
 	// has already accepted the change. What it now looks like is read back.
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the updated webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error reading back the updated customer_external_member", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.WebhookEndpoint
+		var result client.Member
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -256,27 +245,40 @@ func (r *WebhooksEndpointResource) Update(ctx context.Context, req resource.Upda
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "updated webhooks_endpoint resource")
+	tflog.Trace(ctx, "updated customer_external_member resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *WebhooksEndpointResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state WebhooksEndpointModel
+func (r *CustomerExternalMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state CustomerExternalMemberModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/webhooks/endpoints/%v", state.Id.ValueString()), nil)
+	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error deleting customer_external_member", err.Error())
 		return
 	}
 
-	tflog.Trace(ctx, "deleted webhooks_endpoint resource")
+	tflog.Trace(ctx, "deleted customer_external_member resource")
 }
 
-func (r *WebhooksEndpointResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *CustomerExternalMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+
+	// A nested resource is addressed by its parents as well as itself, and an
+	// import id carries only what it is given.
+	parts := strings.Split(req.ID, "/")
+
+	if len(parts) != 2 {
+		resp.Diagnostics.AddError(
+			"Unexpected import identifier",
+			"Expected \"<external_id>/<id>\", got: "+req.ID,
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("external_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }

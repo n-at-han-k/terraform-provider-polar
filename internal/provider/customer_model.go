@@ -18,21 +18,16 @@ type CustomerModel struct {
 	ModifiedAt types.String `tfsdk:"modified_at"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	ExternalId types.String `tfsdk:"external_id"`
-	IndividualEmail types.String `tfsdk:"individual_email"`
-	TeamEmail types.String `tfsdk:"team_email"`
-	EmailVerified types.Bool `tfsdk:"email_verified"`
 	Name types.String `tfsdk:"name"`
-	BillingName types.String `tfsdk:"billing_name"`
 	BillingAddress *CustomerBillingAddressModel `tfsdk:"billing_address"`
 	TaxId jsontypes.Normalized `tfsdk:"tax_id"`
 	Locale types.String `tfsdk:"locale"`
 	OrganizationId types.String `tfsdk:"organization_id"`
-	DefaultPaymentMethodId types.String `tfsdk:"default_payment_method_id"`
-	DeletedAt types.String `tfsdk:"deleted_at"`
-	FirstUserEventAt types.String `tfsdk:"first_user_event_at"`
-	AvatarUrl types.String `tfsdk:"avatar_url"`
-	Type types.String `tfsdk:"type"`
-	Email types.String `tfsdk:"email"`
+	Owner *CustomerOwnerModel `tfsdk:"owner"`
+	CustomerIndividualType types.String `tfsdk:"customer_individual_type"`
+	CustomerTeamType types.String `tfsdk:"customer_team_type"`
+	CustomerIndividualEmail types.String `tfsdk:"customer_individual_email"`
+	CustomerTeamEmail types.String `tfsdk:"customer_team_email"`
 }
 
 // CustomerBillingAddressModel is one `billing_address` block.
@@ -88,10 +83,48 @@ func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
 	m.State = types.StringValue(c.State)
 	m.Country = types.StringValue(c.Country)
 }
+// CustomerOwnerModel is one `owner` block.
+//
+// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
+// reflects over these, so a slice of them is a ListNestedAttribute and a
+// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
+// in step with the fields by hand.
+type CustomerOwnerModel struct {
+	Email types.String `tfsdk:"email"`
+	Name types.String `tfsdk:"name"`
+	ExternalId types.String `tfsdk:"external_id"`
+}
+
+// ToClientModel converts one block to the client type the request carries.
+func (m *CustomerOwnerModel) ToClientModel() (*client.MemberOwnerCreate, error) {
+	out := &client.MemberOwnerCreate{}
+	if !m.Email.IsNull() && !m.Email.IsUnknown() {
+		out.Email = m.Email.ValueString()
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
+		out.ExternalId = m.ExternalId.ValueString()
+	}
+	return out, nil
+}
+
+// FromClientModel fills one block from what the server answered.
+//
+// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
+// are Optional AND Computed: Polar fills in a price's currency and tax
+// behaviour, and a Computed attribute left unknown after an apply is "provider
+// returned invalid result object after apply".
+func (m *CustomerOwnerModel) FromClientModel(c *client.MemberOwnerCreate) {
+	m.Email = types.StringValue(c.Email)
+	m.Name = types.StringValue(c.Name)
+	m.ExternalId = types.StringValue(c.ExternalId)
+}
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
-	out := &client.CustomerUpdate{}
+func (m *CustomerModel) ToClientModel() (*client.CustomerCreate, error) {
+	out := &client.CustomerCreate{}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
@@ -124,43 +157,90 @@ func (m *CustomerModel) ToClientModel() (*client.CustomerUpdate, error) {
 	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		out.Locale = m.Locale.ValueString()
 	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
 	}
-	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
+	if m.Owner != nil {
+		converted, err := m.Owner.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("owner: %w", err)
+		}
+		out.Owner = converted
+	}
+	if !m.CustomerIndividualType.IsNull() && !m.CustomerIndividualType.IsUnknown() {
+		out.CustomerIndividualType = m.CustomerIndividualType.ValueString()
+	}
+	if !m.CustomerTeamType.IsNull() && !m.CustomerTeamType.IsUnknown() {
+		out.CustomerTeamType = m.CustomerTeamType.ValueString()
+	}
+	if !m.CustomerIndividualEmail.IsNull() && !m.CustomerIndividualEmail.IsUnknown() {
+		out.CustomerIndividualEmail = m.CustomerIndividualEmail.ValueString()
+	}
+	if !m.CustomerTeamEmail.IsNull() && !m.CustomerTeamEmail.IsUnknown() {
+		out.CustomerTeamEmail = m.CustomerTeamEmail.ValueString()
 	}
 	return out, nil
 }
 
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *CustomerModel) ToUpdateModel() (*client.CustomerUpdate, error) {
+	out := &client.CustomerUpdate{}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
+		out.ExternalId = m.ExternalId.ValueString()
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if m.BillingAddress != nil {
+		converted, err := m.BillingAddress.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("billing_address: %w", err)
+		}
+		out.BillingAddress = converted
+	}
+	if !m.TaxId.IsNull() && !m.TaxId.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.TaxId.ValueString()), &out.TaxId); err != nil {
+			return out, fmt.Errorf("tax_id: %w", err)
+		}
+	}
+	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
+		out.Locale = m.Locale.ValueString()
+	}
+	return out, nil
+}
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CustomerModel) FromClientModel(c *client.Customer) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
 	}
 	m.ExternalId = types.StringValue(c.ExternalId)
-	m.IndividualEmail = types.StringValue(c.IndividualEmail)
-	m.TeamEmail = types.StringValue(c.TeamEmail)
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.EmailVerified != nil {
-		m.EmailVerified = types.BoolValue(*c.EmailVerified)
-	} else if m.EmailVerified.IsUnknown() {
-		m.EmailVerified = types.BoolNull()
-	}
 	m.Name = types.StringValue(c.Name)
-	m.BillingName = types.StringValue(c.BillingName)
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
@@ -171,9 +251,36 @@ func (m *CustomerModel) FromClientModel(c *client.Customer) {
 	}
 	m.Locale = types.StringValue(c.Locale)
 	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.DefaultPaymentMethodId = types.StringValue(c.DefaultPaymentMethodId)
-	m.DeletedAt = types.StringValue(c.DeletedAt)
-	m.FirstUserEventAt = types.StringValue(c.FirstUserEventAt)
-	m.AvatarUrl = types.StringValue(c.AvatarUrl)
-	m.Type = types.StringValue(c.Type)
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.CustomerIndividualType.IsUnknown() {
+		m.CustomerIndividualType = types.StringNull()
+	}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.CustomerTeamType.IsUnknown() {
+		m.CustomerTeamType = types.StringNull()
+	}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.CustomerIndividualEmail.IsUnknown() {
+		m.CustomerIndividualEmail = types.StringNull()
+	}
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.CustomerTeamEmail.IsUnknown() {
+		m.CustomerTeamEmail = types.StringNull()
+	}
 }

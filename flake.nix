@@ -54,7 +54,7 @@
             go
             gopls
 
-            # bin/derive, which turns Polar's published document into the
+            # bin/generate-config, which turns Polar's published document into the
             # pruned one the generator is pointed at. Every Polar-specific
             # decision lives there rather than in the generator.
             ruby

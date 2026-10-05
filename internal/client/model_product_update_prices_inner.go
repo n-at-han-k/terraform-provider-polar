@@ -13,7 +13,7 @@ type ProductUpdatePricesInner struct {
 	PresetAmount int32 `json:"preset_amount,omitempty"`
 	SeatTiers *ProductPriceSeatTiersInput `json:"seat_tiers,omitempty"`
 	MeterId string `json:"meter_id,omitempty"`
-	UnitAmount interface{} `json:"unit_amount,omitempty"`
+	UnitAmount string `json:"unit_amount,omitempty"`
 	CapAmount int32 `json:"cap_amount,omitempty"`
 	AmountType string `json:"amount_type,omitempty"`
 }

@@ -16,64 +16,36 @@ type CheckoutModel struct {
 	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
+	TrialInterval types.String `tfsdk:"trial_interval"`
+	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
+	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	CustomFieldData jsontypes.Normalized `tfsdk:"custom_field_data"`
-	PaymentProcessor types.String `tfsdk:"payment_processor"`
-	Status types.String `tfsdk:"status"`
-	ClientSecret types.String `tfsdk:"client_secret"`
-	Url types.String `tfsdk:"url"`
-	ExpiresAt types.String `tfsdk:"expires_at"`
-	SuccessUrl types.String `tfsdk:"success_url"`
-	ReturnUrl types.String `tfsdk:"return_url"`
-	EmbedOrigin types.String `tfsdk:"embed_origin"`
+	DiscountId types.String `tfsdk:"discount_id"`
+	AllowDiscountCodes types.Bool `tfsdk:"allow_discount_codes"`
+	RequireBillingAddress types.Bool `tfsdk:"require_billing_address"`
 	Amount types.Int64 `tfsdk:"amount"`
 	Seats types.Int64 `tfsdk:"seats"`
 	MinSeats types.Int64 `tfsdk:"min_seats"`
 	MaxSeats types.Int64 `tfsdk:"max_seats"`
-	DiscountAmount types.Int64 `tfsdk:"discount_amount"`
-	NetAmount types.Int64 `tfsdk:"net_amount"`
-	TaxAmount types.Int64 `tfsdk:"tax_amount"`
-	TaxBehavior types.String `tfsdk:"tax_behavior"`
-	TotalAmount types.Int64 `tfsdk:"total_amount"`
-	Currency types.String `tfsdk:"currency"`
 	AllowTrial types.Bool `tfsdk:"allow_trial"`
-	ActiveTrialInterval types.String `tfsdk:"active_trial_interval"`
-	ActiveTrialIntervalCount types.Int64 `tfsdk:"active_trial_interval_count"`
-	TrialEnd types.String `tfsdk:"trial_end"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	ProductId types.String `tfsdk:"product_id"`
-	ProductPriceId types.String `tfsdk:"product_price_id"`
-	DiscountId types.String `tfsdk:"discount_id"`
-	AllowDiscountCodes types.Bool `tfsdk:"allow_discount_codes"`
-	RequireBillingAddress types.Bool `tfsdk:"require_billing_address"`
-	IsDiscountApplicable types.Bool `tfsdk:"is_discount_applicable"`
-	IsFreeProductPrice types.Bool `tfsdk:"is_free_product_price"`
-	IsPaymentRequired types.Bool `tfsdk:"is_payment_required"`
-	IsPaymentSetupRequired types.Bool `tfsdk:"is_payment_setup_required"`
-	IsPaymentFormRequired types.Bool `tfsdk:"is_payment_form_required"`
 	CustomerId types.String `tfsdk:"customer_id"`
 	IsBusinessCustomer types.Bool `tfsdk:"is_business_customer"`
+	ExternalCustomerId types.String `tfsdk:"external_customer_id"`
 	CustomerName types.String `tfsdk:"customer_name"`
 	CustomerEmail types.String `tfsdk:"customer_email"`
 	CustomerIpAddress types.String `tfsdk:"customer_ip_address"`
 	CustomerBillingName types.String `tfsdk:"customer_billing_name"`
 	CustomerBillingAddress *CheckoutCustomerBillingAddressModel `tfsdk:"customer_billing_address"`
 	CustomerTaxId types.String `tfsdk:"customer_tax_id"`
-	Locale types.String `tfsdk:"locale"`
-	PaymentMethodType types.String `tfsdk:"payment_method_type"`
-	PaymentProcessorMetadata jsontypes.Normalized `tfsdk:"payment_processor_metadata"`
-	BillingAddressFields *CheckoutBillingAddressFieldsModel `tfsdk:"billing_address_fields"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	ExternalCustomerId types.String `tfsdk:"external_customer_id"`
-	Products []CheckoutProductsModel `tfsdk:"products"`
-	Product *CheckoutProductModel `tfsdk:"product"`
-	ProductPrice *CheckoutProductPriceModel `tfsdk:"product_price"`
-	Prices jsontypes.Normalized `tfsdk:"prices"`
-	Discount *CheckoutDiscountModel `tfsdk:"discount"`
-	SubscriptionId types.String `tfsdk:"subscription_id"`
-	AttachedCustomFields []CheckoutAttachedCustomFieldsModel `tfsdk:"attached_custom_fields"`
 	CustomerMetadata jsontypes.Normalized `tfsdk:"customer_metadata"`
+	SubscriptionId types.String `tfsdk:"subscription_id"`
+	SuccessUrl types.String `tfsdk:"success_url"`
+	ReturnUrl types.String `tfsdk:"return_url"`
+	EmbedOrigin types.String `tfsdk:"embed_origin"`
+	Locale types.String `tfsdk:"locale"`
+	Currency types.String `tfsdk:"currency"`
+	Products jsontypes.Normalized `tfsdk:"products"`
+	Prices jsontypes.Normalized `tfsdk:"prices"`
 }
 
 // CheckoutCustomerBillingAddressModel is one `customer_billing_address` block.
@@ -129,617 +101,24 @@ func (m *CheckoutCustomerBillingAddressModel) FromClientModel(c *client.AddressI
 	m.State = types.StringValue(c.State)
 	m.Country = types.StringValue(c.Country)
 }
-// CheckoutBillingAddressFieldsModel is one `billing_address_fields` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutBillingAddressFieldsModel struct {
-	Country types.String `tfsdk:"country"`
-	State types.String `tfsdk:"state"`
-	City types.String `tfsdk:"city"`
-	PostalCode types.String `tfsdk:"postal_code"`
-	Line1 types.String `tfsdk:"line1"`
-	Line2 types.String `tfsdk:"line2"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutBillingAddressFieldsModel) ToClientModel() (*client.CheckoutBillingAddressFields, error) {
-	out := &client.CheckoutBillingAddressFields{}
-	if !m.Country.IsNull() && !m.Country.IsUnknown() {
-		out.Country = m.Country.ValueString()
-	}
-	if !m.State.IsNull() && !m.State.IsUnknown() {
-		out.State = m.State.ValueString()
-	}
-	if !m.City.IsNull() && !m.City.IsUnknown() {
-		out.City = m.City.ValueString()
-	}
-	if !m.PostalCode.IsNull() && !m.PostalCode.IsUnknown() {
-		out.PostalCode = m.PostalCode.ValueString()
-	}
-	if !m.Line1.IsNull() && !m.Line1.IsUnknown() {
-		out.Line1 = m.Line1.ValueString()
-	}
-	if !m.Line2.IsNull() && !m.Line2.IsUnknown() {
-		out.Line2 = m.Line2.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutBillingAddressFieldsModel) FromClientModel(c *client.CheckoutBillingAddressFields) {
-	m.Country = types.StringValue(c.Country)
-	m.State = types.StringValue(c.State)
-	m.City = types.StringValue(c.City)
-	m.PostalCode = types.StringValue(c.PostalCode)
-	m.Line1 = types.StringValue(c.Line1)
-	m.Line2 = types.StringValue(c.Line2)
-}
-// CheckoutProductsModel is one `products` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutProductsModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
-	Name types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Visibility types.String `tfsdk:"visibility"`
-	RecurringInterval types.String `tfsdk:"recurring_interval"`
-	RecurringIntervalCount types.Int64 `tfsdk:"recurring_interval_count"`
-	MeterInterval types.String `tfsdk:"meter_interval"`
-	MeterIntervalCount types.Int64 `tfsdk:"meter_interval_count"`
-	IsRecurring types.Bool `tfsdk:"is_recurring"`
-	IsArchived types.Bool `tfsdk:"is_archived"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Prices jsontypes.Normalized `tfsdk:"prices"`
-	Benefits jsontypes.Normalized `tfsdk:"benefits"`
-	Medias jsontypes.Normalized `tfsdk:"medias"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutProductsModel) ToClientModel() (*client.CheckoutProduct, error) {
-	out := &client.CheckoutProduct{}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
-	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
-		out.CreatedAt = m.CreatedAt.ValueString()
-	}
-	if !m.ModifiedAt.IsNull() && !m.ModifiedAt.IsUnknown() {
-		out.ModifiedAt = m.ModifiedAt.ValueString()
-	}
-	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
-	}
-	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
-	}
-	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
-	}
-	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
-	}
-	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
-	}
-	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
-	}
-	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
-	}
-	if !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
-		out.MeterInterval = m.MeterInterval.ValueString()
-	}
-	if !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
-		out.MeterIntervalCount = int32(m.MeterIntervalCount.ValueInt64())
-	}
-	if !m.IsRecurring.IsNull() && !m.IsRecurring.IsUnknown() {
-		IsRecurring := m.IsRecurring.ValueBool()
-		out.IsRecurring = &IsRecurring
-	}
-	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
-		IsArchived := m.IsArchived.ValueBool()
-		out.IsArchived = &IsArchived
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Prices.IsNull() && !m.Prices.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Prices.ValueString()), &out.Prices); err != nil {
-			return out, fmt.Errorf("prices: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Benefits.IsNull() && !m.Benefits.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Benefits.ValueString()), &out.Benefits); err != nil {
-			return out, fmt.Errorf("benefits: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Medias.ValueString()), &out.Medias); err != nil {
-			return out, fmt.Errorf("medias: %w", err)
-		}
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutProductsModel) FromClientModel(c *client.CheckoutProduct) {
-	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	m.Name = types.StringValue(c.Name)
-	m.Description = types.StringValue(c.Description)
-	m.Visibility = types.StringValue(c.Visibility)
-	m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	m.MeterInterval = types.StringValue(c.MeterInterval)
-	m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
-	if c.IsRecurring != nil {
-		m.IsRecurring = types.BoolValue(*c.IsRecurring)
-	} else {
-		m.IsRecurring = types.BoolNull()
-	}
-	if c.IsArchived != nil {
-		m.IsArchived = types.BoolValue(*c.IsArchived)
-	} else {
-		m.IsArchived = types.BoolNull()
-	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	if encoded, err := json.Marshal(c.Prices); err == nil {
-		if m.Prices.IsNull() || m.Prices.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Prices.ValueString()) {
-			m.Prices = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.Benefits); err == nil {
-		if m.Benefits.IsNull() || m.Benefits.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Benefits.ValueString()) {
-			m.Benefits = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.Medias); err == nil {
-		if m.Medias.IsNull() || m.Medias.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Medias.ValueString()) {
-			m.Medias = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-}
-// CheckoutProductModel is one `product` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutProductModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
-	Name types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-	Visibility types.String `tfsdk:"visibility"`
-	RecurringInterval types.String `tfsdk:"recurring_interval"`
-	RecurringIntervalCount types.Int64 `tfsdk:"recurring_interval_count"`
-	MeterInterval types.String `tfsdk:"meter_interval"`
-	MeterIntervalCount types.Int64 `tfsdk:"meter_interval_count"`
-	IsRecurring types.Bool `tfsdk:"is_recurring"`
-	IsArchived types.Bool `tfsdk:"is_archived"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Prices jsontypes.Normalized `tfsdk:"prices"`
-	Benefits jsontypes.Normalized `tfsdk:"benefits"`
-	Medias jsontypes.Normalized `tfsdk:"medias"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutProductModel) ToClientModel() (*client.CheckoutProduct, error) {
-	out := &client.CheckoutProduct{}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
-	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
-		out.CreatedAt = m.CreatedAt.ValueString()
-	}
-	if !m.ModifiedAt.IsNull() && !m.ModifiedAt.IsUnknown() {
-		out.ModifiedAt = m.ModifiedAt.ValueString()
-	}
-	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
-	}
-	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
-	}
-	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
-	}
-	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
-	}
-	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
-	}
-	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
-	}
-	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
-	}
-	if !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
-		out.MeterInterval = m.MeterInterval.ValueString()
-	}
-	if !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
-		out.MeterIntervalCount = int32(m.MeterIntervalCount.ValueInt64())
-	}
-	if !m.IsRecurring.IsNull() && !m.IsRecurring.IsUnknown() {
-		IsRecurring := m.IsRecurring.ValueBool()
-		out.IsRecurring = &IsRecurring
-	}
-	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
-		IsArchived := m.IsArchived.ValueBool()
-		out.IsArchived = &IsArchived
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Prices.IsNull() && !m.Prices.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Prices.ValueString()), &out.Prices); err != nil {
-			return out, fmt.Errorf("prices: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Benefits.IsNull() && !m.Benefits.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Benefits.ValueString()), &out.Benefits); err != nil {
-			return out, fmt.Errorf("benefits: %w", err)
-		}
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Medias.ValueString()), &out.Medias); err != nil {
-			return out, fmt.Errorf("medias: %w", err)
-		}
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutProductModel) FromClientModel(c *client.CheckoutProduct) {
-	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	m.Name = types.StringValue(c.Name)
-	m.Description = types.StringValue(c.Description)
-	m.Visibility = types.StringValue(c.Visibility)
-	m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	m.MeterInterval = types.StringValue(c.MeterInterval)
-	m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
-	if c.IsRecurring != nil {
-		m.IsRecurring = types.BoolValue(*c.IsRecurring)
-	} else {
-		m.IsRecurring = types.BoolNull()
-	}
-	if c.IsArchived != nil {
-		m.IsArchived = types.BoolValue(*c.IsArchived)
-	} else {
-		m.IsArchived = types.BoolNull()
-	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	if encoded, err := json.Marshal(c.Prices); err == nil {
-		if m.Prices.IsNull() || m.Prices.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Prices.ValueString()) {
-			m.Prices = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.Benefits); err == nil {
-		if m.Benefits.IsNull() || m.Benefits.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Benefits.ValueString()) {
-			m.Benefits = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if encoded, err := json.Marshal(c.Medias); err == nil {
-		if m.Medias.IsNull() || m.Medias.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Medias.ValueString()) {
-			m.Medias = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-}
-// CheckoutProductPriceModel is one `product_price` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutProductPriceModel struct {
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
-	Source types.String `tfsdk:"source"`
-	PriceCurrency types.String `tfsdk:"price_currency"`
-	TaxBehavior types.String `tfsdk:"tax_behavior"`
-	IsArchived types.Bool `tfsdk:"is_archived"`
-	ProductId types.String `tfsdk:"product_id"`
-	Type types.String `tfsdk:"type"`
-	RecurringInterval types.String `tfsdk:"recurring_interval"`
-	PriceAmount types.Int64 `tfsdk:"price_amount"`
-	Legacy types.Bool `tfsdk:"legacy"`
-	MinimumAmount types.Int64 `tfsdk:"minimum_amount"`
-	MaximumAmount types.Int64 `tfsdk:"maximum_amount"`
-	PresetAmount types.Int64 `tfsdk:"preset_amount"`
-	LegacyRecurringProductPriceAmountType types.String `tfsdk:"legacy_recurring_product_price_amount_type"`
-	ProductPriceAmountType types.String `tfsdk:"product_price_amount_type"`
-	SeatTiers types.String `tfsdk:"seat_tiers"`
-	UnitAmount types.String `tfsdk:"unit_amount"`
-	CapAmount types.Int64 `tfsdk:"cap_amount"`
-	MeterId types.String `tfsdk:"meter_id"`
-	Meter types.String `tfsdk:"meter"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutProductPriceModel) ToClientModel() (*client.CheckoutProductPrice, error) {
-	out := &client.CheckoutProductPrice{}
-	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
-		out.CreatedAt = m.CreatedAt.ValueString()
-	}
-	if !m.ModifiedAt.IsNull() && !m.ModifiedAt.IsUnknown() {
-		out.ModifiedAt = m.ModifiedAt.ValueString()
-	}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
-	if !m.Source.IsNull() && !m.Source.IsUnknown() {
-		out.Source = m.Source.ValueString()
-	}
-	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
-		out.PriceCurrency = m.PriceCurrency.ValueString()
-	}
-	if !m.TaxBehavior.IsNull() && !m.TaxBehavior.IsUnknown() {
-		out.TaxBehavior = m.TaxBehavior.ValueString()
-	}
-	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
-		IsArchived := m.IsArchived.ValueBool()
-		out.IsArchived = &IsArchived
-	}
-	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
-	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
-	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
-	}
-	if !m.PriceAmount.IsNull() && !m.PriceAmount.IsUnknown() {
-		out.PriceAmount = int32(m.PriceAmount.ValueInt64())
-	}
-	if !m.Legacy.IsNull() && !m.Legacy.IsUnknown() {
-		Legacy := m.Legacy.ValueBool()
-		out.Legacy = &Legacy
-	}
-	if !m.MinimumAmount.IsNull() && !m.MinimumAmount.IsUnknown() {
-		out.MinimumAmount = int32(m.MinimumAmount.ValueInt64())
-	}
-	if !m.MaximumAmount.IsNull() && !m.MaximumAmount.IsUnknown() {
-		out.MaximumAmount = int32(m.MaximumAmount.ValueInt64())
-	}
-	if !m.PresetAmount.IsNull() && !m.PresetAmount.IsUnknown() {
-		out.PresetAmount = int32(m.PresetAmount.ValueInt64())
-	}
-	if !m.LegacyRecurringProductPriceAmountType.IsNull() && !m.LegacyRecurringProductPriceAmountType.IsUnknown() {
-		out.LegacyRecurringProductPriceAmountType = m.LegacyRecurringProductPriceAmountType.ValueString()
-	}
-	if !m.ProductPriceAmountType.IsNull() && !m.ProductPriceAmountType.IsUnknown() {
-		out.ProductPriceAmountType = m.ProductPriceAmountType.ValueString()
-	}
-	if !m.UnitAmount.IsNull() && !m.UnitAmount.IsUnknown() {
-		out.UnitAmount = m.UnitAmount.ValueString()
-	}
-	if !m.CapAmount.IsNull() && !m.CapAmount.IsUnknown() {
-		out.CapAmount = int32(m.CapAmount.ValueInt64())
-	}
-	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
-		out.MeterId = m.MeterId.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutProductPriceModel) FromClientModel(c *client.CheckoutProductPrice) {
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
-	m.Source = types.StringValue(c.Source)
-	m.PriceCurrency = types.StringValue(c.PriceCurrency)
-	m.TaxBehavior = types.StringValue(c.TaxBehavior)
-	if c.IsArchived != nil {
-		m.IsArchived = types.BoolValue(*c.IsArchived)
-	} else {
-		m.IsArchived = types.BoolNull()
-	}
-	m.ProductId = types.StringValue(c.ProductId)
-	m.Type = types.StringValue(c.Type)
-	m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
-	if c.Legacy != nil {
-		m.Legacy = types.BoolValue(*c.Legacy)
-	} else {
-		m.Legacy = types.BoolNull()
-	}
-	m.MinimumAmount = types.Int64Value(int64(c.MinimumAmount))
-	m.MaximumAmount = types.Int64Value(int64(c.MaximumAmount))
-	m.PresetAmount = types.Int64Value(int64(c.PresetAmount))
-	m.LegacyRecurringProductPriceAmountType = types.StringValue(c.LegacyRecurringProductPriceAmountType)
-	m.ProductPriceAmountType = types.StringValue(c.ProductPriceAmountType)
-	m.UnitAmount = types.StringValue(c.UnitAmount)
-	m.CapAmount = types.Int64Value(int64(c.CapAmount))
-	m.MeterId = types.StringValue(c.MeterId)
-}
-// CheckoutDiscountModel is one `discount` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutDiscountModel struct {
-	Duration types.String `tfsdk:"duration"`
-	Type types.String `tfsdk:"type"`
-	Amount types.Int64 `tfsdk:"amount"`
-	Currency types.String `tfsdk:"currency"`
-	Amounts jsontypes.Normalized `tfsdk:"amounts"`
-	Id types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
-	Code types.String `tfsdk:"code"`
-	DurationInMonths types.Int64 `tfsdk:"duration_in_months"`
-	BasisPoints types.Int64 `tfsdk:"basis_points"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutDiscountModel) ToClientModel() (*client.CheckoutDiscount, error) {
-	out := &client.CheckoutDiscount{}
-	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
-		out.Duration = m.Duration.ValueString()
-	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
-	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
-	}
-	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
-			return out, fmt.Errorf("amounts: %w", err)
-		}
-	}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
-	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
-	}
-	if !m.Code.IsNull() && !m.Code.IsUnknown() {
-		out.Code = m.Code.ValueString()
-	}
-	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
-		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
-	}
-	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
-		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutDiscountModel) FromClientModel(c *client.CheckoutDiscount) {
-	m.Duration = types.StringValue(c.Duration)
-	m.Type = types.StringValue(c.Type)
-	m.Amount = types.Int64Value(int64(c.Amount))
-	m.Currency = types.StringValue(c.Currency)
-	if encoded, err := json.Marshal(c.Amounts); err == nil {
-		if m.Amounts.IsNull() || m.Amounts.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Amounts.ValueString()) {
-			m.Amounts = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	m.Id = types.StringValue(c.Id)
-	m.Name = types.StringValue(c.Name)
-	m.Code = types.StringValue(c.Code)
-	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
-	m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
-}
-// CheckoutAttachedCustomFieldsModel is one `attached_custom_fields` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type CheckoutAttachedCustomFieldsModel struct {
-	CustomFieldId types.String `tfsdk:"custom_field_id"`
-	CustomField types.String `tfsdk:"custom_field"`
-	Order types.Int64 `tfsdk:"order"`
-	Required types.Bool `tfsdk:"required"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *CheckoutAttachedCustomFieldsModel) ToClientModel() (*client.AttachedCustomField, error) {
-	out := &client.AttachedCustomField{}
-	if !m.CustomFieldId.IsNull() && !m.CustomFieldId.IsUnknown() {
-		out.CustomFieldId = m.CustomFieldId.ValueString()
-	}
-	if !m.Order.IsNull() && !m.Order.IsUnknown() {
-		out.Order = int32(m.Order.ValueInt64())
-	}
-	if !m.Required.IsNull() && !m.Required.IsUnknown() {
-		Required := m.Required.ValueBool()
-		out.Required = &Required
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *CheckoutAttachedCustomFieldsModel) FromClientModel(c *client.AttachedCustomField) {
-	m.CustomFieldId = types.StringValue(c.CustomFieldId)
-	m.Order = types.Int64Value(int64(c.Order))
-	if c.Required != nil {
-		m.Required = types.BoolValue(*c.Required)
-	} else {
-		m.Required = types.BoolNull()
-	}
-}
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *CheckoutModel) ToClientModel() (*client.CheckoutUpdate, error) {
-	out := &client.CheckoutUpdate{}
+func (m *CheckoutModel) ToClientModel() (*client.CheckoutProductsCreate, error) {
+	out := &client.CheckoutProductsCreate{}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		out.TrialInterval = m.TrialInterval.ValueString()
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
@@ -747,36 +126,6 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutUpdate, error) {
 		if err := json.Unmarshal([]byte(m.CustomFieldData.ValueString()), &out.CustomFieldData); err != nil {
 			return out, fmt.Errorf("custom_field_data: %w", err)
 		}
-	}
-	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
-		out.SuccessUrl = m.SuccessUrl.ValueString()
-	}
-	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
-		out.ReturnUrl = m.ReturnUrl.ValueString()
-	}
-	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
-		out.EmbedOrigin = m.EmbedOrigin.ValueString()
-	}
-	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
-	}
-	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
-		out.Seats = int32(m.Seats.ValueInt64())
-	}
-	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
-	}
-	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
-		// Addressed, not assigned: the client field is a *bool so that an
-		// explicit false is sent rather than dropped by `omitempty`.
-		AllowTrial := m.AllowTrial.ValueBool()
-		out.AllowTrial = &AllowTrial
-	}
-	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
-	}
-	if !m.ProductPriceId.IsNull() && !m.ProductPriceId.IsUnknown() {
-		out.ProductPriceId = m.ProductPriceId.ValueString()
 	}
 	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
 		out.DiscountId = m.DiscountId.ValueString()
@@ -793,9 +142,151 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutUpdate, error) {
 		RequireBillingAddress := m.RequireBillingAddress.ValueBool()
 		out.RequireBillingAddress = &RequireBillingAddress
 	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		out.Amount = int32(m.Amount.ValueInt64())
+	}
+	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		out.Seats = int32(m.Seats.ValueInt64())
+	}
+	if !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
+		out.MinSeats = int32(m.MinSeats.ValueInt64())
+	}
+	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
+		out.MaxSeats = int32(m.MaxSeats.ValueInt64())
+	}
+	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
+		// Addressed, not assigned: the client field is a *bool so that an
+		// explicit false is sent rather than dropped by `omitempty`.
+		AllowTrial := m.AllowTrial.ValueBool()
+		out.AllowTrial = &AllowTrial
+	}
+	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		out.CustomerId = m.CustomerId.ValueString()
+	}
 	if !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		// Addressed, not assigned: the client field is a *bool so that an
 		// explicit false is sent rather than dropped by `omitempty`.
+		IsBusinessCustomer := m.IsBusinessCustomer.ValueBool()
+		out.IsBusinessCustomer = &IsBusinessCustomer
+	}
+	if !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
+		out.ExternalCustomerId = m.ExternalCustomerId.ValueString()
+	}
+	if !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
+		out.CustomerName = m.CustomerName.ValueString()
+	}
+	if !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
+		out.CustomerEmail = m.CustomerEmail.ValueString()
+	}
+	if !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
+		out.CustomerIpAddress = m.CustomerIpAddress.ValueString()
+	}
+	if !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
+		out.CustomerBillingName = m.CustomerBillingName.ValueString()
+	}
+	if m.CustomerBillingAddress != nil {
+		converted, err := m.CustomerBillingAddress.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("customer_billing_address: %w", err)
+		}
+		out.CustomerBillingAddress = converted
+	}
+	if !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
+		out.CustomerTaxId = m.CustomerTaxId.ValueString()
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.CustomerMetadata.ValueString()), &out.CustomerMetadata); err != nil {
+			return out, fmt.Errorf("customer_metadata: %w", err)
+		}
+	}
+	if !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
+		out.SubscriptionId = m.SubscriptionId.ValueString()
+	}
+	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		out.SuccessUrl = m.SuccessUrl.ValueString()
+	}
+	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		out.ReturnUrl = m.ReturnUrl.ValueString()
+	}
+	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
+		out.EmbedOrigin = m.EmbedOrigin.ValueString()
+	}
+	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
+		out.Locale = m.Locale.ValueString()
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		out.Currency = m.Currency.ValueString()
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.Products.IsNull() && !m.Products.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
+			return out, fmt.Errorf("products: %w", err)
+		}
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.Prices.IsNull() && !m.Prices.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Prices.ValueString()), &out.Prices); err != nil {
+			return out, fmt.Errorf("prices: %w", err)
+		}
+	}
+	return out, nil
+}
+
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *CheckoutModel) ToUpdateModel() (*client.CheckoutUpdate, error) {
+	out := &client.CheckoutUpdate{}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		out.TrialInterval = m.TrialInterval.ValueString()
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+	}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.CustomFieldData.IsNull() && !m.CustomFieldData.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.CustomFieldData.ValueString()), &out.CustomFieldData); err != nil {
+			return out, fmt.Errorf("custom_field_data: %w", err)
+		}
+	}
+	if !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		out.DiscountId = m.DiscountId.ValueString()
+	}
+	if !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
+		AllowDiscountCodes := m.AllowDiscountCodes.ValueBool()
+		out.AllowDiscountCodes = &AllowDiscountCodes
+	}
+	if !m.RequireBillingAddress.IsNull() && !m.RequireBillingAddress.IsUnknown() {
+		RequireBillingAddress := m.RequireBillingAddress.ValueBool()
+		out.RequireBillingAddress = &RequireBillingAddress
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		out.Amount = int32(m.Amount.ValueInt64())
+	}
+	if !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		out.Seats = int32(m.Seats.ValueInt64())
+	}
+	if !m.AllowTrial.IsNull() && !m.AllowTrial.IsUnknown() {
+		AllowTrial := m.AllowTrial.ValueBool()
+		out.AllowTrial = &AllowTrial
+	}
+	if !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		IsBusinessCustomer := m.IsBusinessCustomer.ValueBool()
 		out.IsBusinessCustomer = &IsBusinessCustomer
 	}
@@ -821,40 +312,49 @@ func (m *CheckoutModel) ToClientModel() (*client.CheckoutUpdate, error) {
 	if !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
 		out.CustomerTaxId = m.CustomerTaxId.ValueString()
 	}
-	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
-		out.Locale = m.Locale.ValueString()
-	}
-	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
-	}
-	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
-	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
-		}
-	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
 	if !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
 		if err := json.Unmarshal([]byte(m.CustomerMetadata.ValueString()), &out.CustomerMetadata); err != nil {
 			return out, fmt.Errorf("customer_metadata: %w", err)
 		}
 	}
+	if !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		out.SuccessUrl = m.SuccessUrl.ValueString()
+	}
+	if !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		out.ReturnUrl = m.ReturnUrl.ValueString()
+	}
+	if !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
+		out.EmbedOrigin = m.EmbedOrigin.ValueString()
+	}
+	if !m.Locale.IsNull() && !m.Locale.IsUnknown() {
+		out.Locale = m.Locale.ValueString()
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		out.Currency = m.Currency.ValueString()
+	}
 	return out, nil
 }
-
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
+	m.TrialInterval = types.StringValue(c.TrialInterval)
+	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
 	// unrepresentable one would have failed on the way in.
 	//
@@ -868,39 +368,6 @@ func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 			m.CustomFieldData = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	m.PaymentProcessor = types.StringValue(c.PaymentProcessor)
-	m.Status = types.StringValue(c.Status)
-	m.ClientSecret = types.StringValue(c.ClientSecret)
-	m.Url = types.StringValue(c.Url)
-	m.ExpiresAt = types.StringValue(c.ExpiresAt)
-	m.SuccessUrl = types.StringValue(c.SuccessUrl)
-	m.ReturnUrl = types.StringValue(c.ReturnUrl)
-	m.EmbedOrigin = types.StringValue(c.EmbedOrigin)
-	m.Amount = types.Int64Value(int64(c.Amount))
-	m.Seats = types.Int64Value(int64(c.Seats))
-	m.MinSeats = types.Int64Value(int64(c.MinSeats))
-	m.MaxSeats = types.Int64Value(int64(c.MaxSeats))
-	m.DiscountAmount = types.Int64Value(int64(c.DiscountAmount))
-	m.NetAmount = types.Int64Value(int64(c.NetAmount))
-	m.TaxAmount = types.Int64Value(int64(c.TaxAmount))
-	m.TaxBehavior = types.StringValue(c.TaxBehavior)
-	m.TotalAmount = types.Int64Value(int64(c.TotalAmount))
-	m.Currency = types.StringValue(c.Currency)
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.AllowTrial != nil {
-		m.AllowTrial = types.BoolValue(*c.AllowTrial)
-	} else if m.AllowTrial.IsUnknown() {
-		m.AllowTrial = types.BoolNull()
-	}
-	m.ActiveTrialInterval = types.StringValue(c.ActiveTrialInterval)
-	m.ActiveTrialIntervalCount = types.Int64Value(int64(c.ActiveTrialIntervalCount))
-	m.TrialEnd = types.StringValue(c.TrialEnd)
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	m.ProductId = types.StringValue(c.ProductId)
-	m.ProductPriceId = types.StringValue(c.ProductPriceId)
 	m.DiscountId = types.StringValue(c.DiscountId)
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -920,50 +387,18 @@ func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 	} else if m.RequireBillingAddress.IsUnknown() {
 		m.RequireBillingAddress = types.BoolNull()
 	}
+	m.Amount = types.Int64Value(int64(c.Amount))
+	m.Seats = types.Int64Value(int64(c.Seats))
+	m.MinSeats = types.Int64Value(int64(c.MinSeats))
+	m.MaxSeats = types.Int64Value(int64(c.MaxSeats))
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
 	// value the plan already knows is left alone.
-	if c.IsDiscountApplicable != nil {
-		m.IsDiscountApplicable = types.BoolValue(*c.IsDiscountApplicable)
-	} else if m.IsDiscountApplicable.IsUnknown() {
-		m.IsDiscountApplicable = types.BoolNull()
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsFreeProductPrice != nil {
-		m.IsFreeProductPrice = types.BoolValue(*c.IsFreeProductPrice)
-	} else if m.IsFreeProductPrice.IsUnknown() {
-		m.IsFreeProductPrice = types.BoolNull()
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsPaymentRequired != nil {
-		m.IsPaymentRequired = types.BoolValue(*c.IsPaymentRequired)
-	} else if m.IsPaymentRequired.IsUnknown() {
-		m.IsPaymentRequired = types.BoolNull()
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsPaymentSetupRequired != nil {
-		m.IsPaymentSetupRequired = types.BoolValue(*c.IsPaymentSetupRequired)
-	} else if m.IsPaymentSetupRequired.IsUnknown() {
-		m.IsPaymentSetupRequired = types.BoolNull()
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsPaymentFormRequired != nil {
-		m.IsPaymentFormRequired = types.BoolValue(*c.IsPaymentFormRequired)
-	} else if m.IsPaymentFormRequired.IsUnknown() {
-		m.IsPaymentFormRequired = types.BoolNull()
+	if c.AllowTrial != nil {
+		m.AllowTrial = types.BoolValue(*c.AllowTrial)
+	} else if m.AllowTrial.IsUnknown() {
+		m.AllowTrial = types.BoolNull()
 	}
 	m.CustomerId = types.StringValue(c.CustomerId)
 	// A bool the server does not answer leaves the pointer nil, and a Computed
@@ -975,13 +410,12 @@ func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 	} else if m.IsBusinessCustomer.IsUnknown() {
 		m.IsBusinessCustomer = types.BoolNull()
 	}
+	m.ExternalCustomerId = types.StringValue(c.ExternalCustomerId)
 	m.CustomerName = types.StringValue(c.CustomerName)
 	m.CustomerEmail = types.StringValue(c.CustomerEmail)
 	m.CustomerIpAddress = types.StringValue(c.CustomerIpAddress)
 	m.CustomerBillingName = types.StringValue(c.CustomerBillingName)
 	m.CustomerTaxId = types.StringValue(c.CustomerTaxId)
-	m.Locale = types.StringValue(c.Locale)
-	m.PaymentMethodType = types.StringValue(c.PaymentMethodType)
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
 	// unrepresentable one would have failed on the way in.
 	//
@@ -989,121 +423,24 @@ func (m *CheckoutModel) FromClientModel(c *client.Checkout) {
 	// not already say -- see jsonSupersetOf. A server that merely filled in its
 	// own defaults has told us nothing, and recording it would fail the apply
 	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.PaymentProcessorMetadata); err == nil {
-		if m.PaymentProcessorMetadata.IsNull() || m.PaymentProcessorMetadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.PaymentProcessorMetadata.ValueString()) {
-			m.PaymentProcessorMetadata = jsontypes.NewNormalizedValue(string(encoded))
+	if encoded, err := json.Marshal(c.CustomerMetadata); err == nil {
+		if m.CustomerMetadata.IsNull() || m.CustomerMetadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.CustomerMetadata.ValueString()) {
+			m.CustomerMetadata = jsontypes.NewNormalizedValue(string(encoded))
 		}
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.BillingAddressFields != nil {
-		block := CheckoutBillingAddressFieldsModel{}
-		if m.BillingAddressFields != nil {
-			block = *m.BillingAddressFields
-		}
-		block.FromClientModel(c.BillingAddressFields)
-		m.BillingAddressFields = &block
-	} else {
-		m.BillingAddressFields = nil
-	}
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
-	}
-	m.ExternalCustomerId = types.StringValue(c.ExternalCustomerId)
-	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
-	// compares element by element, so a server that reorders or adds a price is
-	// a diff -- which is correct: it did something the configuration did not say.
-	Products := make([]CheckoutProductsModel, 0, len(c.Products))
-	for index := range c.Products {
-		block := CheckoutProductsModel{}
-		if index < len(m.Products) {
-			block = m.Products[index]
-		}
-		block.FromClientModel(&c.Products[index])
-		Products = append(Products, block)
-	}
-	m.Products = Products
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.Product != nil {
-		block := CheckoutProductModel{}
-		if m.Product != nil {
-			block = *m.Product
-		}
-		block.FromClientModel(c.Product)
-		m.Product = &block
-	} else {
-		m.Product = nil
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.ProductPrice != nil {
-		block := CheckoutProductPriceModel{}
-		if m.ProductPrice != nil {
-			block = *m.ProductPrice
-		}
-		block.FromClientModel(c.ProductPrice)
-		m.ProductPrice = &block
-	} else {
-		m.ProductPrice = nil
-	}
-	// Marshalling a Go value cannot fail in a way worth surfacing here; an
-	// unrepresentable one would have failed on the way in.
-	//
-	// The answer is only written when it says something the configuration does
-	// not already say -- see jsonSupersetOf. A server that merely filled in its
-	// own defaults has told us nothing, and recording it would fail the apply
-	// and then propose an update forever.
-	if encoded, err := json.Marshal(c.Prices); err == nil {
-		if m.Prices.IsNull() || m.Prices.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Prices.ValueString()) {
-			m.Prices = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.Discount != nil {
-		block := CheckoutDiscountModel{}
-		if m.Discount != nil {
-			block = *m.Discount
-		}
-		block.FromClientModel(c.Discount)
-		m.Discount = &block
-	} else {
-		m.Discount = nil
 	}
 	m.SubscriptionId = types.StringValue(c.SubscriptionId)
-	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
-	// compares element by element, so a server that reorders or adds a price is
-	// a diff -- which is correct: it did something the configuration did not say.
-	AttachedCustomFields := make([]CheckoutAttachedCustomFieldsModel, 0, len(c.AttachedCustomFields))
-	for index := range c.AttachedCustomFields {
-		block := CheckoutAttachedCustomFieldsModel{}
-		if index < len(m.AttachedCustomFields) {
-			block = m.AttachedCustomFields[index]
-		}
-		block.FromClientModel(&c.AttachedCustomFields[index])
-		AttachedCustomFields = append(AttachedCustomFields, block)
-	}
-	m.AttachedCustomFields = AttachedCustomFields
+	m.SuccessUrl = types.StringValue(c.SuccessUrl)
+	m.ReturnUrl = types.StringValue(c.ReturnUrl)
+	m.EmbedOrigin = types.StringValue(c.EmbedOrigin)
+	m.Locale = types.StringValue(c.Locale)
+	m.Currency = types.StringValue(c.Currency)
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
 	// the apply is over: "provider returned invalid result object after apply".
 	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.CustomerMetadata.IsUnknown() {
-		m.CustomerMetadata = jsontypes.NewNormalizedNull()
+	if m.Prices.IsUnknown() {
+		m.Prices = jsontypes.NewNormalizedNull()
 	}
 }

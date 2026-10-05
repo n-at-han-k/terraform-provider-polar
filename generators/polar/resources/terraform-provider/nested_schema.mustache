@@ -1,0 +1,66 @@
+{{!
+    One nested block's body, recursing into its own children.
+
+    A LIST WRAPS ITS OBJECT, A SINGLE ONE DOES NOT: ListNestedAttribute carries
+    NestedObject: schema.NestedAttributeObject, while SingleNestedAttribute
+    carries Attributes itself and has no NestedObject field at all.
+
+    RECURSES INTO ITSELF by including this same partial, which is the only way a
+    template can follow a tree whose depth it does not know. A meter's
+    filter.clauses[].property is three levels down, and rendering one level left
+    clauses a ListNestedAttribute with no object inside it -- which compiles and
+    then refuses every plan.
+
+    Do not write a closing double-brace inside this comment: it ends the comment,
+    and the rest of the prose lands in the generated Go.
+}}
+{{#isNestedList}}
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+{{#nested}}
+						"{{terraformName}}": {{terraformAttrType}}{
+{{#isJson}}
+							CustomType:  jsontypes.NormalizedType{},
+{{/isJson}}
+{{#isRequired}}
+							Required:    true,
+{{/isRequired}}
+{{#isComputed}}
+							Computed:    true,
+{{/isComputed}}
+{{#isOptional}}
+							Optional:    true,
+{{/isOptional}}
+{{#isNested}}
+{{>nested_schema}}
+{{/isNested}}
+							Description: "{{{description}}}",
+						},
+{{/nested}}
+					},
+				},
+{{/isNestedList}}
+{{#isNestedObject}}
+				Attributes: map[string]schema.Attribute{
+{{#nested}}
+					"{{terraformName}}": {{terraformAttrType}}{
+{{#isJson}}
+						CustomType:  jsontypes.NormalizedType{},
+{{/isJson}}
+{{#isRequired}}
+						Required:    true,
+{{/isRequired}}
+{{#isComputed}}
+						Computed:    true,
+{{/isComputed}}
+{{#isOptional}}
+						Optional:    true,
+{{/isOptional}}
+{{#isNested}}
+{{>nested_schema}}
+{{/isNested}}
+						Description: "{{{description}}}",
+					},
+{{/nested}}
+				},
+{{/isNestedObject}}

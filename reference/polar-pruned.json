@@ -1000,22 +1000,7 @@
                 "properties": {
                   "metadata": {
                     "additionalProperties": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "maxLength": 500,
-                          "minLength": 1
-                        },
-                        {
-                          "type": "integer"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        }
-                      ]
+                      "type": "string"
                     },
                     "propertyNames": {
                       "maxLength": 40,
@@ -1955,22 +1940,7 @@
                 "properties": {
                   "metadata": {
                     "additionalProperties": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "maxLength": 500,
-                          "minLength": 1
-                        },
-                        {
-                          "type": "integer"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "boolean"
-                        }
-                      ]
+                      "type": "string"
                     },
                     "propertyNames": {
                       "maxLength": 40,
@@ -10070,22 +10040,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -10933,24 +10888,7 @@
           },
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -11891,17 +11829,7 @@
           },
           "customer_metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Customer Metadata"
@@ -12428,22 +12356,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -12820,22 +12733,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -13171,22 +13069,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -13199,24 +13082,7 @@
           },
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -13415,22 +13281,7 @@
           },
           "customer_metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -13611,18 +13462,9 @@
                         "description": "The ID of the meter associated to the price."
                       },
                       "unit_amount": {
-                        "anyOf": [
-                          {
-                            "type": "number",
-                            "exclusiveMinimum": 0
-                          },
-                          {
-                            "type": "string",
-                            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,5}|(?=[\\d.]{1,18}0*$)\\d{0,5}\\.\\d{0,12}0*$)"
-                          }
-                        ],
                         "title": "Unit Amount",
-                        "description": "The price per unit in cents. Supports up to 12 decimal places."
+                        "description": "The price per unit in cents. Supports up to 12 decimal places.",
+                        "type": "string"
                       },
                       "cap_amount": {
                         "anyOf": [
@@ -13705,24 +13547,7 @@
         "properties": {
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -13900,22 +13725,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -14003,22 +13813,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
-                  "anyOf": [
-                    {
-                      "type": "string",
-                      "maxLength": 500,
-                      "minLength": 1
-                    },
-                    {
-                      "type": "integer"
-                    },
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "boolean"
-                    }
-                  ]
+                  "type": "string"
                 },
                 "propertyNames": {
                   "maxLength": 40,
@@ -14197,22 +13992,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -14472,22 +14252,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -14862,22 +14627,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -15093,22 +14843,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -15414,22 +15149,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -15832,22 +15552,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -16077,14 +15782,7 @@
           },
           "clauses": {
             "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/FilterClause"
-                },
-                {
-                  "$ref": "#/components/schemas/Filter"
-                }
-              ]
+              "$ref": "#/components/schemas/FilterClause"
             },
             "type": "array",
             "title": "Clauses"
@@ -16107,21 +15805,8 @@
             "$ref": "#/components/schemas/FilterOperator"
           },
           "value": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000
-              },
-              {
-                "type": "integer",
-                "maximum": 2147483647,
-                "minimum": -2147483648
-              },
-              {
-                "type": "boolean"
-              }
-            ],
-            "title": "Value"
+            "title": "Value",
+            "type": "string"
           }
         },
         "type": "object",
@@ -16676,20 +16361,7 @@
       },
       "MetadataOutputType": {
         "additionalProperties": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "integer"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "boolean"
-            }
-          ]
+          "type": "string"
         },
         "type": "object"
       },
@@ -16801,22 +16473,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -16919,22 +16576,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -17472,24 +17114,7 @@
           },
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -17820,24 +17445,7 @@
         "properties": {
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -17845,22 +17453,7 @@
           },
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -21968,22 +21561,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -22464,22 +22042,7 @@
         "properties": {
           "metadata": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "maxLength": 500,
-                  "minLength": 1
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "boolean"
-                }
-              ]
+              "type": "string"
             },
             "propertyNames": {
               "maxLength": 40,
@@ -22668,18 +22231,9 @@
                           "description": "The ID of the meter associated to the price."
                         },
                         "unit_amount": {
-                          "anyOf": [
-                            {
-                              "type": "number",
-                              "exclusiveMinimum": 0
-                            },
-                            {
-                              "type": "string",
-                              "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,5}|(?=[\\d.]{1,18}0*$)\\d{0,5}\\.\\d{0,12}0*$)"
-                            }
-                          ],
                           "title": "Unit Amount",
-                          "description": "The price per unit in cents. Supports up to 12 decimal places."
+                          "description": "The price per unit in cents. Supports up to 12 decimal places.",
+                          "type": "string"
                         },
                         "cap_amount": {
                           "anyOf": [
@@ -23131,24 +22685,7 @@
           },
           "custom_field_data": {
             "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+              "type": "string"
             },
             "type": "object",
             "title": "Custom Field Data",
@@ -24053,14 +23590,7 @@
         "properties": {
           "loc": {
             "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
+              "type": "string"
             },
             "type": "array",
             "title": "Location"
@@ -25067,18 +24597,9 @@
             "description": "The ID of the meter associated to the price."
           },
           "unit_amount": {
-            "anyOf": [
-              {
-                "type": "number",
-                "exclusiveMinimum": 0
-              },
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,5}|(?=[\\d.]{1,18}0*$)\\d{0,5}\\.\\d{0,12}0*$)"
-              }
-            ],
             "title": "Unit Amount",
-            "description": "The price per unit in cents. Supports up to 12 decimal places."
+            "description": "The price per unit in cents. Supports up to 12 decimal places.",
+            "type": "string"
           },
           "cap_amount": {
             "anyOf": [

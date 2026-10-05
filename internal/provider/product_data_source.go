@@ -46,16 +46,13 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"trial_interval": schema.StringAttribute{
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
-				Description: "The interval unit for the trial period.",
-			},
-			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The number of interval units for the trial period.",
+				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "The name of the product.",
 			},
 			"description": schema.StringAttribute{
@@ -65,6 +62,31 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"visibility": schema.StringAttribute{
 				Computed:    true,
 				Description: "The visibility of the product.",
+			},
+			"prices": schema.StringAttribute{
+				Required:    true,
+				Description: "List of prices for this product.",
+			},
+			"medias": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Description: "List of medias associated to the product.",
+			},
+			"attached_custom_fields": schema.StringAttribute{
+				Computed:    true,
+				Description: "List of custom fields attached to the product.",
+			},
+			"organization_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the organization owning the product.",
+			},
+			"trial_interval": schema.StringAttribute{
+				Computed:    true,
+				Description: "The interval unit for the trial period.",
+			},
+			"trial_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Description: "The number of interval units for the trial period.",
 			},
 			"recurring_interval": schema.StringAttribute{
 				Computed:    true,
@@ -81,40 +103,6 @@ func (d *ProductDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 			"meter_interval_count": schema.Int64Attribute{
 				Computed:    true,
 				Description: "Number of meter interval units. None when no meter cycle is set.",
-			},
-			"is_recurring": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the product is a subscription.",
-			},
-			"is_archived": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the product is archived and no longer available.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the product.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
-			"prices": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of prices for this product.",
-			},
-			"benefits": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of benefits granted by the product.",
-			},
-			"medias": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "List of medias associated to the product.",
-			},
-			"attached_custom_fields": schema.StringAttribute{
-				Computed:    true,
-				Description: "List of custom fields attached to the product.",
 			},
 		},
 	}

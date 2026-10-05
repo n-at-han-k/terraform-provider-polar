@@ -16,23 +16,20 @@ type ProductModel struct {
 	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	TrialInterval types.String `tfsdk:"trial_interval"`
-	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
+	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	Name types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Visibility types.String `tfsdk:"visibility"`
+	Prices []ProductPricesModel `tfsdk:"prices"`
+	Medias jsontypes.Normalized `tfsdk:"medias"`
+	AttachedCustomFields []ProductAttachedCustomFieldsModel `tfsdk:"attached_custom_fields"`
+	OrganizationId types.String `tfsdk:"organization_id"`
+	TrialInterval types.String `tfsdk:"trial_interval"`
+	TrialIntervalCount types.Int64 `tfsdk:"trial_interval_count"`
 	RecurringInterval types.String `tfsdk:"recurring_interval"`
 	RecurringIntervalCount types.Int64 `tfsdk:"recurring_interval_count"`
 	MeterInterval types.String `tfsdk:"meter_interval"`
 	MeterIntervalCount types.Int64 `tfsdk:"meter_interval_count"`
-	IsRecurring types.Bool `tfsdk:"is_recurring"`
-	IsArchived types.Bool `tfsdk:"is_archived"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Prices []ProductPricesModel `tfsdk:"prices"`
-	Benefits []ProductBenefitsModel `tfsdk:"benefits"`
-	Medias jsontypes.Normalized `tfsdk:"medias"`
-	AttachedCustomFields []ProductAttachedCustomFieldsModel `tfsdk:"attached_custom_fields"`
 }
 
 // ProductPricesModel is one `prices` block.
@@ -42,7 +39,6 @@ type ProductModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type ProductPricesModel struct {
-	Id types.String `tfsdk:"id"`
 	PriceCurrency types.String `tfsdk:"price_currency"`
 	TaxBehavior types.String `tfsdk:"tax_behavior"`
 	PriceAmount types.Int64 `tfsdk:"price_amount"`
@@ -51,17 +47,14 @@ type ProductPricesModel struct {
 	PresetAmount types.Int64 `tfsdk:"preset_amount"`
 	SeatTiers types.String `tfsdk:"seat_tiers"`
 	MeterId types.String `tfsdk:"meter_id"`
-	UnitAmount jsontypes.Normalized `tfsdk:"unit_amount"`
+	UnitAmount types.String `tfsdk:"unit_amount"`
 	CapAmount types.Int64 `tfsdk:"cap_amount"`
 	AmountType types.String `tfsdk:"amount_type"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
-func (m *ProductPricesModel) ToClientModel() (*client.ProductUpdatePricesInner, error) {
-	out := &client.ProductUpdatePricesInner{}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
+func (m *ProductPricesModel) ToClientModel() (*client.ProductCreatePricesItem, error) {
+	out := &client.ProductCreatePricesItem{}
 	if !m.PriceCurrency.IsNull() && !m.PriceCurrency.IsUnknown() {
 		out.PriceCurrency = m.PriceCurrency.ValueString()
 	}
@@ -83,11 +76,8 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductUpdatePricesInner, 
 	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
 		out.MeterId = m.MeterId.ValueString()
 	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
 	if !m.UnitAmount.IsNull() && !m.UnitAmount.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.UnitAmount.ValueString()), &out.UnitAmount); err != nil {
-			return out, fmt.Errorf("unit_amount: %w", err)
-		}
+		out.UnitAmount = m.UnitAmount.ValueString()
 	}
 	if !m.CapAmount.IsNull() && !m.CapAmount.IsUnknown() {
 		out.CapAmount = int32(m.CapAmount.ValueInt64())
@@ -104,8 +94,7 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductUpdatePricesInner, 
 // are Optional AND Computed: Polar fills in a price's currency and tax
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
-func (m *ProductPricesModel) FromClientModel(c *client.ProductUpdatePricesInner) {
-	m.Id = types.StringValue(c.Id)
+func (m *ProductPricesModel) FromClientModel(c *client.ProductCreatePricesItem) {
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	m.TaxBehavior = types.StringValue(c.TaxBehavior)
 	m.PriceAmount = types.Int64Value(int64(c.PriceAmount))
@@ -113,145 +102,9 @@ func (m *ProductPricesModel) FromClientModel(c *client.ProductUpdatePricesInner)
 	m.MaximumAmount = types.Int64Value(int64(c.MaximumAmount))
 	m.PresetAmount = types.Int64Value(int64(c.PresetAmount))
 	m.MeterId = types.StringValue(c.MeterId)
-	if encoded, err := json.Marshal(c.UnitAmount); err == nil {
-		if m.UnitAmount.IsNull() || m.UnitAmount.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.UnitAmount.ValueString()) {
-			m.UnitAmount = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
+	m.UnitAmount = types.StringValue(c.UnitAmount)
 	m.CapAmount = types.Int64Value(int64(c.CapAmount))
 	m.AmountType = types.StringValue(c.AmountType)
-}
-// ProductBenefitsModel is one `benefits` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type ProductBenefitsModel struct {
-	Id types.String `tfsdk:"id"`
-	CreatedAt types.String `tfsdk:"created_at"`
-	ModifiedAt types.String `tfsdk:"modified_at"`
-	Description types.String `tfsdk:"description"`
-	Selectable types.Bool `tfsdk:"selectable"`
-	Deletable types.Bool `tfsdk:"deletable"`
-	IsDeleted types.Bool `tfsdk:"is_deleted"`
-	OrganizationId types.String `tfsdk:"organization_id"`
-	Metadata jsontypes.Normalized `tfsdk:"metadata"`
-	Visibility types.String `tfsdk:"visibility"`
-	CustomProperties types.String `tfsdk:"custom_properties"`
-	DiscordProperties types.String `tfsdk:"discord_properties"`
-	GithubRepositoryProperties types.String `tfsdk:"github_repository_properties"`
-	DownloadablesProperties types.String `tfsdk:"downloadables_properties"`
-	LicenseKeysProperties types.String `tfsdk:"license_keys_properties"`
-	MeterCreditProperties types.String `tfsdk:"meter_credit_properties"`
-	FeatureFlagProperties jsontypes.Normalized `tfsdk:"feature_flag_properties"`
-	SlackSharedChannelProperties types.String `tfsdk:"slack_shared_channel_properties"`
-	VisibilityConfigurable types.Bool `tfsdk:"visibility_configurable"`
-	Type types.String `tfsdk:"type"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *ProductBenefitsModel) ToClientModel() (*client.Benefit, error) {
-	out := &client.Benefit{}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		out.Id = m.Id.ValueString()
-	}
-	if !m.CreatedAt.IsNull() && !m.CreatedAt.IsUnknown() {
-		out.CreatedAt = m.CreatedAt.ValueString()
-	}
-	if !m.ModifiedAt.IsNull() && !m.ModifiedAt.IsUnknown() {
-		out.ModifiedAt = m.ModifiedAt.ValueString()
-	}
-	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
-	}
-	if !m.Selectable.IsNull() && !m.Selectable.IsUnknown() {
-		Selectable := m.Selectable.ValueBool()
-		out.Selectable = &Selectable
-	}
-	if !m.Deletable.IsNull() && !m.Deletable.IsUnknown() {
-		Deletable := m.Deletable.ValueBool()
-		out.Deletable = &Deletable
-	}
-	if !m.IsDeleted.IsNull() && !m.IsDeleted.IsUnknown() {
-		IsDeleted := m.IsDeleted.ValueBool()
-		out.IsDeleted = &IsDeleted
-	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
-		}
-	}
-	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		out.Visibility = m.Visibility.ValueString()
-	}
-	// Deeper than nestedMaxDepth, so this child is JSON inside a typed block.
-	if !m.FeatureFlagProperties.IsNull() && !m.FeatureFlagProperties.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.FeatureFlagProperties.ValueString()), &out.FeatureFlagProperties); err != nil {
-			return out, fmt.Errorf("feature_flag_properties: %w", err)
-		}
-	}
-	if !m.VisibilityConfigurable.IsNull() && !m.VisibilityConfigurable.IsUnknown() {
-		VisibilityConfigurable := m.VisibilityConfigurable.ValueBool()
-		out.VisibilityConfigurable = &VisibilityConfigurable
-	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *ProductBenefitsModel) FromClientModel(c *client.Benefit) {
-	m.Id = types.StringValue(c.Id)
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Description = types.StringValue(c.Description)
-	if c.Selectable != nil {
-		m.Selectable = types.BoolValue(*c.Selectable)
-	} else {
-		m.Selectable = types.BoolNull()
-	}
-	if c.Deletable != nil {
-		m.Deletable = types.BoolValue(*c.Deletable)
-	} else {
-		m.Deletable = types.BoolNull()
-	}
-	if c.IsDeleted != nil {
-		m.IsDeleted = types.BoolValue(*c.IsDeleted)
-	} else {
-		m.IsDeleted = types.BoolNull()
-	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	if encoded, err := json.Marshal(c.Metadata); err == nil {
-		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
-			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	m.Visibility = types.StringValue(c.Visibility)
-	if encoded, err := json.Marshal(c.FeatureFlagProperties); err == nil {
-		if m.FeatureFlagProperties.IsNull() || m.FeatureFlagProperties.IsUnknown() ||
-			!jsonSupersetOf(string(encoded), m.FeatureFlagProperties.ValueString()) {
-			m.FeatureFlagProperties = jsontypes.NewNormalizedValue(string(encoded))
-		}
-	}
-	if c.VisibilityConfigurable != nil {
-		m.VisibilityConfigurable = types.BoolValue(*c.VisibilityConfigurable)
-	} else {
-		m.VisibilityConfigurable = types.BoolNull()
-	}
-	m.Type = types.StringValue(c.Type)
 }
 // ProductAttachedCustomFieldsModel is one `attached_custom_fields` block.
 //
@@ -293,13 +146,15 @@ func (m *ProductAttachedCustomFieldsModel) FromClientModel(c *client.AttachedCus
 }
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *ProductModel) ToClientModel() (*client.ProductUpdate, error) {
-	out := &client.ProductUpdate{}
-	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		out.TrialInterval = m.TrialInterval.ValueString()
-	}
-	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
+	out := &client.ProductCreate{}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
@@ -310,28 +165,8 @@ func (m *ProductModel) ToClientModel() (*client.ProductUpdate, error) {
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		out.Visibility = m.Visibility.ValueString()
 	}
-	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		out.RecurringInterval = m.RecurringInterval.ValueString()
-	}
-	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
-	}
-	if !m.IsArchived.IsNull() && !m.IsArchived.IsUnknown() {
-		// Addressed, not assigned: the client field is a *bool so that an
-		// explicit false is sent rather than dropped by `omitempty`.
-		IsArchived := m.IsArchived.ValueBool()
-		out.IsArchived = &IsArchived
-	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
-			return out, fmt.Errorf("metadata: %w", err)
-		}
-	}
 	if len(m.Prices) > 0 {
-		out.Prices = make([]client.ProductUpdatePricesInner, 0, len(m.Prices))
+		out.Prices = make([]client.ProductCreatePricesItem, 0, len(m.Prices))
 		for index := range m.Prices {
 			converted, err := m.Prices[index].ToClientModel()
 			if err != nil {
@@ -358,64 +193,105 @@ func (m *ProductModel) ToClientModel() (*client.ProductUpdate, error) {
 			out.AttachedCustomFields = append(out.AttachedCustomFields, *converted)
 		}
 	}
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
+	}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		out.TrialInterval = m.TrialInterval.ValueString()
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+	}
+	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
+		out.RecurringInterval = m.RecurringInterval.ValueString()
+	}
+	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
+		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
+	}
+	if !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
+		out.MeterInterval = m.MeterInterval.ValueString()
+	}
+	if !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
+		out.MeterIntervalCount = int32(m.MeterIntervalCount.ValueInt64())
+	}
 	return out, nil
 }
 
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *ProductModel) ToUpdateModel() (*client.ProductUpdate, error) {
+	out := &client.ProductUpdate{}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.Description.IsNull() && !m.Description.IsUnknown() {
+		out.Description = m.Description.ValueString()
+	}
+	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		out.Visibility = m.Visibility.ValueString()
+	}
+	if !m.Medias.IsNull() && !m.Medias.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Medias.ValueString()), &out.Medias); err != nil {
+			return out, fmt.Errorf("medias: %w", err)
+		}
+	}
+	if len(m.AttachedCustomFields) > 0 {
+		out.AttachedCustomFields = make([]client.AttachedCustomFieldCreate, 0, len(m.AttachedCustomFields))
+		for index := range m.AttachedCustomFields {
+			converted, err := m.AttachedCustomFields[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("attached_custom_fields[%d]: %w", index, err)
+			}
+			out.AttachedCustomFields = append(out.AttachedCustomFields, *converted)
+		}
+	}
+	if !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		out.TrialInterval = m.TrialInterval.ValueString()
+	}
+	if !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		out.TrialIntervalCount = int32(m.TrialIntervalCount.ValueInt64())
+	}
+	if !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
+		out.RecurringInterval = m.RecurringInterval.ValueString()
+	}
+	if !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
+		out.RecurringIntervalCount = int32(m.RecurringIntervalCount.ValueInt64())
+	}
+	return out, nil
+}
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *ProductModel) FromClientModel(c *client.Product) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.TrialInterval = types.StringValue(c.TrialInterval)
-	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
 	m.Name = types.StringValue(c.Name)
 	m.Description = types.StringValue(c.Description)
 	m.Visibility = types.StringValue(c.Visibility)
-	m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	m.MeterInterval = types.StringValue(c.MeterInterval)
-	m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsRecurring != nil {
-		m.IsRecurring = types.BoolValue(*c.IsRecurring)
-	} else if m.IsRecurring.IsUnknown() {
-		m.IsRecurring = types.BoolNull()
-	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.IsArchived != nil {
-		m.IsArchived = types.BoolValue(*c.IsArchived)
-	} else if m.IsArchived.IsUnknown() {
-		m.IsArchived = types.BoolNull()
-	}
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
-	}
-	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
-	// compares element by element, so a server that reorders or adds a price is
-	// a diff -- which is correct: it did something the configuration did not say.
-	Benefits := make([]ProductBenefitsModel, 0, len(c.Benefits))
-	for index := range c.Benefits {
-		block := ProductBenefitsModel{}
-		if index < len(m.Benefits) {
-			block = m.Benefits[index]
-		}
-		block.FromClientModel(&c.Benefits[index])
-		Benefits = append(Benefits, block)
-	}
-	m.Benefits = Benefits
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
@@ -424,4 +300,11 @@ func (m *ProductModel) FromClientModel(c *client.Product) {
 	if m.Medias.IsUnknown() {
 		m.Medias = jsontypes.NewNormalizedNull()
 	}
+	m.OrganizationId = types.StringValue(c.OrganizationId)
+	m.TrialInterval = types.StringValue(c.TrialInterval)
+	m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	m.RecurringInterval = types.StringValue(c.RecurringInterval)
+	m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
+	m.MeterInterval = types.StringValue(c.MeterInterval)
+	m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
 }

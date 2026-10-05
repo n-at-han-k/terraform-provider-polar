@@ -46,30 +46,18 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"description": schema.StringAttribute{
-				Computed:    true,
-				Description: "The description of the benefit.",
-			},
-			"selectable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is selectable when creating a product.",
-			},
-			"deletable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is deletable.",
-			},
-			"is_deleted": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the benefit is deleted.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the benefit.",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
+			},
+			"description": schema.StringAttribute{
+				Required:    true,
+				Description: "The description of the benefit.",
+			},
+			"organization_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the organization owning the benefit.",
 			},
 			"visibility": schema.StringAttribute{
 				Computed:    true,
@@ -108,78 +96,9 @@ func (d *BenefitDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "",
 			},
-			"visibility_configurable": schema.BoolAttribute{
-				Computed:    true,
-				Description: "",
-			},
 			"type": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Which variant this is. Selects which of the optional blocks above applies.",
-			},
-			"benefit_custom_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_discord_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_git_hub_repository_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_downloadables_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_license_keys_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_meter_credit_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_feature_flag_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_slack_shared_channel_update_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_custom_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_discord_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_git_hub_repository_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_downloadables_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_license_keys_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_meter_credit_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"benefit_feature_flag_update_properties": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Properties for a benefit of type `feature_flag`.",
-			},
-			"benefit_slack_shared_channel_update_properties": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
 			},
 		},
 	}

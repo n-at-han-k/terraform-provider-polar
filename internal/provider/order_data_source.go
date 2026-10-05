@@ -46,155 +46,39 @@ func (d *OrderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"status": schema.StringAttribute{
+			"custom_field_data": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
-				Description: "",
-			},
-			"paid": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the order has been paid for.",
-			},
-			"subtotal_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, before discounts and taxes.",
-			},
-			"discount_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Discount amount in cents.",
-			},
-			"net_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts but before taxes.",
-			},
-			"tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax amount in cents.",
-			},
-			"total_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts and taxes.",
-			},
-			"applied_balance_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Customer's balance amount applied to this invoice. Can increase the total amount paid, if the customer has a negative balance,  or decrease it, if the customer has a positive balance.Amount in cents.",
-			},
-			"due_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents that is due for this order.",
-			},
-			"refunded_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount refunded in cents.",
-			},
-			"refunded_tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax refunded in cents.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"billing_reason": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"billing_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "The name of the customer that should appear on the invoice. ",
-			},
-			"billing_address": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"invoice_number": schema.StringAttribute{
-				Computed:    true,
-				Description: "The invoice number associated with this order. `null` while the order is in `draft` status; assigned at finalize.",
-			},
-			"is_invoice_generated": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether an invoice has been generated for this order.",
-			},
-			"receipt_number": schema.StringAttribute{
-				Computed:    true,
-				Description: "The receipt number for this order. Set once the order is paid for organizations with receipts enabled. When set, a downloadable receipt PDF can be obtained via the receipt endpoint.",
-			},
-			"seats": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of seats purchased (for seat-based one-time orders).",
-			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"discount_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"subscription_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"checkout_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"next_payment_attempt_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "When the next automatic payment retry is scheduled. `null` if the order is not in dunning or all retries have been exhausted.",
+				Description: "Key-value object storing custom field values.",
 			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Description: "",
 			},
-			"custom_field_data": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Key-value object storing custom field values.",
+				Description: "The organization ID.",
 			},
-			"platform_fee_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Platform fee amount in cents.",
+			"customer_id": schema.StringAttribute{
+				Required:    true,
+				Description: "",
 			},
-			"platform_fee_currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "Filter by description.",
+			"product_id": schema.StringAttribute{
+				Required:    true,
+				Description: "",
 			},
-			"customer": schema.StringAttribute{
+			"currency": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},
-			"product": schema.StringAttribute{
+			"amount": schema.Int64Attribute{
 				Computed:    true,
-				Description: "",
-			},
-			"discount": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"subscription": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"items": schema.StringAttribute{
-				Computed:    true,
-				Description: "Line items composing the order.",
+				Description: "A custom amount to charge, in the smallest currency unit. Overrides the product's price; defaults to the product's configured price (0 for free products). A positive amount must be at least the currency's minimum.",
 			},
 			"description": schema.StringAttribute{
 				Computed:    true,
 				Description: "A summary description of the order.",
-			},
-			"refundable_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents that can still be refunded (net, before taxes). Accounts for any applied customer balance and previous refunds.",
-			},
-			"refundable_tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax in cents that would be refunded if the full refundable amount is refunded.",
 			},
 		},
 	}

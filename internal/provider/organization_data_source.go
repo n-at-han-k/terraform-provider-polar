@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
@@ -34,6 +33,10 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = schema.Schema{
 		Description: "Fetches a organization data source.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -42,29 +45,21 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
 			"name": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Organization name shown in checkout, customer portal, emails etc.",
 			},
 			"slug": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Unique organization slug in checkout, customer portal and credit card statements.",
 			},
 			"avatar_url": schema.StringAttribute{
 				Computed:    true,
 				Description: "Avatar URL shown in checkout, customer portal, emails etc.",
 			},
-			"proration_behavior": schema.StringAttribute{
+			"legal_entity": schema.StringAttribute{
 				Computed:    true,
-				Description: "Proration behavior applied when customer updates their subscription from the portal.",
-			},
-			"allow_customer_updates": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether customers can update their subscriptions from the customer portal.",
+				Description: "",
 			},
 			"email": schema.StringAttribute{
 				Computed:    true,
@@ -78,29 +73,13 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Links to social profiles.",
 			},
-			"status": schema.StringAttribute{
+			"details": schema.StringAttribute{
 				Computed:    true,
-				Description: "Current organization status",
+				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
 			},
-			"details_submitted_at": schema.StringAttribute{
+			"country": schema.StringAttribute{
 				Computed:    true,
-				Description: "When the business details were submitted for review.",
-			},
-			"onboarding_resubmission_requested_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "When Polar requested that the organization review and resubmit its onboarding information, if applicable.",
-			},
-			"sso_enforced": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether members must access this organization through its SSO connection.",
-			},
-			"default_presentment_currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "Default presentment currency. Used as fallback in checkout and customer portal, if the customer's local currency is not available.",
-			},
-			"default_tax_behavior": schema.StringAttribute{
-				Computed:    true,
-				Description: "Default tax behavior applied on products.",
+				Description: "Two-letter country code (ISO 3166-1 alpha-2).",
 			},
 			"feature_settings": schema.StringAttribute{
 				Computed:    true,
@@ -118,38 +97,13 @@ func (d *OrganizationDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				Description: "Settings related to the customer portal",
 			},
-			"dispute_settings": schema.StringAttribute{
+			"default_presentment_currency": schema.StringAttribute{
 				Computed:    true,
-				Description: "Settings related to disputes",
+				Description: "Default presentment currency. Used as fallback in checkout and customer portal, if the customer's local currency is not available.",
 			},
-			"embed_hosts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"default_tax_behavior": schema.StringAttribute{
 				Computed:    true,
-				Description: "Hosts allowed to embed this organization's checkout. An entry is a host and an optional port, without a scheme: HTTPS is always allowed, and HTTP too for local hosts — `localhost`, any `.localhost` or `.local` name, and loopback or private addresses. `*.example.com` matches any subdomain, but not `example.com` itself. An app origin such as `chrome-extension://abcdef` carries its scheme, having no host to match on.",
-			},
-			"embed_hosts_enforced": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether an embedding page's origin must match `embed_hosts`. Organizations that have not configured a list yet embed unchecked until the allowlist is enforced for everyone.",
-			},
-			"country": schema.StringAttribute{
-				Computed:    true,
-				Description: "Two-letter country code (ISO 3166-1 alpha-2).",
-			},
-			"account_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the transactions account.",
-			},
-			"payout_account_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the payout account.",
-			},
-			"capabilities": schema.StringAttribute{
-				Computed:    true,
-				Description: "Capabilities currently granted to the organization.",
-			},
-			"details": schema.StringAttribute{
-				Computed:    true,
-				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
+				Description: "Default tax behavior applied on products.",
 			},
 		},
 	}

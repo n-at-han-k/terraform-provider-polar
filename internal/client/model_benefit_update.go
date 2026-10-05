@@ -4,7 +4,7 @@ package client
 
 // BenefitUpdate - BenefitUpdate struct
 type BenefitUpdate struct {
-	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	Description string `json:"description,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
 	BenefitCustomUpdateType string `json:"benefit_custom_update_type,omitempty"`

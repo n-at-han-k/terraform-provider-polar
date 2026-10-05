@@ -11,23 +11,21 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-// WebhooksEndpointModel is the Terraform model for webhooks_endpoint.
-type WebhooksEndpointModel struct {
+// WebhookEndpointModel is the Terraform model for webhook_endpoint.
+type WebhookEndpointModel struct {
+	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
 	Url types.String `tfsdk:"url"`
 	Name types.String `tfsdk:"name"`
 	Format types.String `tfsdk:"format"`
-	Secret types.String `tfsdk:"secret"`
-	OrganizationId types.String `tfsdk:"organization_id"`
 	Events jsontypes.Normalized `tfsdk:"events"`
-	Enabled types.Bool `tfsdk:"enabled"`
+	OrganizationId types.String `tfsdk:"organization_id"`
 }
 
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, error) {
+func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, error) {
 	out := &client.WebhookEndpointCreate{}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
 		out.Url = m.Url.ValueString()
@@ -38,9 +36,6 @@ func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, 
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
 		out.Format = m.Format.ValueString()
 	}
-	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
-		out.OrganizationId = m.OrganizationId.ValueString()
-	}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
@@ -48,6 +43,9 @@ func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, 
 		if err := json.Unmarshal([]byte(m.Events.ValueString()), &out.Events); err != nil {
 			return out, fmt.Errorf("events: %w", err)
 		}
+	}
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
 	}
 	return out, nil
 }
@@ -60,7 +58,7 @@ func (m *WebhooksEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, 
 //
 // Fields the patch model does not declare are simply absent here -- the
 // generator only emits the ones it has.
-func (m *WebhooksEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, error) {
+func (m *WebhookEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, error) {
 	out := &client.WebhookEndpointUpdate{}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
 		out.Url = m.Url.ValueString()
@@ -76,23 +74,17 @@ func (m *WebhooksEndpointModel) ToUpdateModel() (*client.WebhookEndpointUpdate, 
 			return out, fmt.Errorf("events: %w", err)
 		}
 	}
-	if !m.Enabled.IsNull() && !m.Enabled.IsUnknown() {
-		Enabled := m.Enabled.ValueBool()
-		out.Enabled = &Enabled
-	}
 	return out, nil
 }
 
 // FromClientModel updates the Terraform model from a client model.
-func (m *WebhooksEndpointModel) FromClientModel(c *client.WebhookEndpoint) {
+func (m *WebhookEndpointModel) FromClientModel(c *client.WebhookEndpoint) {
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
 	m.Url = types.StringValue(c.Url)
 	m.Name = types.StringValue(c.Name)
 	m.Format = types.StringValue(c.Format)
-	m.Secret = types.StringValue(c.Secret)
-	m.OrganizationId = types.StringValue(c.OrganizationId)
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
 	// unrepresentable one would have failed on the way in.
 	//
@@ -106,13 +98,5 @@ func (m *WebhooksEndpointModel) FromClientModel(c *client.WebhookEndpoint) {
 			m.Events = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	// A bool the server does not answer leaves the pointer nil, and a Computed
-	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
-	// value ... all values must be known after apply". Unknown becomes null; a
-	// value the plan already knows is left alone.
-	if c.Enabled != nil {
-		m.Enabled = types.BoolValue(*c.Enabled)
-	} else if m.Enabled.IsUnknown() {
-		m.Enabled = types.BoolNull()
-	}
+	m.OrganizationId = types.StringValue(c.OrganizationId)
 }

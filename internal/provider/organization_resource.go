@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -42,6 +43,10 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 	resp.Schema = schema.Schema{
 		Description: "Manages a organization resource.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -50,17 +55,12 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
 			"name": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "Organization name shown in checkout, customer portal, emails etc.",
 			},
 			"slug": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Unique organization slug in checkout, customer portal and credit card statements.",
 			},
 			"avatar_url": schema.StringAttribute{
@@ -68,13 +68,20 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "Avatar URL shown in checkout, customer portal, emails etc.",
 			},
-			"proration_behavior": schema.StringAttribute{
-				Computed:    true,
-				Description: "Proration behavior applied when customer updates their subscription from the portal.",
-			},
-			"allow_customer_updates": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether customers can update their subscriptions from the customer portal.",
+			"legal_entity": schema.SingleNestedAttribute{
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"registered_name": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "",
+					},
+					"type": schema.StringAttribute{
+						Required:    true,
+						Description: "Which variant this is. Selects which of the optional blocks above applies.",
+					},
+				},
+				Description: "",
 			},
 			"email": schema.StringAttribute{
 				Computed:    true,
@@ -103,32 +110,69 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				},
 				Description: "Links to social profiles.",
 			},
-			"status": schema.StringAttribute{
-				Computed:    true,
-				Description: "Current organization status",
+			"details": schema.SingleNestedAttribute{
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"about": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Brief information about you and your business.",
+					},
+					"product_description": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Description of digital products being sold.",
+					},
+					"selling_categories": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Categories of products being sold.",
+					},
+					"pricing_models": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Pricing models used by the organization.",
+					},
+					"intended_use": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "How the organization will integrate and use Polar.",
+					},
+					"customer_acquisition": schema.StringAttribute{
+						CustomType:  jsontypes.NormalizedType{},
+						Computed:    true,
+						Optional:    true,
+						Description: "Main customer acquisition channels.",
+					},
+					"future_annual_revenue": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Estimated revenue in the next 12 months",
+					},
+					"switching": schema.BoolAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Switching from another platform?",
+					},
+					"switching_from": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Which platform the organization is migrating from.",
+					},
+					"previous_annual_revenue": schema.Int64Attribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "Revenue from last year if applicable.",
+					},
+				},
+				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
 			},
-			"details_submitted_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "When the business details were submitted for review.",
-			},
-			"onboarding_resubmission_requested_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "When Polar requested that the organization review and resubmit its onboarding information, if applicable.",
-			},
-			"sso_enforced": schema.BoolAttribute{
+			"country": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "Whether members must access this organization through its SSO connection.",
-			},
-			"default_presentment_currency": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Default presentment currency. Used as fallback in checkout and customer portal, if the customer's local currency is not available.",
-			},
-			"default_tax_behavior": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Default tax behavior applied on products.",
+				Description: "Two-letter country code (ISO 3166-1 alpha-2).",
 			},
 			"feature_settings": schema.SingleNestedAttribute{
 				Optional:    true,
@@ -267,129 +311,15 @@ func (r *OrganizationResource) Schema(_ context.Context, _ resource.SchemaReques
 				},
 				Description: "Settings related to the customer portal",
 			},
-			"dispute_settings": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"auto_accept_below_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Concede disputes below this amount, in USD cents, without asking the organization. A dispute charged in another currency converts at the rate its payment settled at. `null` turns it off. The disputed amount and the processor's dispute fee are still deducted.",
-					},
-				},
-				Description: "Settings related to disputes",
-			},
-			"embed_hosts": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
+			"default_presentment_currency": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "Hosts allowed to embed this organization's checkout. An entry is a host and an optional port, without a scheme: HTTPS is always allowed, and HTTP too for local hosts — `localhost`, any `.localhost` or `.local` name, and loopback or private addresses. `*.example.com` matches any subdomain, but not `example.com` itself. An app origin such as `chrome-extension://abcdef` carries its scheme, having no host to match on.",
+				Description: "Default presentment currency. Used as fallback in checkout and customer portal, if the customer's local currency is not available.",
 			},
-			"embed_hosts_enforced": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether an embedding page's origin must match `embed_hosts`. Organizations that have not configured a list yet embed unchecked until the allowlist is enforced for everyone.",
-			},
-			"country": schema.StringAttribute{
+			"default_tax_behavior": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "Two-letter country code (ISO 3166-1 alpha-2).",
-			},
-			"account_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the transactions account.",
-			},
-			"payout_account_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the payout account.",
-			},
-			"capabilities": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"checkout_payments": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can accept new checkout payments.",
-					},
-					"subscription_renewals": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can process subscription renewals.",
-					},
-					"payouts": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can withdraw its balance.",
-					},
-					"refunds": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can issue refunds.",
-					},
-					"api_access": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can access the API.",
-					},
-					"dashboard_access": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the organization can access the dashboard.",
-					},
-				},
-				Description: "Capabilities currently granted to the organization.",
-			},
-			"details": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"about": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Brief information about you and your business.",
-					},
-					"product_description": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Description of digital products being sold.",
-					},
-					"selling_categories": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Categories of products being sold.",
-					},
-					"pricing_models": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Pricing models used by the organization.",
-					},
-					"intended_use": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "How the organization will integrate and use Polar.",
-					},
-					"customer_acquisition": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Main customer acquisition channels.",
-					},
-					"future_annual_revenue": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Estimated revenue in the next 12 months",
-					},
-					"switching": schema.BoolAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Switching from another platform?",
-					},
-					"switching_from": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Which platform the organization is migrating from.",
-					},
-					"previous_annual_revenue": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Revenue from last year if applicable.",
-					},
-				},
-				Description: "Additional, private, business details Polar needs about active organizations for compliance (KYC).",
+				Description: "Default tax behavior applied on products.",
 			},
 		},
 	}
@@ -413,7 +343,52 @@ func (r *OrganizationResource) Configure(_ context.Context, req resource.Configu
 }
 
 func (r *OrganizationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for organization")
+	var plan OrganizationModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid organization configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/organizations/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating organization", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/organizations/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created organization", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Organization
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created organization resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *OrganizationResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -482,7 +457,8 @@ func (r *OrganizationResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid organization configuration", err.Error())
 		return

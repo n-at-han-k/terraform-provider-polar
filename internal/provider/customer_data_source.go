@@ -55,25 +55,9 @@ func (d *CustomerDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "The ID of the customer in your system. This must be unique within the organization. Once set, it can't be updated.",
 			},
-			"individual_email": schema.StringAttribute{
-				Computed:    true,
-				Description: "The email address of the customer. This must be unique within the organization.",
-			},
-			"team_email": schema.StringAttribute{
-				Computed:    true,
-				Description: "The email address of the customer. This must be unique within the organization.",
-			},
-			"email_verified": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the customer email address is verified. The address is automatically verified when the customer accesses the customer portal using their email address.",
-			},
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "The name of the customer.",
-			},
-			"billing_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
 			},
 			"billing_address": schema.StringAttribute{
 				Computed:    true,
@@ -92,29 +76,25 @@ func (d *CustomerDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Computed:    true,
 				Description: "The ID of the organization owning the customer.",
 			},
-			"default_payment_method_id": schema.StringAttribute{
+			"owner": schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the customer's default payment method, if any. Use the payment methods endpoint to retrieve its details.",
+				Description: "Optional owner member to create with the customer. If not provided, an owner member will be automatically created using the customer's email and name.",
 			},
-			"deleted_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Timestamp for when the customer was soft deleted.",
-			},
-			"first_user_event_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Timestamp of the first event ingested for this customer. Can predate `created_at`, and is null if no event was ever ingested.",
-			},
-			"avatar_url": schema.StringAttribute{
+			"customer_individual_type": schema.StringAttribute{
 				Computed:    true,
 				Description: "",
 			},
-			"type": schema.StringAttribute{
+			"customer_team_type": schema.StringAttribute{
 				Computed:    true,
-				Description: "Which variant this is. Selects which of the optional blocks above applies.",
+				Description: "",
 			},
-			"email": schema.StringAttribute{
+			"customer_individual_email": schema.StringAttribute{
 				Computed:    true,
 				Description: "The email address of the customer. This must be unique within the organization.",
+			},
+			"customer_team_email": schema.StringAttribute{
+				Computed:    true,
+				Description: "The email address of the team customer. Optional for team customers — if omitted, an owner with an email must be provided.",
 			},
 		},
 	}

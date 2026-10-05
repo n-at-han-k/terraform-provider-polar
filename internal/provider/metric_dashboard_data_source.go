@@ -16,24 +16,28 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ datasource.DataSource = &MetricsDashboardDataSource{}
+var _ datasource.DataSource = &MetricDashboardDataSource{}
 
-func NewMetricsDashboardDataSource() datasource.DataSource {
-	return &MetricsDashboardDataSource{}
+func NewMetricDashboardDataSource() datasource.DataSource {
+	return &MetricDashboardDataSource{}
 }
 
-type MetricsDashboardDataSource struct {
+type MetricDashboardDataSource struct {
 	client *client.Client
 }
 
-func (d *MetricsDashboardDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_metrics_dashboard"
+func (d *MetricDashboardDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_metric_dashboard"
 }
 
-func (d *MetricsDashboardDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *MetricDashboardDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches a metrics_dashboard data source.",
+		Description: "Fetches a metric_dashboard data source.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -41,10 +45,6 @@ func (d *MetricsDashboardDataSource) Schema(_ context.Context, _ datasource.Sche
 			"modified_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
-			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -63,7 +63,7 @@ func (d *MetricsDashboardDataSource) Schema(_ context.Context, _ datasource.Sche
 	}
 }
 
-func (d *MetricsDashboardDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *MetricDashboardDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -80,8 +80,8 @@ func (d *MetricsDashboardDataSource) Configure(_ context.Context, req datasource
 	d.client = c
 }
 
-func (d *MetricsDashboardDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config MetricsDashboardModel
+func (d *MetricDashboardDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config MetricDashboardModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -90,7 +90,7 @@ func (d *MetricsDashboardDataSource) Read(ctx context.Context, req datasource.Re
 
 	respBody, err := d.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", config.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading metrics_dashboard", err.Error())
+		resp.Diagnostics.AddError("Error reading metric_dashboard", err.Error())
 		return
 	}
 
@@ -102,6 +102,6 @@ func (d *MetricsDashboardDataSource) Read(ctx context.Context, req datasource.Re
 
 	config.FromClientModel(&result)
 
-	tflog.Trace(ctx, "read metrics_dashboard data source")
+	tflog.Trace(ctx, "read metric_dashboard data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

@@ -9,8 +9,6 @@ import (
 	"encoding/json"
 
 
-	"strings"
-
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -18,6 +16,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -25,28 +24,28 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ resource.Resource = &CustomersExternalMemberResource{}
-var _ resource.ResourceWithImportState = &CustomersExternalMemberResource{}
+var _ resource.Resource = &MetricDashboardResource{}
+var _ resource.ResourceWithImportState = &MetricDashboardResource{}
 
-func NewCustomersExternalMemberResource() resource.Resource {
-	return &CustomersExternalMemberResource{}
+func NewMetricDashboardResource() resource.Resource {
+	return &MetricDashboardResource{}
 }
 
-type CustomersExternalMemberResource struct {
+type MetricDashboardResource struct {
 	client *client.Client
 }
 
-func (r *CustomersExternalMemberResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_customers_external_member"
+func (r *MetricDashboardResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_metric_dashboard"
 }
 
-func (r *CustomersExternalMemberResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *MetricDashboardResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a customers_external_member resource.",
+		Description: "Manages a metric_dashboard resource.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "The ID of the member.",
+				Description: "The ID of the object.",
 			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
@@ -56,34 +55,26 @@ func (r *CustomersExternalMemberResource) Schema(_ context.Context, _ resource.S
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the customer this member belongs to.",
-			},
-			"email": schema.StringAttribute{
-				Required:    true,
-				Description: "The email address of the member.",
-			},
 			"name": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The name of the member.",
+				Required:    true,
+				Description: "Display name for the dashboard.",
 			},
-			"external_id": schema.StringAttribute{
+			"metrics": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
-				Description: "The ID of the member in your system. This must be unique within the customer. ",
+				Description: "List of metric slugs displayed in this dashboard.",
 			},
-			"role": schema.StringAttribute{
+			"organization_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "The role of the member within the customer.",
+				Description: "The ID of the organization owning this dashboard.",
 			},
 		},
 	}
 }
 
-func (r *CustomersExternalMemberResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *MetricDashboardResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -100,8 +91,8 @@ func (r *CustomersExternalMemberResource) Configure(_ context.Context, req resou
 	r.client = c
 }
 
-func (r *CustomersExternalMemberResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan CustomersExternalMemberModel
+func (r *MetricDashboardResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan MetricDashboardModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -110,13 +101,13 @@ func (r *CustomersExternalMemberResource) Create(ctx context.Context, req resour
 
 	reqBody, err := plan.ToClientModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid customers_external_member configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid metric_dashboard configuration", err.Error())
 		return
 	}
 
-	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", fmt.Sprintf("/customers/external/%v/members", plan.ExternalId.ValueString()), reqBody)
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/metrics/dashboards", reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error creating metric_dashboard", err.Error())
 		return
 	}
 
@@ -129,14 +120,14 @@ func (r *CustomersExternalMemberResource) Create(ctx context.Context, req resour
 		plan.Id = types.StringValue(created)
 	}
 
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", plan.ExternalId.ValueString(), plan.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", plan.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the created customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error reading back the created metric_dashboard", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.Member
+		var result client.MetricDashboardSchema
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -145,12 +136,12 @@ func (r *CustomersExternalMemberResource) Create(ctx context.Context, req resour
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "created customers_external_member resource")
+	tflog.Trace(ctx, "created metric_dashboard resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *CustomersExternalMemberResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state CustomersExternalMemberModel
+func (r *MetricDashboardResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state MetricDashboardModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -166,7 +157,7 @@ func (r *CustomersExternalMemberResource) Read(ctx context.Context, req resource
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
+	respBody, err := r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
 	if err != nil {
 		// GONE IS NOT BROKEN. A 404 here means the resource this state row
 		// describes no longer exists -- deleted by hand, or by something else
@@ -183,11 +174,11 @@ func (r *CustomersExternalMemberResource) Read(ctx context.Context, req resource
 			return
 		}
 
-		resp.Diagnostics.AddError("Error reading customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error reading metric_dashboard", err.Error())
 		return
 	}
 
-	var result client.Member
+	var result client.MetricDashboardSchema
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		resp.Diagnostics.AddError("Error parsing response", err.Error())
 		return
@@ -198,8 +189,8 @@ func (r *CustomersExternalMemberResource) Read(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *CustomersExternalMemberResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan CustomersExternalMemberModel
+func (r *MetricDashboardResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan MetricDashboardModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -209,7 +200,7 @@ func (r *CustomersExternalMemberResource) Update(ctx context.Context, req resour
 	// The identifiers come off state: they cannot change on an update, and the
 	// plan's copy of a Computed one is unknown -- which is also the only place
 	// an imported nested resource's parents live.
-	var state CustomersExternalMemberModel
+	var state MetricDashboardModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -218,13 +209,13 @@ func (r *CustomersExternalMemberResource) Update(ctx context.Context, req resour
 	// The UPDATE model, not the create one -- see ToUpdateModel.
 	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
-		resp.Diagnostics.AddError("Invalid customers_external_member configuration", err.Error())
+		resp.Diagnostics.AddError("Invalid metric_dashboard configuration", err.Error())
 		return
 	}
 
-	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), reqBody)
+	respBody, err := r.client.DoRequest(ctx, "PATCH", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), reqBody)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error updating metric_dashboard", err.Error())
 		return
 	}
 
@@ -233,14 +224,14 @@ func (r *CustomersExternalMemberResource) Update(ctx context.Context, req resour
 	// updates answer nothing at all; neither is the resource, and
 	// unmarshalling either one is "Error parsing response" AFTER the server
 	// has already accepted the change. What it now looks like is read back.
-	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading back the updated customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error reading back the updated metric_dashboard", err.Error())
 		return
 	}
 
 	if len(respBody) > 0 {
-		var result client.Member
+		var result client.MetricDashboardSchema
 		if err := json.Unmarshal(respBody, &result); err != nil {
 			resp.Diagnostics.AddError("Error parsing response", err.Error())
 			return
@@ -249,40 +240,27 @@ func (r *CustomersExternalMemberResource) Update(ctx context.Context, req resour
 		plan.FromClientModel(&result)
 	}
 
-	tflog.Trace(ctx, "updated customers_external_member resource")
+	tflog.Trace(ctx, "updated metric_dashboard resource")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *CustomersExternalMemberResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state CustomersExternalMemberModel
+func (r *MetricDashboardResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state MetricDashboardModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/customers/external/%v/members/%v", state.ExternalId.ValueString(), state.Id.ValueString()), nil)
+	_, err := r.client.DoRequest(ctx, "DELETE", fmt.Sprintf("/metrics/dashboards/%v", state.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error deleting metric_dashboard", err.Error())
 		return
 	}
 
-	tflog.Trace(ctx, "deleted customers_external_member resource")
+	tflog.Trace(ctx, "deleted metric_dashboard resource")
 }
 
-func (r *CustomersExternalMemberResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-
-	// A nested resource is addressed by its parents as well as itself, and an
-	// import id carries only what it is given.
-	parts := strings.Split(req.ID, "/")
-
-	if len(parts) != 2 {
-		resp.Diagnostics.AddError(
-			"Unexpected import identifier",
-			"Expected \"<external_id>/<id>\", got: "+req.ID,
-		)
-		return
-	}
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("external_id"), parts[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
+func (r *MetricDashboardResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

@@ -33,22 +33,19 @@ import static org.openapitools.codegen.utils.StringUtils.underscore;
 /**
  * The terraform-provider generator, grouped by RESOURCE instead of by tag.
  *
- * It is github.com/n-at-han-k/terraform-provider-wso2's generator with the
- * parts RT's API shape breaks replaced -- the same replacements
- * crossplane-provider-rt makes, because both targets ask the same question of
- * the document: which operations are one resource, and which of them is the
- * create, the read, the update and the delete.
+ * WHAT IT HAS TO PRODUCE is the provider that already exists by hand
+ * (sjkchang/terraform-provider-polar), resource for resource and attribute for
+ * attribute -- its own test suite is copied into test/ unchanged and is the
+ * definition of correct. Nothing here is a judgement about how a Polar provider
+ * ought to look; every question of shape is answered by that suite.
  *
- * Upstream keys its operation map on the tag and then asks
+ * Upstream keys its operation map on the tag and asks
  * {@code CodegenOperation.isRestfulCreate()} which operation is the create.
- * Those helpers assume the create and the collection share a path, and RT
- * does not -- it creates with {@code POST /ticket} and searches with
- * {@code POST /tickets}. Every RT resource comes out of upstream's grouping
- * either empty or doubled, so the shape of the path decides instead, and a
- * create is told from a search by what it answers: 201, not 200.
- *
- * Everything else -- the schema, the CRUD bodies, the client, the image -- is
- * the WSO2 generator's.
+ * That cannot answer for Polar's document: the operations of one resource are
+ * spread across tags, and the helpers assume a create on a path with no
+ * parameters. So the shape of the PATH decides instead -- a collection and its
+ * member path are one resource -- and a create is told from a list by what it
+ * answers: 201, not 200.
  */
 public class TerraformCodegen extends TerraformProviderCodegen {
 
@@ -56,7 +53,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
     /**
      * THE CONFIGURATION THIS GENERATOR TAKES, all of it, and all of it written
-     * by bin/derive rather than by hand -- derive has read the document and
+     * by bin/generate-config rather than by hand -- derive has read the document and
      * knows which positions can be a typed block and which cannot, so it says
      * so instead of leaving the generator to guess.
      *
@@ -81,7 +78,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      *                    meter's `filter`, whose clauses contain filters).
      */
     private boolean nestedAttributes = true;
-    private int nestedMaxDepth = 1;
+    private int nestedMaxDepth = 3;
     private final Set<String> jsonAttributes = new HashSet<>();
 
     public TerraformCodegen() {
@@ -112,10 +109,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         // THE AUTH SCHEME IS THE DOCUMENT'S, not a guess. Polar declares every
         // token scheme as `type: http, scheme: bearer`, so the header is
-        // `Authorization: Bearer <token>`. That is NOT what this generator's
-        // ancestor sent: it was written for Request Tracker, whose scheme is the
-        // literal word `token`, and a Bearer API answers 401 to that with
-        // nothing useful in the body.
+        // `Authorization: Bearer <token>` and not the literal word `token`, which
+        // a Bearer API answers 401 to with nothing useful in the body.
         additionalProperties().put("authHeaderPrefix", bearerPrefix());
 
         Object json = additionalProperties().get("jsonAttributes");
@@ -162,26 +157,24 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * with the collection's own -- and what is not part of a resource at all
      * never lands anywhere.
      *
-     * RT POSTs both to create and to SEARCH -- {@code POST /ticket} creates
-     * one, {@code POST /tickets} searches -- and the two are told apart by
-     * what they answer, not by how the path is spelled. A create answers 201,
-     * a search answers 200. That reading survives the places where the
-     * spelling does not: {@code POST /lifecycles} is a create on a plural
-     * path, and {@code POST /customfields} is a search on one.
+     * A POST is told from a list by WHAT IT ANSWERS, not by how its path is
+     * spelled: a create answers 201 and a list answers 200. Reading the response
+     * code rather than the path also drops the action endpoints for free --
+     * {@code POST /events/ingest} and {@code POST /checkouts/client/{secret}/confirm}
+     * answer 200, so neither is mistaken for a create.
      *
      * What is kept is everything a resource actually calls:
      *
      * <pre>
      *   a member path                GET read, PUT update, DELETE delete
      *   POST answering 201           the create
-     *   PUT on a collection          RT's idempotent "set these" --
-     *                                /user/{idOrName}/groups
+     *   PUT on a collection          an idempotent "set these" 
      *   DELETE on a collection       the inverse of that set
      * </pre>
      *
      * and what is dropped is a GET on a collection (a list, which a resource
-     * never calls) and a POST that answers 200 (a search, or an action
-     * endpoint like /lifecycle/{name}/validate).
+     * never calls) and a POST that answers 200 (an action endpoint, such as
+     * {@code /events/ingest}).
      */
     @Override
     public void addOperationToGroup(String tag, String resourcePath, Operation operation,
@@ -216,13 +209,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     }
 
     /**
-     * A group that describes nothing. RT revokes a right with
-     * {@code DELETE /queue/{id}/rights/{right}/group/{id}} and removes one
-     * member with {@code DELETE /group/{id}/member/{id}}. Each looks like a
-     * member path, so each would become a resource that can only be deleted
-     * -- never created, never read, nothing for Terraform to own. A
-     * collection with neither a create nor a read is a verb spelled as a
-     * path.
+     * A group that describes nothing.
      */
     private boolean describesAResource(String collection) {
         if (openAPI == null || openAPI.getPaths() == null) {
@@ -257,10 +244,9 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /**
      * The collection every group of this resource is keyed on.
      *
-     * RT creates a lifecycle at {@code POST /lifecycles} and addresses it at
-     * {@code /lifecycle/{name}} ever after, and both name the same resource.
-     * Left alone they are two groups writing one set of files, the second
-     * silently overwriting the first with half a resource.
+     * Where a document creates a thing on one path and addresses it on another,
+     * both name the same resource. Left alone they are two groups writing one set
+     * of files, the second silently overwriting the first with half a resource.
      */
     private String canonicalCollection(String collection) {
         if (openAPI == null || openAPI.getPaths() == null) {
@@ -330,11 +316,11 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /**
      * Which operation is the create, the read, the update, the delete.
      *
-     * Upstream asks {@code CodegenOperation.isRestfulCreate()} and friends,
-     * and those cannot answer for a NESTED resource: {@code isMemberPath()}
-     * opens with {@code if (pathParams.size() != 1) return false}, so
-     * {@code /tenants/{tenant-id}/owners/{owner-id}} -- two path params --
-     * looks like nothing at all, and the whole resource comes out empty.
+     * Upstream asks {@code CodegenOperation.isRestfulCreate()} and friends, and
+     * those cannot answer for a NESTED resource: {@code isMemberPath()} opens
+     * with {@code if (pathParams.size() != 1) return false}, so
+     * {@code /customers/{id}/members/{member_id}} -- two path params -- looks
+     * like nothing at all, and the whole resource comes out empty.
      *
      * The shape of the path already says it. This group IS a collection path
      * and its member path, so an operation on the collection is the create or
@@ -352,6 +338,11 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         CodegenOperation update = null;
         boolean deleteOnCollection = false;
+        // CAPTURED HERE, NOT LOOKED UP LATER. super() rebuilds the operation list
+        // it was handed, so asking it for the create afterwards found nothing and
+        // the fallback below used the UPDATE body as the write shape -- which is
+        // how every resource's ToClientModel came out taking a *Update.
+        String createBody = null;
 
         for (CodegenOperation op : group) {
             boolean member = isMember(collection, op.path);
@@ -373,9 +364,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 deleteOnCollection = true;
             } else if (!"GET".equals(method)) {
                 // A POST answering 201, or a set's PUT. Its path need not be
-                // the collection: RT creates a lifecycle at /lifecycles and
-                // addresses it at /lifecycle/{name} ever after.
+                // the collection: a document may create a thing on one path and
+                // address it on another.
                 op.vendorExtensions.put("x-terraform-is-create", true);
+                if (op.bodyParam != null) {
+                    createBody = op.bodyParam.dataType;
+                }
             }
         }
 
@@ -402,19 +396,33 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         processed.getOperations().put("deleteIsSet", deleteOnCollection);
 
         // THE UPDATE HAS ITS OWN BODY. Upstream has one requestModel, the create's,
-        // and sends it to the update too -- so PATCH /applications/{id} received
-        // an ApplicationModel where it wanted an ApplicationPatchModel, and WSO2
-        // answered UE-10000, "provided request body content is not in the
-        // expected format". They really are different: the patch model has no
-        // inboundProtocolConfiguration and no id.
+        // and sends it to the update too, which an API that declares a separate
+        // patch body refuses. Polar declares one for every resource here:
+        // BenefitUpdate against BenefitCreate, MeterUpdate against MeterCreate.
         CodegenOperation updateOp = operationFlagged(group, "x-terraform-is-update");
         if (updateOp != null && updateOp.bodyParam != null) {
             processed.getOperations().put("updateRequestModel", updateOp.bodyParam.dataType);
         }
 
+        // THE CREATE'S BODY IS THE WRITE SHAPE, taken from the operation THIS
+        // generator flagged rather than from upstream's own guess. Upstream only
+        // recognises a create on a top-level collection by its own rules, and
+        // where it finds none it leaves requestModel null -- at which point the
+        // fallback below used the UPDATE body instead.
+        //
+        // WHAT THAT COST: polar_benefit's writable attributes became
+        // BenefitUpdate's flattened variants -- benefit_meter_credit_update_type
+        // and fifteen more -- while `type`, which BenefitCreate requires, matched
+        // nothing and came out Computed. A benefit resource that cannot say which
+        // kind of benefit it is cannot create one, and the whole catalogue was
+        // unexpressible.
+        if (createBody != null) {
+            processed.getOperations().put("requestModel", createBody);
+        }
+
         // Upstream takes the request body from the CREATE operation only, so a
-        // resource you can update but not create -- a tenant's owner is PUT,
-        // never POSTed -- had no request model, and ToClientModel came out as
+        // resource you can update but not create -- one whose write is a PUT and
+        // never a POST -- had no request model, and ToClientModel came out as
         // `*client.` with no type. The update body is the write shape there.
         if (processed.getOperations().get("requestModel") == null) {
             CodegenOperation writes = operationFlagged(group, "x-terraform-is-update");
@@ -424,10 +432,9 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             }
         }
 
-        // A free-form or list body is not a model. GET /applications/{id}/export
-        // answers an unconstrained object -- returnType `interface{}` -- and
-        // PATCH /organizations/self takes `[]OrganizationPatchRequestItem`, so
-        // the templates spelled `client.interface{}` and `client.[]Organization...`.
+        // A free-form or list body is not a model: an unconstrained object comes
+        // through as returnType `interface{}` and a list body as a Go slice, so the
+        // templates spelled `client.interface{}` and `client.[]Something`.
         // Where the name is not a generated model, there is no model. AFTER the
         // fallback above, or the fallback puts one straight back.
         for (String key : new String[] { "responseModel", "requestModel", "updateRequestModel" }) {
@@ -440,9 +447,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         // Upstream strips a trailing "api" off the resource name, which is right
         // for a tag called PetApi and wrong for a PATH segment: /authorized-apis
-        // became wso2_application_authorized -- a name that says nothing, and
-        // one the file beside it (application_authorized_api_resource.go) does
-        // not even agree with. The path already named this resource.
+        // strips a meaningful segment off the end. The path already named this
+        // resource.
         processed.getOperations().put("resourceClassName", toApiName(collection));
         processed.getOperations().put("resourceName",
                 underscore(toApiName(collection)).toLowerCase(Locale.ROOT));
@@ -471,8 +477,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // imported nowhere and the nested struct will not compile.
         boolean usesJson = tf != null && (tf.stream()
                 .anyMatch(a -> Boolean.TRUE.equals(a.get("isJson")))
-                || tf.stream().flatMap(a -> nestedOf(a).stream())
-                        .anyMatch(child -> Boolean.TRUE.equals(child.get("isJson"))));
+                || nestedJson(tf));
         // Every nested conversion wraps its error, so fmt is needed wherever one
         // is emitted at all -- and types, because every child is a types.*.
         boolean anyNested = tf != null && tf.stream()
@@ -502,6 +507,24 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         Object createModel = processed.getOperations().get("requestModel");
         Object updateModel = processed.getOperations().get("updateRequestModel");
+
+        // A SEPARATE UPDATE MODEL HAS TO SHARE SOME FIELD NAMES WITH THE CREATE,
+        // or it is not a different shape -- it is a differently NAMED one, and
+        // nothing a configuration set will ever reach it.
+        //
+        // Polar's PATCH /benefits/{id} takes an inline, non-discriminated anyOf
+        // of BenefitCustomUpdate and seven siblings, so the flattened names come
+        // off the schema names (`benefit_meter_credit_update_properties`) while
+        // the create's come off its discriminator (`meter_credit_properties`).
+        // Not one name overlaps, so every attribute's inUpdateRequest was false
+        // and ToUpdateModel sent an empty body. Sending the create's shape to the
+        // patch is the better wrong answer, and for Polar it is the right one:
+        // the update variants carry the same fields the create variants do.
+        if (!sharesFieldNames(allModels, createModel, updateModel)) {
+            processed.getOperations().put("updateRequestModel", createModel);
+            updateModel = createModel;
+        }
+
         // Only worth a second conversion when the shapes actually differ.
         processed.getOperations().put("hasSeparateUpdateModel",
                 updateModel != null && !updateModel.equals(createModel));
@@ -518,10 +541,10 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * wrong, and all three are fatal to actually declaring a resource:
      *
      * The response model says every property the server always answers is
-     * `required` and nothing is readOnly unless the document says so -- and
-     * the WSO2 documents never say so. `wso2_organization` came out demanding
-     * `id`, `status`, `version`, `created` and `last_modified` in
-     * configuration, values the server assigns.
+     * `required`, and nothing is readOnly unless the document marks it --
+     * which Polar's does not. So a resource came out demanding `id`,
+     * `created_at` and `modified_at` in configuration, values the server
+     * assigns.
      *
      * A property the create body takes and the response model does not have is
      * missing from the schema entirely. A tenant's owner carries a `password`,
@@ -566,12 +589,53 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // here must not be put in a patch -- the whole body is refused if it is.
         CodegenModel updateRequest =
                 modelNamed(allModels, (String) operations.get("updateRequestModel"));
-        Set<String> patchable = new HashSet<>();
+        Map<String, CodegenProperty> patchable = new LinkedHashMap<>();
 
         if (updateRequest != null) {
             for (CodegenProperty property : updateRequest.vars) {
-                patchable.add(property.baseName.toLowerCase(Locale.ROOT));
+                patchable.put(property.baseName.toLowerCase(Locale.ROOT), property);
             }
+        }
+
+        // THE SCHEMA IS THE CREATE BODY, PLUS IDENTITY -- which is how the
+        // hand-written provider this one replaces is shaped, and the only shape a
+        // configuration can actually write.
+        //
+        // Upstream seeds the attribute list from the RESPONSE model and overlays
+        // the create on top, so every field the server merely ANSWERS became an
+        // attribute: polar_benefit carried `selectable`, `deletable`,
+        // `is_deleted` and `visibility_configurable`, none of which a
+        // configuration may set, and the create's own `type` lost its name to the
+        // response's read-only one and came out Computed. A benefit that cannot
+        // say which kind it is cannot be created.
+        //
+        // So the list is rebuilt: the identifier and the timestamps from the
+        // response, Computed, and then everything the create body takes, in the
+        // order the document declares it. A response-derived entry is REUSED
+        // where one exists, because that is what carries the Go type the read
+        // converts back from.
+        if (request != null) {
+            Map<String, Map<String, Object>> answeredBy = new LinkedHashMap<>();
+            for (Map<String, Object> attribute : attributes) {
+                answeredBy.put(String.valueOf(attribute.get("name")).toLowerCase(Locale.ROOT), attribute);
+            }
+
+            List<Map<String, Object>> rebuilt = new ArrayList<>();
+
+            for (String identity : IDENTITY) {
+                Map<String, Object> attribute = answeredBy.get(identity);
+                if (attribute != null && !writable.containsKey(identity)) {
+                    rebuilt.add(attribute);
+                }
+            }
+
+            for (Map.Entry<String, CodegenProperty> entry : writable.entrySet()) {
+                Map<String, Object> attribute = answeredBy.get(entry.getKey());
+                rebuilt.add(attribute != null ? attribute : writeOnlyAttribute(entry.getValue()));
+            }
+
+            attributes.clear();
+            attributes.addAll(rebuilt);
         }
 
         Set<String> answered = new HashSet<>();
@@ -602,28 +666,43 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             boolean sameShape = writes == null
                     || writes.dataType.equals(String.valueOf(attribute.get("goType")));
             attribute.put("inRequest", writes != null);
-            attribute.put("inUpdateRequest", patchable.contains(name));
-            attribute.put("readBack", sameShape);
+            attribute.put("inUpdateRequest", patchable.containsKey(name));
+            // AND THE RESPONSE HAS TO ANSWER IT. A property the create body takes
+            // and no response carries is write-only, and reading it back emits
+            // `c.Whatever` for a field the response model does not have -- which
+            // is a compile error, not a drift bug. writeOnlyAttribute already
+            // says so; this loop was overwriting it.
+            attribute.put("readBack", sameShape && !Boolean.TRUE.equals(attribute.get("isWriteOnly")));
 
             unpoint(attribute);
             retype(attribute);
         }
 
-        // What the create body takes and no response ever answers.
-        for (Map.Entry<String, CodegenProperty> entry : writable.entrySet()) {
-            if (answered.contains(entry.getKey())) {
-                continue;
+        // Only reachable when there is no create body to rebuild from; the
+        // rebuild above already carries every writable property.
+        if (request == null) {
+            for (Map.Entry<String, CodegenProperty> entry : writable.entrySet()) {
+                if (answered.contains(entry.getKey())) {
+                    continue;
+                }
+                attributes.add(writeOnlyAttribute(entry.getValue()));
             }
-            attributes.add(writeOnlyAttribute(entry.getValue()));
         }
 
-        nest(attributes, allModels, writable, String.valueOf(operations.get("resourceClassName")));
+        nest(attributes, allModels, writable, patchable, String.valueOf(operations.get("resourceClassName")));
+
+        // EVERY ATTRIBUTE SAYS WHETHER IT IS NESTED, even the ones that plainly
+        // are not. Mustache resolves a missing key by walking UP the context
+        // stack, so a scalar child with no `isNestedList` of its own found its
+        // PARENT's -- and nested_schema.mustache rendered the parent's body
+        // again, for ever. The generator died in a StackOverflowError inside
+        // jmustache with no file written.
+        denestDefaults(attributes);
 
         for (Map<String, Object> attribute : attributes) {
             String terraformName = String.valueOf(attribute.get("terraformName"));
 
-            // A tfsdk name must START WITH A LETTER, and RT answers every
-            // object's links under `_hyperlinks`: "invalid tfsdk tag, must
+            // A tfsdk name must START WITH A LETTER: "invalid tfsdk tag, must
             // only use lowercase letters, underscores, and numbers, and must
             // start with a letter", on every apply. The Go field and the JSON
             // key are untouched -- only the name a configuration spells.
@@ -649,9 +728,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         // The nested blocks, collected so the model file can declare a struct
         // for each one. Mustache cannot gather them itself.
-        List<Map<String, Object>> nestedModels = attributes.stream()
-                .filter(attribute -> Boolean.TRUE.equals(attribute.get("isNested")))
-                .collect(java.util.stream.Collectors.toList());
+        List<Map<String, Object>> nestedModels = new ArrayList<>();
+        collectNested(attributes, nestedModels);
         operations.put("nestedModels", nestedModels);
         operations.put("hasNestedModels", !nestedModels.isEmpty());
 
@@ -659,6 +737,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // not needed and the JSON one is.
         operations.put("hasListAttributes", false);
         operations.put("hasJsonAttributes", anyJson);
+
+        // THE DATA SOURCE RENDERS NO NESTED BLOCKS, so a JSON attribute that only
+        // exists as a nested child must not make it import jsontypes -- an import
+        // Go does not need is as fatal as one it does.
+        operations.put("hasFlatJsonAttributes", attributes.stream()
+                .anyMatch(attribute -> Boolean.TRUE.equals(attribute.get("isJson"))));
     }
 
 
@@ -917,7 +1001,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * means the server may.
      */
     private void nest(List<Map<String, Object>> attributes, List<ModelMap> allModels,
-                      Map<String, CodegenProperty> writable, String resourceClassName) {
+                      Map<String, CodegenProperty> writable,
+                      Map<String, CodegenProperty> patchable, String resourceClassName) {
         if (!nestedAttributes || nestedMaxDepth < 1) {
             return;
         }
@@ -945,43 +1030,9 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                     .toLowerCase(Locale.ROOT));
             String go = writes != null ? writes.dataType : responseGo;
 
-            boolean list = go.startsWith("[]");
-            // WHETHER THE CLIENT FIELD IS A POINTER, which decides how the
-            // conversion assigns it. `*BenefitMeterCreditCreateProperties`
-            // takes the converted pointer; a plain struct field takes what it
-            // points at. Getting this from the shape rather than guessing is
-            // the difference between compiling and "cannot use *converted
-            // (variable of struct type X) as *X value in assignment".
-            boolean pointer = go.replace("[]", "").startsWith("*");
-            String bare = go.replace("[]", "").replace("*", "");
-
-            CodegenModel model = modelNamed(allModels, bare);
-            if (model == null || model.vars == null || model.vars.isEmpty()) {
+            if (!nestInto(attribute, allModels, go, resourceClassName, 1)) {
                 continue;
             }
-
-            List<Map<String, Object>> children = new ArrayList<>();
-            for (CodegenProperty property : model.vars) {
-                children.add(childAttribute(property));
-            }
-
-            // Mustache cannot ask whether it is on the last item, and a Go
-            // composite literal tolerates a trailing comma, so nothing needs a
-            // separator here -- but the struct does need to know it has any.
-            if (children.isEmpty()) {
-                continue;
-            }
-
-            String nestedModel = resourceClassName + camelize(attribute.get("goName").toString()) + "Model";
-
-            attribute.put("isJson", false);
-            attribute.put("isNested", true);
-            attribute.put("isNestedList", list);
-            attribute.put("isNestedObject", !list);
-            attribute.put("nested", children);
-            attribute.put("nestedModel", nestedModel);
-            attribute.put("nestedClientType", bare);
-            attribute.put("nestedPointer", pointer);
 
             // READ BACK ONLY WHERE THE TWO SHAPES ARE THE SAME ONE. Where they
             // differ there is nothing to convert the answer into -- the nested
@@ -993,14 +1044,29 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             boolean readBack = go.equals(responseGo) && Boolean.TRUE.equals(attribute.get("readBack"));
             attribute.put("readBack", readBack);
             attribute.put("isComputed", readBack);
-            attribute.put("terraformType", list ? "[]" + nestedModel : "*" + nestedModel);
-            attribute.put("terraformAttrType",
-                    list ? "schema.ListNestedAttribute" : "schema.SingleNestedAttribute");
-            // A nested block is never Required as a whole here: which half of a
-            // flattened union applies depends on the discriminator, and a
-            // Required block on a product with no prices cannot be satisfied.
-            attribute.put("isRequired", false);
-            attribute.put("isOptional", true);
+
+            // AND THE PATCH HAS TO TAKE THE SAME TYPE. A nested block is
+            // converted through the CREATE body's client type, and Polar names
+            // the update's differently for the same shape --
+            // MeterCreateAggregation against MeterUpdateAggregation,
+            // ProductCreatePricesItem against ProductUpdatePricesInner. Emitting
+            // the update arm anyway assigns one into the other, which is a
+            // compile error rather than a wrong request.
+            CodegenProperty patch = patchable.get(String.valueOf(attribute.get("name"))
+                    .toLowerCase(Locale.ROOT));
+            if (patch == null || !go.equals(patch.dataType)) {
+                attribute.put("inUpdateRequest", false);
+            }
+            // REQUIRED IF THE CREATE BODY REQUIRES IT. A meter cannot be created
+            // without a `filter` or an `aggregation`, and the hand-written
+            // provider marks both Required; forcing every block Optional made a
+            // meter appliable with nothing in it.
+            boolean required = writes != null && writes.required;
+            attribute.put("isRequired", required);
+            attribute.put("isOptional", !required);
+            if (required) {
+                attribute.put("isComputed", false);
+            }
         }
     }
 
@@ -1010,7 +1076,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
      * then anything still composite is JSON, because this is depth one and
      * there is nowhere further to go.
      */
-    private Map<String, Object> childAttribute(CodegenProperty property) {
+    private Map<String, Object> childAttribute(CodegenProperty property, List<ModelMap> allModels,
+                                              String modelPrefix, int depth) {
         Map<String, Object> attribute = new HashMap<>();
 
         attribute.put("name", property.baseName);
@@ -1038,7 +1105,108 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         unpoint(attribute);
         retype(attribute);
 
+        // A CHILD CAN BE A BLOCK TOO, AND A LIST OF BLOCKS. A meter's
+        // `filter.clauses` is an array of objects inside an object, and expanding
+        // only the outer one left it a string: "Inappropriate value for attribute
+        // filter: attribute clauses: string required, but have tuple".
+        if (Boolean.TRUE.equals(attribute.get("isJson"))
+                && depth < nestedMaxDepth
+                && !jsonAttributes.contains(String.valueOf(attribute.get("terraformName")))) {
+            nestInto(attribute, allModels, String.valueOf(attribute.get("goType")), modelPrefix, depth);
+        }
+
         return attribute;
+    }
+
+    /**
+     * Turn one JSON-carrying attribute into a typed block, and its children into
+     * blocks in turn until {@code nestedMaxDepth} runs out. False when there is no
+     * model behind it to expand.
+     *
+     * WHETHER THE CLIENT FIELD IS A POINTER decides how the conversion assigns
+     * it: a pointer field takes the converted pointer, a plain struct field takes
+     * what it points at. Reading that off the shape rather than guessing is the
+     * difference between compiling and "cannot use *converted (variable of struct
+     * type X) as *X value in assignment".
+     */
+    private boolean nestInto(Map<String, Object> attribute, List<ModelMap> allModels,
+                             String go, String modelPrefix, int depth) {
+        boolean list = go.startsWith("[]");
+        boolean pointer = go.replace("[]", "").startsWith("*");
+        String bare = go.replace("[]", "").replace("*", "");
+
+        CodegenModel model = modelNamed(allModels, bare);
+        if (model == null || model.vars == null || model.vars.isEmpty()) {
+            return false;
+        }
+
+        String nestedModel = modelPrefix + camelize(String.valueOf(attribute.get("goName"))) + "Model";
+
+        List<Map<String, Object>> children = new ArrayList<>();
+        for (CodegenProperty property : model.vars) {
+            children.add(childAttribute(property, allModels, nestedModel, depth + 1));
+        }
+
+        if (children.isEmpty()) {
+            return false;
+        }
+
+        attribute.put("isJson", false);
+        attribute.put("isNested", true);
+        attribute.put("isNestedList", list);
+        attribute.put("isNestedObject", !list);
+        attribute.put("nested", children);
+        attribute.put("nestedModel", nestedModel);
+        attribute.put("nestedClientType", bare);
+        attribute.put("nestedPointer", pointer);
+        attribute.put("terraformType", list ? "[]" + nestedModel : "*" + nestedModel);
+        attribute.put("terraformAttrType",
+                list ? "schema.ListNestedAttribute" : "schema.SingleNestedAttribute");
+
+        return true;
+    }
+
+    /**
+     * Every nested block in the tree, so the model file can declare a struct for
+     * each one. Mustache cannot gather them itself.
+     */
+    private void collectNested(List<Map<String, Object>> attributes, List<Map<String, Object>> into) {
+        for (Map<String, Object> attribute : attributes) {
+            if (!Boolean.TRUE.equals(attribute.get("isNested"))) {
+                continue;
+            }
+
+            into.add(attribute);
+            collectNested(nestedOf(attribute), into);
+        }
+    }
+
+    /**
+     * Give every attribute in the tree an explicit answer for the four keys the
+     * nested templates branch on, so no lookup can fall through to a parent.
+     */
+    private void denestDefaults(List<Map<String, Object>> attributes) {
+        for (Map<String, Object> attribute : attributes) {
+            attribute.putIfAbsent("isNested", false);
+            attribute.putIfAbsent("isNestedList", false);
+            attribute.putIfAbsent("isNestedObject", false);
+            attribute.putIfAbsent("nested", new ArrayList<Map<String, Object>>());
+
+            denestDefaults(nestedOf(attribute));
+        }
+    }
+
+    /** Whether any block anywhere in the tree still carries a JSON attribute. */
+    private boolean nestedJson(List<Map<String, Object>> attributes) {
+        for (Map<String, Object> attribute : attributes) {
+            if (Boolean.TRUE.equals(attribute.get("isJson"))) {
+                return true;
+            }
+            if (nestedJson(nestedOf(attribute))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -1067,6 +1235,32 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 .findFirst()
                 .map(scheme -> scheme.substring(0, 1).toUpperCase(Locale.ROOT) + scheme.substring(1))
                 .orElse("Bearer");
+    }
+
+    /**
+     * Whether two models have any property name in common. Used to tell a
+     * genuinely different update body from one that is only differently named --
+     * see the note at hasSeparateUpdateModel.
+     */
+    private boolean sharesFieldNames(List<ModelMap> allModels, Object create, Object update) {
+        if (create == null || update == null || create.equals(update)) {
+            return true;
+        }
+
+        CodegenModel createModel = modelNamed(allModels, String.valueOf(create));
+        CodegenModel updateModel = modelNamed(allModels, String.valueOf(update));
+
+        if (createModel == null || updateModel == null) {
+            return true;
+        }
+
+        Set<String> names = new HashSet<>();
+        for (CodegenProperty property : createModel.vars) {
+            names.add(property.baseName.toLowerCase(Locale.ROOT));
+        }
+
+        return updateModel.vars.stream()
+                .anyMatch(property -> names.contains(property.baseName.toLowerCase(Locale.ROOT)));
     }
 
     /**
@@ -1121,11 +1315,11 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             return;
         }
 
-        // A DECLARED SCALAR is a scalar whatever the composition around it
-        // said: RT's EmailAddress is `type: string` with an anyOf that only
-        // narrows it, so the property is flagged a model and the Go field is
-        // a string. Declaring that one jsontypes.Normalized gave a model
-        // struct the conversions could not assign to.
+        // A DECLARED SCALAR is a scalar whatever the composition around it said.
+        // A `type: string` carrying an anyOf that only narrows it is flagged a
+        // model while its Go field is a string, and declaring that one
+        // jsontypes.Normalized gives a model struct the conversions cannot assign
+        // to.
         String scalar = go.startsWith("*") ? go.substring(1) : go;
         if (Arrays.asList("string", "bool", "int", "int32", "int64", "float32", "float64")
                 .contains(scalar)) {
@@ -1154,8 +1348,10 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         attribute.put("isComputed", false);
         attribute.put("inRequest", true);
         attribute.put("inUpdateRequest", false);
-        // Nothing answers it, so there is nothing to read back.
+        // Nothing answers it, so there is nothing to read back -- and the loop in
+        // reshapeAttributes must not decide otherwise.
         attribute.put("readBack", false);
+        attribute.put("isWriteOnly", true);
         attribute.put("isString", "string".equals(property.dataType));
         attribute.put("isInt64", "int64".equals(property.dataType) || "int32".equals(property.dataType));
         attribute.put("isFloat64", "float64".equals(property.dataType) || "float32".equals(property.dataType));
@@ -1164,7 +1360,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         attribute.put("isObject", property.isModel && !property.isArray);
         // ponytail: a name-based guess at what is secret. A document that says
         // writeOnly or x-terraform-sensitive is believed first; this catches the
-        // ones that say neither, and WSO2's tenant owner password says neither.
+        // ones that say neither.
         attribute.put("isSensitive", property.isWriteOnly
                 || property.baseName.toLowerCase(Locale.ROOT).contains("password")
                 || property.baseName.toLowerCase(Locale.ROOT).contains("secret"));
@@ -1203,7 +1399,42 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         if (property.isBoolean) {
             return "bool";
         }
+
+        // A UNION OF SCALARS IS A STRING, because that is the only one of its
+        // branches a configuration can write for all of them. A filter clause's
+        // `value` is `anyOf: [string, integer, boolean]`, and as `interface{}` it
+        // became a JSON attribute -- so the suite's `value = "api_call"` was
+        // refused with "A string value was provided that is not valid JSON string
+        // format (RFC 7159)". The hand-written provider takes a string here and
+        // lets the server coerce, and so does this.
+        if (allBranchesScalar(property)) {
+            return "string";
+        }
+
         return "interface{}";
+    }
+
+    /** Whether every branch of a composition is a primitive rather than a shape. */
+    private boolean allBranchesScalar(CodegenProperty property) {
+        if (property.getComposedSchemas() == null) {
+            return false;
+        }
+
+        List<CodegenProperty> branches = new ArrayList<>();
+        if (property.getComposedSchemas().getAnyOf() != null) {
+            branches.addAll(property.getComposedSchemas().getAnyOf());
+        }
+        if (property.getComposedSchemas().getOneOf() != null) {
+            branches.addAll(property.getComposedSchemas().getOneOf());
+        }
+
+        if (branches.isEmpty()) {
+            return false;
+        }
+
+        return branches.stream().allMatch(branch ->
+                branch.isString || branch.isInteger || branch.isLong || branch.isNumber
+                        || branch.isFloat || branch.isDouble || branch.isBoolean);
     }
 
     private String goType(String dataType) {
@@ -1257,12 +1488,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         for (ModelMap map : processed.getModels()) {
             for (CodegenProperty property : map.getModel().vars) {
                 // OpenAPI 3.1 lets a schema carry a type AND an `anyOf` that
-                // only narrows it: RT's EmailAddress is `type: string` with
-                // an anyOf of {format: email, maxLength: 0}, meaning "an
-                // address, or empty". openapi-generator names that
-                // composition `AnyOf` and emits it as the Go type, which is
-                // not a type and does not compile. The declared type is still
-                // on the property, so it is used; a genuine union -- one that
+                // only narrows it -- a `type: string` with an anyOf of
+                // {format: email, maxLength: 0}, meaning "an address, or
+                // empty". openapi-generator names that composition `AnyOf` and
+                // emits it as the Go type, which is not a type and does not
+                // compile. The declared type is still on the property, so it is
+                // used; a genuine union -- one that
                 // declares no type of its own -- travels as JSON.
                 if (property.dataType != null
                         && (property.dataType.startsWith("AnyOf") || property.dataType.startsWith("OneOf"))) {
@@ -1276,31 +1507,26 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                     //
                     // NOTHING COERCES AN IDENTIFIER HERE. Polar types every id
                     // as a string with `format: uuid4`, consistently, so an id
-                    // is whatever the document says it is. The generator this
-                    // one descends from forced every `id` to a bespoke type
-                    // because Request Tracker answered a number in one response
-                    // and a quoted string in the next; that is a fact about RT
-                    // and has no business in a Polar client.
+                    // is whatever the document says it is -- no bespoke id type
+                    // and no unmarshaller tolerant of numbers.
                     property.dataType = "interface{}";
                 }
 
                 // A nested object is a POINTER, because Go's `omitempty` does
-                // nothing for a struct: an unset one still goes out as
-                // "associatedRoles":{"allowedAudience":""}, and WSO2 answers
-                // UE-10000, "provided request body content is not in the
-                // expected format" -- the empty string is not one of the
-                // audiences its enum allows. A nil pointer is simply absent.
+                // nothing for a struct: an unset one still goes out as `{}` with
+                // every field at its zero value, and an API that validates an
+                // enum refuses the empty string inside it. A nil pointer is
+                // simply absent.
                 // complexType, not isModel: a property written as
-                // `allOf: [$ref: FapiProfile]` -- which is how this document
+                // `allOf: [$ref: Something]` -- which is how a document
                 // attaches a description to a ref -- is not flagged a model,
                 // and went out as "fapiProfile":{} regardless.
                 // A BOOL IS A POINTER TOO, for the same reason and a worse
-                // consequence: `omitempty` cannot tell false from unset, so
-                // `supportPlainTransformAlgorithm = false` was dropped from
-                // the body -- and WSO2 answers a MISSING one with a 500,
-                // APP-65006 "server encountered an unexpected error". Sending
-                // it explicitly is a 201. Verified against the server both
-                // ways.
+                // consequence: `omitempty` cannot tell false from unset, so an
+                // explicit `false` is dropped from the body entirely and the
+                // server sees a missing field rather than the value the
+                // configuration set. `rollover = false` on a meter credit benefit
+                // is exactly that case.
                 if ("bool".equals(property.dataType)) {
                     property.dataType = "*bool";
                 }
@@ -1325,12 +1551,10 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /**
      * A named schema that is not an object is not a struct.
      *
-     * RT's {@code perlBoolean} is a string enum -- "1" or "0", because RT
-     * does not translate perl's booleans -- and {@code ticketLink} is an
-     * anyOf of an integer and an array. openapi-generator gives each of them
-     * a model of its own, and the template renders a model as a struct, so
-     * both came out as {@code type PerlBoolean struct{}}. A queue's
-     * {@code Disabled} was then a field of that type: nothing could convert
+     * A named string enum, or an anyOf of an integer and an array, gets a model
+     * of its own from openapi-generator, and the template renders a model as a
+     * struct -- so each came out as {@code type Something struct{}}. A property
+     * of that type was then a field nothing could convert
      * it, so the attribute stayed UNKNOWN through an apply -- "provider
      * returned invalid result object after apply".
      *
@@ -1431,14 +1655,13 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 continue;
             }
 
-            // Singular means "one of these". A literal followed by a parameter
-            // names one -- /applications/{applicationId}/share is a share of ONE
-            // application -- while /applications/share acts on the collection.
-            // Both end in "share", and without this they were one name, one
-            // file, and one of the two resources silently gone.
-            boolean names1 = i == segments.length - 1
-                    || (i + 1 < segments.length && segments[i + 1].startsWith("{"));
-            String spelled = names1 ? singular(segment) : segment;
+            // EVERY LITERAL SEGMENT IS SINGULAR, because a resource manages one
+            // of a thing however the collection is spelled. /webhooks/endpoints
+            // is `polar_webhook_endpoint`, which is what the hand-written
+            // provider calls it and what a configuration already spells --
+            // singularising only the last segment gave `polar_webhooks_endpoint`
+            // and nothing could be migrated to it without an edit.
+            String spelled = singular(segment);
 
             if (parts.length() > 0) {
                 parts.append('_');
@@ -1483,9 +1706,24 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         return path;
     }
 
-    /** The member of THIS collection: its path plus one trailing {param}. */
+    /**
+     * The member of THIS collection: its path plus one trailing {param}.
+     *
+     * THE TRAILING SLASH IS THE WHOLE OF THIS. Polar spells its collections with
+     * one -- `/benefits/`, `/products/`, `/meters/` -- and collectionOf() strips
+     * it, so `POST /benefits/` compared unequal to its own collection
+     * `/benefits` and was classified a MEMBER operation. A member POST matches
+     * none of the member branches, so the create was never flagged: no
+     * createPath, no createArgs, and requestModel fell through to the UPDATE
+     * body. That is why every ToClientModel took a *XUpdate and polar_benefit's
+     * `type` was Computed -- one slash, three resources' worth of damage.
+     */
     private boolean isMember(String collection, String path) {
-        return collectionOf(path).equals(collection) && !path.equals(collection);
+        String trimmed = path.length() > 1 && path.endsWith("/")
+                ? path.substring(0, path.length() - 1)
+                : path;
+
+        return collectionOf(path).equals(collection) && !trimmed.equals(collection);
     }
 
     private String lastSegment(String path) {
@@ -1505,10 +1743,19 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /**
      * Terraform reserves these at the root of a resource block, and a schema
      * using one is refused outright: "count is a reserved root attribute/block
-     * name". WSO2's list responses carry a `count`.
+     * name".
      */
     private static final List<String> RESERVED =
             Arrays.asList("count", "for_each", "depends_on", "provider", "lifecycle", "id_");
+
+    /**
+     * The only response-only fields that belong in a schema: what the resource is
+     * addressed by, and when the server last touched it. Everything else a
+     * response carries and a create body does not is state the server owns, and
+     * an attribute a configuration cannot write is noise in `tofu plan`.
+     */
+    private static final List<String> IDENTITY =
+            Arrays.asList("id", "created_at", "modified_at");
 
     private static final List<String> KEEP = Arrays.asList("ss", "us", "is", "os", "sts");
 

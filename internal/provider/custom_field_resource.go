@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -42,6 +43,10 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 	resp.Schema = schema.Schema{
 		Description: "Manages a custom_field resource.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -50,10 +55,6 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
@@ -61,17 +62,16 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 				Description: "",
 			},
 			"slug": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "Identifier of the custom field. It'll be used as key when storing the value.",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "Name of the custom field.",
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "The ID of the organization owning the custom field.",
 			},
 			"text_properties": schema.SingleNestedAttribute{
@@ -216,9 +216,20 @@ func (r *CustomFieldResource) Schema(_ context.Context, _ resource.SchemaRequest
 						Optional:    true,
 						Description: "",
 					},
-					"options": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
+					"options": schema.ListNestedAttribute{
 						Required:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"value": schema.StringAttribute{
+							Required:    true,
+							Description: "",
+						},
+						"label": schema.StringAttribute{
+							Required:    true,
+							Description: "",
+						},
+					},
+				},
 						Description: "",
 					},
 				},
@@ -250,7 +261,52 @@ func (r *CustomFieldResource) Configure(_ context.Context, req resource.Configur
 }
 
 func (r *CustomFieldResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for custom_field")
+	var plan CustomFieldModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid custom_field configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/custom-fields/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating custom_field", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/custom-fields/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created custom_field", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.CustomField
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created custom_field resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *CustomFieldResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -319,7 +375,8 @@ func (r *CustomFieldResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid custom_field configuration", err.Error())
 		return

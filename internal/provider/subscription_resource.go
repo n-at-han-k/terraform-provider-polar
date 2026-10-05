@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -42,6 +43,10 @@ func (r *SubscriptionResource) Schema(_ context.Context, _ resource.SchemaReques
 	resp.Schema = schema.Schema{
 		Description: "Manages a subscription resource.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -50,602 +55,25 @@ func (r *SubscriptionResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
-			},
-			"amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "The amount of the subscription.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "The currency of the subscription.",
-			},
-			"recurring_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "The interval at which the subscription recurs.",
-			},
-			"recurring_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on.",
-			},
-			"status": schema.StringAttribute{
-				Computed:    true,
-				Description: "The status of the subscription.",
-			},
-			"current_period_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the current billing period.",
-			},
-			"current_period_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "The end timestamp of the current billing period.",
-			},
-			"current_meter_period_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the current meter period, if the product has a meter cycle set. Metered credits are granted and overage is settled on this cadence.",
-			},
-			"current_meter_period_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "The end timestamp of the current meter period, if the product has a meter cycle set. This is when credits next renew.",
-			},
-			"trial_start": schema.StringAttribute{
-				Computed:    true,
-				Description: "The start timestamp of the trial period, if any.",
-			},
-			"trial_end": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The end timestamp of the trial period, if any.",
-			},
-			"cancel_at_period_end": schema.BoolAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Whether the subscription will be canceled at the end of the current period.",
-			},
-			"canceled_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription was canceled. The subscription might still be active if `cancel_at_period_end` is `true`.",
-			},
-			"started_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription started.",
-			},
-			"ends_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription will end.",
-			},
-			"ended_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription ended.",
-			},
-			"past_due_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription entered `past_due` status.",
-			},
-			"pause_at_period_end": schema.BoolAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Whether the subscription will be paused at the end of the current period.",
-			},
-			"paused_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "The timestamp when the subscription was paused.",
-			},
-			"resumes_at": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The timestamp when a paused subscription is scheduled to automatically resume, if set.",
-			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the subscribed customer.",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the subscribed product.",
-			},
-			"discount_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The ID of the applied discount, if any.",
-			},
-			"checkout_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"seats": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The number of seats for seat-based subscriptions. None for non-seat subscriptions.",
-			},
-			"customer_cancellation_reason": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"customer_cancellation_comment": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
+				Optional:    true,
 				Description: "",
 			},
-			"custom_field_data": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Key-value object storing custom field values.",
+			"product_id": schema.StringAttribute{
+				Required:    true,
+				Description: "The ID of the subscribed product.",
 			},
-			"customer": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the customer.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"external_id": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The ID of the customer in your system. This must be unique within the organization. Once set, it can't be updated.",
-					},
-					"email": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The email address of the customer. This must be unique within the organization.",
-					},
-					"email_verified": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the customer email address is verified. The address is automatically verified when the customer accesses the customer portal using their email address.",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "The type of customer: 'individual' for single users, 'team' for customers with multiple members.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the customer.",
-					},
-					"billing_name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
-					},
-					"billing_address": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"tax_id": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"locale": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the organization owning the customer.",
-					},
-					"default_payment_method_id": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The ID of the customer's default payment method, if any. Use the payment methods endpoint to retrieve its details.",
-					},
-					"deleted_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp for when the customer was soft deleted.",
-					},
-					"first_user_event_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp of the first event ingested for this customer. Can predate `created_at`, and is null if no event was ever ingested.",
-					},
-					"avatar_url": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"product": schema.SingleNestedAttribute{
+			"customer_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"trial_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The interval unit for the trial period.",
-					},
-					"trial_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "The number of interval units for the trial period.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the product.",
-					},
-					"description": schema.StringAttribute{
-						Required:    true,
-						Description: "The description of the product.",
-					},
-					"visibility": schema.StringAttribute{
-						Required:    true,
-						Description: "The visibility of the product.",
-					},
-					"recurring_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
-					},
-					"recurring_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
-					},
-					"meter_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
-					},
-					"meter_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of meter interval units. None when no meter cycle is set.",
-					},
-					"is_recurring": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is a subscription.",
-					},
-					"is_archived": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is archived and no longer available.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the organization owning the product.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"prices": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of prices for this product.",
-					},
-					"benefits": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of benefits granted by the product.",
-					},
-					"medias": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of medias associated to the product.",
-					},
-					"attached_custom_fields": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of custom fields attached to the product.",
-					},
-				},
-				Description: "",
+				Description: "The ID of the subscribed customer.",
 			},
-			"discount": schema.SingleNestedAttribute{
+			"external_customer_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"duration": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"currency": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"amounts": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Map of currency to fixed amount to discount from the total.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
-					},
-					"code": schema.StringAttribute{
-						Required:    true,
-						Description: "Code customers can use to apply the discount during checkout.",
-					},
-					"starts_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is redeemable.",
-					},
-					"ends_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is no longer redeemable.",
-					},
-					"max_redemptions": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed.",
-					},
-					"max_redemptions_per_customer": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed by a single customer.",
-					},
-					"redemptions_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of times the discount has been redeemed.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The organization ID.",
-					},
-					"duration_in_months": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"basis_points": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
-					},
-				},
-				Description: "",
-			},
-			"prices": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"created_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Creation timestamp of the object.",
-						},
-						"modified_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Last modification timestamp of the object.",
-						},
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the price.",
-						},
-						"source": schema.StringAttribute{
-							Required:    true,
-							Description: "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session.",
-						},
-						"price_currency": schema.StringAttribute{
-							Required:    true,
-							Description: "The currency in which the customer will be charged.",
-						},
-						"tax_behavior": schema.StringAttribute{
-							Required:    true,
-							Description: "The tax behavior of the price. If null, it defaults to the organization's default tax behavior.",
-						},
-						"is_archived": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the price is archived and no longer available.",
-						},
-						"product_id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the product owning the price.",
-						},
-						"type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The type of the price.",
-						},
-						"recurring_interval": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The recurring interval of the price.",
-						},
-						"price_amount": schema.Int64Attribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The price in cents.",
-						},
-						"legacy": schema.BoolAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"minimum_amount": schema.Int64Attribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'.",
-						},
-						"maximum_amount": schema.Int64Attribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The maximum amount the customer can pay.",
-						},
-						"preset_amount": schema.Int64Attribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The initial amount shown to the customer.",
-						},
-						"legacy_recurring_product_price_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "Which variant this is. Selects which of the optional blocks above applies.",
-						},
-						"product_price_amount_type": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "Which variant this is. Selects which of the optional blocks above applies.",
-						},
-						"seat_tiers": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "Tiered pricing based on seat quantity",
-						},
-						"unit_amount": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The price per unit in cents.",
-						},
-						"cap_amount": schema.Int64Attribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The maximum amount in cents that can be charged, regardless of the number of units consumed.",
-						},
-						"meter_id": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The ID of the meter associated to the price.",
-						},
-						"meter": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "The meter associated to the price.",
-						},
-					},
-				},
-				Description: "List of enabled prices for the subscription.",
-			},
-			"meters": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"created_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Creation timestamp of the object.",
-						},
-						"modified_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Last modification timestamp of the object.",
-						},
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the object.",
-						},
-						"consumed_units": schema.Float64Attribute{
-							Required:    true,
-							Description: "The number of consumed units so far in this billing period.",
-						},
-						"credited_units": schema.Int64Attribute{
-							Required:    true,
-							Description: "The number of credited units so far in this billing period.",
-						},
-						"amount": schema.Int64Attribute{
-							Required:    true,
-							Description: "The amount due in cents so far in this billing period.",
-						},
-						"meter_id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the meter.",
-						},
-						"meter": schema.StringAttribute{
-							Required:    true,
-							Description: "The meter associated with this subscription.",
-						},
-					},
-				},
-				Description: "List of meters associated with the subscription.",
-			},
-			"pending_update": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"applies_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The date and time when the subscription update will be applied.",
-					},
-					"product_id": schema.StringAttribute{
-						Required:    true,
-						Description: "ID of the new product to apply to the subscription. If `null`, the product won't be changed.",
-					},
-					"seats": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of seats to apply to the subscription. If `null`, the number of seats won't be changed.",
-					},
-				},
-				Description: "Pending subscription update that will be applied at the beginning of the next period. If `null`, there is no pending update.",
-			},
-			"proration_behavior": schema.StringAttribute{
-				Optional:    true,
-				Description: "Determine how to handle the proration billing. If not provided, will use the default organization setting.",
-			},
-			"current_billing_period_end": schema.StringAttribute{
-				Optional:    true,
-				Description: "Set a new date for the end of the current billing period. The subscription will renew on this date. The new date can be earlier or later than the current period end, as long as it's in the future.  It is not possible to update the current billing period on a canceled subscription.",
-			},
-			"revoke": schema.BoolAttribute{
-				Optional:    true,
-				Description: "Cancel and revoke an active subscription immediately",
-			},
-			"resume": schema.BoolAttribute{
-				Optional:    true,
-				Description: "Resume a paused subscription immediately, starting a new billing period and charging the customer.",
+				Description: "The ID of the customer in your system to create the subscription for. It must already exist in Polar.",
 			},
 		},
 	}
@@ -669,7 +97,52 @@ func (r *SubscriptionResource) Configure(_ context.Context, req resource.Configu
 }
 
 func (r *SubscriptionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for subscription")
+	var plan SubscriptionModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid subscription configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/subscriptions/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating subscription", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/subscriptions/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created subscription", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Subscription
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created subscription resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *SubscriptionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -738,7 +211,8 @@ func (r *SubscriptionResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid subscription configuration", err.Error())
 		return

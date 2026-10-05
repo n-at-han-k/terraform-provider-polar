@@ -9,7 +9,7 @@ type CheckoutLink struct {
 	ModifiedAt string `json:"modified_at,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	PaymentProcessor string `json:"payment_processor,omitempty"`
 	ClientSecret string `json:"client_secret,omitempty"`
 	SuccessUrl string `json:"success_url,omitempty"`

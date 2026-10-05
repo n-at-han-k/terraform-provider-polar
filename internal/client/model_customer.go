@@ -7,7 +7,7 @@ type Customer struct {
 	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	ExternalId string `json:"external_id,omitempty"`
 	IndividualEmail string `json:"individual_email,omitempty"`
 	TeamEmail string `json:"team_email,omitempty"`

@@ -13,14 +13,9 @@ import (
 
 // DiscountModel is the Terraform model for discount.
 type DiscountModel struct {
-	Duration types.String `tfsdk:"duration"`
-	Type types.String `tfsdk:"type"`
-	Amount types.Int64 `tfsdk:"amount"`
-	Currency types.String `tfsdk:"currency"`
-	Amounts jsontypes.Normalized `tfsdk:"amounts"`
+	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
 	Metadata jsontypes.Normalized `tfsdk:"metadata"`
 	Name types.String `tfsdk:"name"`
 	Code types.String `tfsdk:"code"`
@@ -28,37 +23,21 @@ type DiscountModel struct {
 	EndsAt types.String `tfsdk:"ends_at"`
 	MaxRedemptions types.Int64 `tfsdk:"max_redemptions"`
 	MaxRedemptionsPerCustomer types.Int64 `tfsdk:"max_redemptions_per_customer"`
-	RedemptionsCount types.Int64 `tfsdk:"redemptions_count"`
-	OrganizationId types.String `tfsdk:"organization_id"`
 	Products jsontypes.Normalized `tfsdk:"products"`
+	OrganizationId types.String `tfsdk:"organization_id"`
+	Duration types.String `tfsdk:"duration"`
 	DurationInMonths types.Int64 `tfsdk:"duration_in_months"`
+	Amount types.Int64 `tfsdk:"amount"`
+	Currency types.String `tfsdk:"currency"`
+	Amounts jsontypes.Normalized `tfsdk:"amounts"`
 	BasisPoints types.Int64 `tfsdk:"basis_points"`
+	Type types.String `tfsdk:"type"`
 }
 
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *DiscountModel) ToClientModel() (*client.DiscountUpdate, error) {
-	out := &client.DiscountUpdate{}
-	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
-		out.Duration = m.Duration.ValueString()
-	}
-	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
-	}
-	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
-		out.Amount = int32(m.Amount.ValueInt64())
-	}
-	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
-		out.Currency = m.Currency.ValueString()
-	}
-	// A silently dropped field is worse than a loud one: bad JSON here means
-	// the configuration said something this resource cannot send, and the
-	// request would otherwise go out quietly missing it.
-	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
-		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
-			return out, fmt.Errorf("amounts: %w", err)
-		}
-	}
+func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
+	out := &client.DiscountCreate{}
 	// A silently dropped field is worse than a loud one: bad JSON here means
 	// the configuration said something this resource cannot send, and the
 	// request would otherwise go out quietly missing it.
@@ -93,20 +72,137 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountUpdate, error) {
 			return out, fmt.Errorf("products: %w", err)
 		}
 	}
+	if !m.OrganizationId.IsNull() && !m.OrganizationId.IsUnknown() {
+		out.OrganizationId = m.OrganizationId.ValueString()
+	}
+	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
+		out.Duration = m.Duration.ValueString()
+	}
 	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
 		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		out.Amount = int32(m.Amount.ValueInt64())
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		out.Currency = m.Currency.ValueString()
+	}
+	// A silently dropped field is worse than a loud one: bad JSON here means
+	// the configuration said something this resource cannot send, and the
+	// request would otherwise go out quietly missing it.
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
+			return out, fmt.Errorf("amounts: %w", err)
+		}
 	}
 	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
 		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
 	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
 	return out, nil
 }
 
+// ToUpdateModel converts a Terraform model to the UPDATE client model, which is
+// a different shape from the create one: an update body may declare neither the
+// nested blocks the create takes nor the id, and sending the create model to the
+// patch endpoint is answered with "provided request body content is not in the
+// expected format".
+//
+// Fields the patch model does not declare are simply absent here -- the
+// generator only emits the ones it has.
+func (m *DiscountModel) ToUpdateModel() (*client.DiscountUpdate, error) {
+	out := &client.DiscountUpdate{}
+	if !m.Metadata.IsNull() && !m.Metadata.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Metadata.ValueString()), &out.Metadata); err != nil {
+			return out, fmt.Errorf("metadata: %w", err)
+		}
+	}
+	if !m.Name.IsNull() && !m.Name.IsUnknown() {
+		out.Name = m.Name.ValueString()
+	}
+	if !m.Code.IsNull() && !m.Code.IsUnknown() {
+		out.Code = m.Code.ValueString()
+	}
+	if !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		out.StartsAt = m.StartsAt.ValueString()
+	}
+	if !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		out.EndsAt = m.EndsAt.ValueString()
+	}
+	if !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		out.MaxRedemptions = int32(m.MaxRedemptions.ValueInt64())
+	}
+	if !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		out.MaxRedemptionsPerCustomer = int32(m.MaxRedemptionsPerCustomer.ValueInt64())
+	}
+	if !m.Products.IsNull() && !m.Products.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Products.ValueString()), &out.Products); err != nil {
+			return out, fmt.Errorf("products: %w", err)
+		}
+	}
+	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
+		out.Duration = m.Duration.ValueString()
+	}
+	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
+		out.DurationInMonths = int32(m.DurationInMonths.ValueInt64())
+	}
+	if !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		out.Amount = int32(m.Amount.ValueInt64())
+	}
+	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		out.Currency = m.Currency.ValueString()
+	}
+	if !m.Amounts.IsNull() && !m.Amounts.IsUnknown() {
+		if err := json.Unmarshal([]byte(m.Amounts.ValueString()), &out.Amounts); err != nil {
+			return out, fmt.Errorf("amounts: %w", err)
+		}
+	}
+	if !m.BasisPoints.IsNull() && !m.BasisPoints.IsUnknown() {
+		out.BasisPoints = int32(m.BasisPoints.ValueInt64())
+	}
+	if !m.Type.IsNull() && !m.Type.IsUnknown() {
+		out.Type = m.Type.ValueString()
+	}
+	return out, nil
+}
 
 // FromClientModel updates the Terraform model from a client model.
 func (m *DiscountModel) FromClientModel(c *client.Discount) {
+	m.Id = types.StringValue(c.Id)
+	m.CreatedAt = types.StringValue(c.CreatedAt)
+	m.ModifiedAt = types.StringValue(c.ModifiedAt)
+	// Marshalling a Go value cannot fail in a way worth surfacing here; an
+	// unrepresentable one would have failed on the way in.
+	//
+	// The answer is only written when it says something the configuration does
+	// not already say -- see jsonSupersetOf. A server that merely filled in its
+	// own defaults has told us nothing, and recording it would fail the apply
+	// and then propose an update forever.
+	if encoded, err := json.Marshal(c.Metadata); err == nil {
+		if m.Metadata.IsNull() || m.Metadata.IsUnknown() ||
+			!jsonSupersetOf(string(encoded), m.Metadata.ValueString()) {
+			m.Metadata = jsontypes.NewNormalizedValue(string(encoded))
+		}
+	}
+	m.Name = types.StringValue(c.Name)
+	m.Code = types.StringValue(c.Code)
+	m.StartsAt = types.StringValue(c.StartsAt)
+	m.EndsAt = types.StringValue(c.EndsAt)
+	m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
+	m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
+	// The create body takes this and no response of the same shape answers it --
+	// AssociationRequest against AssociationResponse -- so nothing above writes
+	// it, and a Computed attribute the configuration left out stays UNKNOWN once
+	// the apply is over: "provider returned invalid result object after apply".
+	// Unknown becomes null; a value the plan already knows is left alone.
+	if m.Products.IsUnknown() {
+		m.Products = jsontypes.NewNormalizedNull()
+	}
+	m.OrganizationId = types.StringValue(c.OrganizationId)
 	m.Duration = types.StringValue(c.Duration)
-	m.Type = types.StringValue(c.Type)
+	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
 	m.Amount = types.Int64Value(int64(c.Amount))
 	m.Currency = types.StringValue(c.Currency)
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
@@ -122,33 +218,6 @@ func (m *DiscountModel) FromClientModel(c *client.Discount) {
 			m.Amounts = jsontypes.NewNormalizedValue(string(encoded))
 		}
 	}
-	m.CreatedAt = types.StringValue(c.CreatedAt)
-	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Metadata.IsUnknown() {
-		m.Metadata = jsontypes.NewNormalizedNull()
-	}
-	m.Name = types.StringValue(c.Name)
-	m.Code = types.StringValue(c.Code)
-	m.StartsAt = types.StringValue(c.StartsAt)
-	m.EndsAt = types.StringValue(c.EndsAt)
-	m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
-	m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
-	m.RedemptionsCount = types.Int64Value(int64(c.RedemptionsCount))
-	m.OrganizationId = types.StringValue(c.OrganizationId)
-	// The create body takes this and no response of the same shape answers it --
-	// AssociationRequest against AssociationResponse -- so nothing above writes
-	// it, and a Computed attribute the configuration left out stays UNKNOWN once
-	// the apply is over: "provider returned invalid result object after apply".
-	// Unknown becomes null; a value the plan already knows is left alone.
-	if m.Products.IsUnknown() {
-		m.Products = jsontypes.NewNormalizedNull()
-	}
-	m.DurationInMonths = types.Int64Value(int64(c.DurationInMonths))
 	m.BasisPoints = types.Int64Value(int64(c.BasisPoints))
+	m.Type = types.StringValue(c.Type)
 }

@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -54,19 +55,14 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"trial_interval": schema.StringAttribute{
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
-				Description: "The interval unit for the trial period.",
-			},
-			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The number of interval units for the trial period.",
+				Description: "",
 			},
 			"name": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+				Required:    true,
 				Description: "The name of the product.",
 			},
 			"description": schema.StringAttribute{
@@ -79,51 +75,10 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Optional:    true,
 				Description: "The visibility of the product.",
 			},
-			"recurring_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
-			},
-			"recurring_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
-			},
-			"meter_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
-			},
-			"meter_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of meter interval units. None when no meter cycle is set.",
-			},
-			"is_recurring": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the product is a subscription.",
-			},
-			"is_archived": schema.BoolAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Whether the product is archived and no longer available.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the organization owning the product.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
 			"prices": schema.ListNestedAttribute{
-				Optional:    true,
+				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
 						"price_currency": schema.StringAttribute{
 							Computed:    true,
 							Optional:    true,
@@ -165,10 +120,9 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 							Description: "The ID of the meter associated to the price.",
 						},
 						"unit_amount": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
 							Computed:    true,
 							Optional:    true,
-							Description: "",
+							Description: "The price per unit in cents. Supports up to 12 decimal places.",
 						},
 						"cap_amount": schema.Int64Attribute{
 							Computed:    true,
@@ -182,105 +136,6 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 					},
 				},
 				Description: "List of prices for this product.",
-			},
-			"benefits": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the benefit.",
-						},
-						"created_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Creation timestamp of the object.",
-						},
-						"modified_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Last modification timestamp of the object.",
-						},
-						"description": schema.StringAttribute{
-							Required:    true,
-							Description: "The description of the benefit.",
-						},
-						"selectable": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the benefit is selectable when creating a product.",
-						},
-						"deletable": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the benefit is deletable.",
-						},
-						"is_deleted": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the benefit is deleted.",
-						},
-						"organization_id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the organization owning the benefit.",
-						},
-						"metadata": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
-							Required:    true,
-							Description: "",
-						},
-						"visibility": schema.StringAttribute{
-							Required:    true,
-							Description: "The visibility of the benefit in the customer portal.",
-						},
-						"custom_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"discord_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"github_repository_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"downloadables_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"license_keys_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"meter_credit_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"feature_flag_properties": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
-							Computed:    true,
-							Optional:    true,
-							Description: "Properties for a benefit of type `feature_flag`.",
-						},
-						"slack_shared_channel_properties": schema.StringAttribute{
-							Computed:    true,
-							Optional:    true,
-							Description: "",
-						},
-						"visibility_configurable": schema.BoolAttribute{
-							Required:    true,
-							Description: "",
-						},
-						"type": schema.StringAttribute{
-							Required:    true,
-							Description: "Which variant this is. Selects which of the optional blocks above applies.",
-						},
-					},
-				},
-				Description: "List of benefits granted by the product.",
 			},
 			"medias": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
@@ -304,6 +159,41 @@ func (r *ProductResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 				},
 				Description: "List of custom fields attached to the product.",
 			},
+			"organization_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The ID of the organization owning the product.",
+			},
+			"trial_interval": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The interval unit for the trial period.",
+			},
+			"trial_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The number of interval units for the trial period.",
+			},
+			"recurring_interval": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
+			},
+			"recurring_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
+			},
+			"meter_interval": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
+			},
+			"meter_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "Number of meter interval units. None when no meter cycle is set.",
+			},
 		},
 	}
 }
@@ -326,7 +216,52 @@ func (r *ProductResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 func (r *ProductResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for product")
+	var plan ProductModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid product configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/products/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating product", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/products/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created product", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Product
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created product resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *ProductResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -395,7 +330,8 @@ func (r *ProductResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid product configuration", err.Error())
 		return

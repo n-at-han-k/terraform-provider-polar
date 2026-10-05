@@ -7,12 +7,11 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-// CustomersExternalMemberModel is the Terraform model for customers_external_member.
-type CustomersExternalMemberModel struct {
+// CustomerExternalMemberModel is the Terraform model for customer_external_member.
+type CustomerExternalMemberModel struct {
 	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	CustomerId types.String `tfsdk:"customer_id"`
 	Email types.String `tfsdk:"email"`
 	Name types.String `tfsdk:"name"`
 	ExternalId types.String `tfsdk:"external_id"`
@@ -21,7 +20,7 @@ type CustomersExternalMemberModel struct {
 
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *CustomersExternalMemberModel) ToClientModel() (*client.MemberCreateFromCustomer, error) {
+func (m *CustomerExternalMemberModel) ToClientModel() (*client.MemberCreateFromCustomer, error) {
 	out := &client.MemberCreateFromCustomer{}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
 		out.Email = m.Email.ValueString()
@@ -46,7 +45,7 @@ func (m *CustomersExternalMemberModel) ToClientModel() (*client.MemberCreateFrom
 //
 // Fields the patch model does not declare are simply absent here -- the
 // generator only emits the ones it has.
-func (m *CustomersExternalMemberModel) ToUpdateModel() (*client.MemberUpdate, error) {
+func (m *CustomerExternalMemberModel) ToUpdateModel() (*client.MemberUpdate, error) {
 	out := &client.MemberUpdate{}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
 		out.Email = m.Email.ValueString()
@@ -61,11 +60,10 @@ func (m *CustomersExternalMemberModel) ToUpdateModel() (*client.MemberUpdate, er
 }
 
 // FromClientModel updates the Terraform model from a client model.
-func (m *CustomersExternalMemberModel) FromClientModel(c *client.Member) {
+func (m *CustomerExternalMemberModel) FromClientModel(c *client.Member) {
 	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.CustomerId = types.StringValue(c.CustomerId)
 	m.Email = types.StringValue(c.Email)
 	m.Name = types.StringValue(c.Name)
 	m.ExternalId = types.StringValue(c.ExternalId)

@@ -15,12 +15,9 @@ import (
 // that returns the object it just made, in the Location header for one that
 // returns only where to find it.
 //
-// A PLAIN STRING, because that is what the document says an id is. The generator
-// this one descends from had a bespoke `RTID` type here, with an unmarshaller
-// that accepted a JSON number as well as a string, because Request Tracker
-// answered `"id": 1` on one route and `"id": "5"` on the next. Polar types every
-// id as a string with `format: uuid4`, so none of that applies and all of it is
-// gone -- see the note in TerraformCodegen's retype pass.
+// A PLAIN STRING, because that is what the document says an id is: Polar types
+// every id as a string with `format: uuid4`, consistently, so there is no
+// bespoke id type here and no unmarshaller tolerant of JSON numbers.
 func IDFromCreate(body []byte, location string) string {
 	var answered struct {
 		ID string `json:"id"`

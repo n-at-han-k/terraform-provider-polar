@@ -1,27 +1,44 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 #
-# THE POLAR DOCUMENT IN, A DOCUMENT THE GENERATOR CAN BE POINTED AT OUT.
+# THE GENERATOR'S CONFIGURATION, computed from the vendored OpenAPI description.
 #
-# Every Polar-specific decision in this provider is made HERE, against the
-# published OpenAPI description, and lands as a committed artifact -- a pruned
-# document and a manifest beside it. The generator itself knows nothing about
-# Polar: it is pointed at reference/polar-pruned.json and groups whatever it is
-# given. That is the whole reason this file exists rather than five more hooks
-# in generators/polar/src/polar/TerraformCodegen.java.
+# IT EXISTS FOR ONE REASON: there are things the generator cannot work out
+# accurately from the document on its own, and guessing them produces a provider
+# that compiles and is wrong. Those answers are computed here, once, and written
+# where the generator reads them -- so the generator is told rather than left to
+# infer, and what it was told is a committed file somebody can read.
 #
-# WHY A DERIVED ARTIFACT AND NOT A HEURISTIC AT GENERATE TIME. Polar versions
-# its document (`info.version`, "2026-04") and ships a new one without asking.
-# A rule that runs inside the generator answers differently on the new document
-# and says nothing about it; a rule that runs here produces a diff -- two
-# resources added, one dropped -- which is a thing to read before committing.
-# The manifest is written for exactly that review.
+# What it answers:
 #
-#   bin/vendor-spec   # refresh the vendored description (the only network step)
-#   bin/derive        # prune the vendored one, write both artifacts
+#   * WHICH COLLECTIONS ARE RESOURCES. A resource is one Terraform can create and
+#     read back. Without a create a path is a report; without a read on its member
+#     it is a verb. The generator sees operations one at a time and cannot take
+#     that view.
 #
-# NOTHING HERE IS HAND-MAINTAINED. Do not edit polar-pruned.json; edit the
-# rules below and run this again.
+#   * HOW A UNION MAPS ONTO ATTRIBUTES. HCL has no union, so a oneOf has to become
+#     one concrete object -- which properties merge, which are renamed per variant,
+#     which variant of a recursive union survives, and which unions of scalars
+#     widen to one type. These are the answers the generator would have to
+#     calculate inaccurately.
+#
+#   * WHICH POSITIONS CANNOT BE A TYPED BLOCK AT ALL. Freeform maps have no
+#     properties to expand.
+#
+#   * HOW DEEP A BLOCK GOES, and the version prefix that is not part of a
+#     resource's name.
+#
+# It writes reference/polar-pruned.json (the document as the generator should see
+# it), reference/generator-config.yaml (the values it is told) and
+# reference/resources.md (what was kept and dropped, which is the thing to read
+# when Polar publishes a new description).
+#
+#   bin/vendor-spec      # refresh the vendored description -- the only network step
+#   bin/generate-config  # compute the configuration from it
+#   bin/generate         # both of the above, then generate and build
+#
+# NOTHING HERE IS HAND-MAINTAINED. Do not edit the files it writes; edit the rules
+# below and run it again.
 require "json"
 
 ROOT    = File.expand_path("..", __dir__)
@@ -38,11 +55,13 @@ PROVIDER_NAME    = "polar"
 PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
 PROVIDER_VERSION = "1.0.0"
 
-# One level of nesting is typed; anything deeper is JSON inside its typed
-# parent. That is enough for Polar -- a product's prices is a list of flat
-# objects, a benefit's meter_credit_properties is a flat object -- and it is the
-# depth at which a Terraform block stays something a person can read.
-NESTED_MAX_DEPTH = 1
+# HOW DEEP A TYPED BLOCK GOES, and it has to reach the deepest block the
+# hand-written provider has: a meter's `filter.clauses[].property` is three
+# levels down, and a license key benefit's
+# `license_keys_properties.expires.ttl` is three as well. At one level `clauses`
+# came out a string holding JSON and the conformance suite said so --
+# "attribute clauses: string required, but have tuple".
+NESTED_MAX_DEPTH = 3
 
 # The version segment every Polar path opens with. Lifted off the paths and
 # onto the server URL below, so a resource is `polar_product` rather than
@@ -154,6 +173,61 @@ def drop_null_properties!(node, dropped)
   end
 
   dropped
+end
+
+# A UNION OF DIFFERENT SCALARS IS A STRING.
+#
+# A filter clause's `value` is `anyOf: [{string}, {integer}, {boolean}]` -- "match
+# against whichever of these the property holds". Terraform has no such attribute:
+# one attribute is one type. openapi-generator renders the composition as
+# `interface{}`, which this generator then carries as a string holding JSON, and
+# the suite's `value = "api_call"` is refused -- "A string value was provided that
+# is not valid JSON string format (RFC 7159)".
+#
+# The hand-written provider takes a string here and lets the server coerce, so
+# that is what the document is rewritten to say.
+#
+# NOT NULLABILITY. `anyOf: [{string}, {null}]` is one type and a null, which
+# openapi-generator already handles; a null member is ignored here and a union
+# that reduces to a single type is left alone.
+SCALAR_TYPES = %w[string integer number boolean].freeze
+
+def collapse_scalar_unions!(node, collapsed)
+  case node
+  when Hash
+    node.each_value { |value| collapse_scalar_unions!(value, collapsed) }
+
+    members = node["oneOf"] || node["anyOf"]
+    return collapsed unless members.is_a?(Array)
+
+    typed = members.reject { |m| m.is_a?(Hash) && m["type"] == "null" }
+    return collapsed if typed.empty?
+    return collapsed unless typed.all? { |m| m.is_a?(Hash) && SCALAR_TYPES.include?(m["type"]) }
+    return collapsed if typed.map { |m| m["type"] }.uniq.size < 2
+
+    title = node["title"]
+    description = node["description"]
+
+    # A UNION OF NUMBERS IS A NUMBER, not a string. Polar's metric values are
+    # `anyOf: [{integer}, {number}]` -- "a count or a currency amount" -- and
+    # calling those strings would make every metric attribute a quoted number.
+    # Only a union that mixes KINDS has to fall back to a string.
+    kinds = typed.map { |m| m["type"] }.uniq
+    widened = (kinds - %w[integer number]).empty? ? "number" : "string"
+
+    node.delete("oneOf")
+    node.delete("anyOf")
+    node.delete("discriminator")
+    node["type"] = widened
+    node["title"] = title if title
+    node["description"] = description if description
+
+    collapsed << "#{title || 'anonymous'} -> #{widened}"
+  when Array
+    node.each { |value| collapse_scalar_unions!(value, collapsed) }
+  end
+
+  collapsed
 end
 
 # A FLATTENED UNION NEEDS A NAME OF ITS OWN.
@@ -362,9 +436,36 @@ def flatten_unions!(node, schemas, flattened)
     # a recursive union stays a union and the generator renders that position as
     # JSON -- which is the right answer for it, and the shape the hand-written
     # catalogue already uses (a flat list of clauses).
+    # A RECURSIVE UNION LOSES ITS RECURSIVE HALF rather than the whole position.
+    #
+    # A meter's filter has `clauses.items.anyOf = [FilterClause, Filter]` -- a
+    # clause, or another whole filter, which is how a nested group of conditions
+    # is described. Terraform cannot express arbitrary nesting as a typed
+    # attribute, and the hand-written provider does not try: it models `clauses`
+    # as a list of CLAUSES and supports no nested filters at all.
+    #
+    # So drop the variants that reach back into the union and flatten what is
+    # left. Refusing the whole union instead left `clauses` a string holding JSON,
+    # and the conformance suite says otherwise: "attribute clauses: string
+    # required, but have tuple".
     names = variants.keys
-    recursive = names.any? { |name| (closure_of(name, schemas) & names).any? }
-    return flattened if recursive
+    recursive = names.select { |name| (closure_of(name, schemas) & names).any? }
+
+    unless recursive.empty?
+      variants = variants.reject { |name, _| recursive.include?(name) }
+      return flattened if variants.empty?
+
+      # One variant left is not a union at all -- point straight at it, so the
+      # generator sees a named schema rather than a composition.
+      if variants.size == 1
+        node.delete("oneOf")
+        node.delete("anyOf")
+        node.delete("discriminator")
+        node["$ref"] = "#/components/schemas/#{variants.keys.first}"
+        flattened << "#{variants.keys.first} (recursive union reduced to one variant)"
+        return flattened
+      end
+    end
 
     # The discriminator value that selects each variant, so a renamed property
     # is named for what a configuration actually writes. Without a discriminator
@@ -553,6 +654,8 @@ loop do
   break if unions.size == before_pass
 end
 
+scalars = collapse_scalar_unions!(spec, [])
+
 hoisted = hoist_inline_objects!(spec, spec["components"]["schemas"])
 
 reachable = reachable_schemas(spec["paths"], spec["components"]["schemas"])
@@ -568,10 +671,10 @@ json_only = json_only_properties(spec)
 # A yaml file rather than --additional-properties because the list below is
 # longer than a command line should carry.
 File.write(GENERATOR_CONFIG, <<~YAML)
-  # GENERATED by bin/derive. Do not edit.
+  # GENERATED by bin/generate-config. Do not edit.
   #
   # Passed to the generator as `-c`. Every value is derived from the vendored
-  # OpenAPI description; see bin/derive for what each one means and why.
+  # OpenAPI description; see bin/generate-config for what each one means and why.
   additionalProperties:
     providerName: #{PROVIDER_NAME}
     providerAddress: #{PROVIDER_ADDRESS}
@@ -589,11 +692,11 @@ YAML
 
 # The thing to actually read on a spec bump.
 File.open(MANIFEST, "w") do |io|
-  io.puts "<!-- GENERATED by bin/derive. Do not edit. -->"
+  io.puts "<!-- GENERATED by bin/generate-config. Do not edit. -->"
   io.puts
   io.puts "# Polar #{spec.dig('info', 'version')} -> provider resources"
   io.puts
-  io.puts "`bin/derive` keeps a collection when it has a **create** (`POST` answering 201)"
+  io.puts "`bin/generate-config` keeps a collection when it has a **create** (`POST` answering 201)"
   io.puts "and a **read** on its member (`GET /thing/{id}`). Everything else is a report or"
   io.puts "a verb. The customer portal is dropped whole: it authenticates with a customer"
   io.puts "session, not this provider's organization token."
@@ -639,6 +742,9 @@ warn("dropped #{nulls.size} null-typed properties: #{nulls.uniq.sort.join(', ')}
 warn("flattened #{unions.size} unions of objects")
 unions.uniq.sort.each { |line| warn("  #{line}") }
 warn("schemas #{before} -> #{spec['components']['schemas'].size}")
+warn("collapsed #{scalars.size} scalar unions " \
+     "(#{scalars.count { |c| c.end_with?('number') }} to number, " \
+     "#{scalars.count { |c| c.end_with?('string') }} to string)")
 warn("hoisted #{hoisted.size} flattened unions into named schemas")
 warn("json-only properties (#{json_only.size}): #{json_only.join(', ')}")
 warn("wrote #{PRUNED.sub("#{ROOT}/", '')}, #{MANIFEST.sub("#{ROOT}/", '')} and " \

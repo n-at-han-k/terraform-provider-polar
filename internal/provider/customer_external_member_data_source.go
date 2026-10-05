@@ -15,23 +15,23 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ datasource.DataSource = &CustomersExternalMemberDataSource{}
+var _ datasource.DataSource = &CustomerExternalMemberDataSource{}
 
-func NewCustomersExternalMemberDataSource() datasource.DataSource {
-	return &CustomersExternalMemberDataSource{}
+func NewCustomerExternalMemberDataSource() datasource.DataSource {
+	return &CustomerExternalMemberDataSource{}
 }
 
-type CustomersExternalMemberDataSource struct {
+type CustomerExternalMemberDataSource struct {
 	client *client.Client
 }
 
-func (d *CustomersExternalMemberDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_customers_external_member"
+func (d *CustomerExternalMemberDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_customer_external_member"
 }
 
-func (d *CustomersExternalMemberDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *CustomerExternalMemberDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches a customers_external_member data source.",
+		Description: "Fetches a customer_external_member data source.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -44,10 +44,6 @@ func (d *CustomersExternalMemberDataSource) Schema(_ context.Context, _ datasour
 			"modified_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
-			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the customer this member belongs to.",
 			},
 			"email": schema.StringAttribute{
 				Required:    true,
@@ -69,7 +65,7 @@ func (d *CustomersExternalMemberDataSource) Schema(_ context.Context, _ datasour
 	}
 }
 
-func (d *CustomersExternalMemberDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *CustomerExternalMemberDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -86,8 +82,8 @@ func (d *CustomersExternalMemberDataSource) Configure(_ context.Context, req dat
 	d.client = c
 }
 
-func (d *CustomersExternalMemberDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config CustomersExternalMemberModel
+func (d *CustomerExternalMemberDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config CustomerExternalMemberModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -96,7 +92,7 @@ func (d *CustomersExternalMemberDataSource) Read(ctx context.Context, req dataso
 
 	respBody, err := d.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/external/%v/members/%v", config.ExternalId.ValueString(), config.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading customers_external_member", err.Error())
+		resp.Diagnostics.AddError("Error reading customer_external_member", err.Error())
 		return
 	}
 
@@ -108,6 +104,6 @@ func (d *CustomersExternalMemberDataSource) Read(ctx context.Context, req dataso
 
 	config.FromClientModel(&result)
 
-	tflog.Trace(ctx, "read customers_external_member data source")
+	tflog.Trace(ctx, "read customer_external_member data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

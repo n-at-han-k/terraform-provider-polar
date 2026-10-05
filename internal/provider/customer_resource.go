@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -65,26 +66,10 @@ func (r *CustomerResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "The ID of the customer in your system. This must be unique within the organization. Once set, it can't be updated.",
 			},
-			"individual_email": schema.StringAttribute{
-				Computed:    true,
-				Description: "The email address of the customer. This must be unique within the organization.",
-			},
-			"team_email": schema.StringAttribute{
-				Computed:    true,
-				Description: "The email address of the customer. This must be unique within the organization.",
-			},
-			"email_verified": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the customer email address is verified. The address is automatically verified when the customer accesses the customer portal using their email address.",
-			},
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
 				Description: "The name of the customer.",
-			},
-			"billing_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
 			},
 			"billing_address": schema.SingleNestedAttribute{
 				Optional:    true,
@@ -134,32 +119,48 @@ func (r *CustomerResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"organization_id": schema.StringAttribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "The ID of the organization owning the customer.",
 			},
-			"default_payment_method_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the customer's default payment method, if any. Use the payment methods endpoint to retrieve its details.",
+			"owner": schema.SingleNestedAttribute{
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"email": schema.StringAttribute{
+						Required:    true,
+						Description: "The email address of the member.",
+					},
+					"name": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "The name of the member.",
+					},
+					"external_id": schema.StringAttribute{
+						Computed:    true,
+						Optional:    true,
+						Description: "The ID of the member in your system. This must be unique within the customer. ",
+					},
+				},
+				Description: "Optional owner member to create with the customer. If not provided, an owner member will be automatically created using the customer's email and name.",
 			},
-			"deleted_at": schema.StringAttribute{
+			"customer_individual_type": schema.StringAttribute{
 				Computed:    true,
-				Description: "Timestamp for when the customer was soft deleted.",
-			},
-			"first_user_event_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Timestamp of the first event ingested for this customer. Can predate `created_at`, and is null if no event was ever ingested.",
-			},
-			"avatar_url": schema.StringAttribute{
-				Computed:    true,
+				Optional:    true,
 				Description: "",
 			},
-			"type": schema.StringAttribute{
+			"customer_team_type": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "Which variant this is. Selects which of the optional blocks above applies.",
+				Description: "",
 			},
-			"email": schema.StringAttribute{
+			"customer_individual_email": schema.StringAttribute{
+				Computed:    true,
 				Optional:    true,
 				Description: "The email address of the customer. This must be unique within the organization.",
+			},
+			"customer_team_email": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The email address of the team customer. Optional for team customers — if omitted, an owner with an email must be provided.",
 			},
 		},
 	}
@@ -183,7 +184,52 @@ func (r *CustomerResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *CustomerResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for customer")
+	var plan CustomerModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid customer configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/customers/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating customer", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/customers/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created customer", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Customer
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created customer resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *CustomerResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -252,7 +298,8 @@ func (r *CustomerResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid customer configuration", err.Error())
 		return

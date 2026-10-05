@@ -28,7 +28,7 @@ is the only pin on it.
 
 ## The two artifacts
 
-Every Polar-specific decision is made by `bin/derive`, against the vendored
+Every Polar-specific decision is made by `bin/generate-config`, against the vendored
 description, and lands as a committed artifact. The generator is pointed at the
 result and **knows nothing about Polar**.
 
@@ -37,7 +37,7 @@ result and **knows nothing about Polar**.
 | `reference/polar-pruned.json` | what the generator is given |
 | `reference/resources.md` | what was kept and dropped, and why |
 
-`bin/derive` also **flattens every discriminated union of objects**, because HCL
+`bin/generate-config` also **flattens every discriminated union of objects**, because HCL
 has no union and a Terraform attribute has to be one concrete shape:
 
 - a property every variant agrees on is emitted once, as itself;
@@ -68,7 +68,7 @@ one dropped — which is a thing to read before committing.
 
 ## What it covers
 
-Fifteen resources, from 127 paths. `bin/derive` keeps a collection when it has a
+Fifteen resources, from 127 paths. `bin/generate-config` keeps a collection when it has a
 **create** (`POST` answering 201) and a **read** on its member
 (`GET /thing/{id}`):
 
@@ -111,7 +111,7 @@ and never a real payment.
 ## The configuration the generator takes
 
 The generator has no Polar knowledge. Everything it is told is in
-`reference/generator-config.yaml`, written by `bin/derive` from the document and
+`reference/generator-config.yaml`, written by `bin/generate-config` from the document and
 passed as `-c`:
 
 | | |
@@ -153,7 +153,7 @@ shape question Polar raised was answered by pruning the document instead:
   "this variant has no such field" that way — a one-time product is a
   `ProductCreate` whose `recurring_interval` is `{"type": "null"}` — and the
   field came out `*nil`, which does not compile. A property that can only ever
-  be null carries no value, so `bin/derive` deletes it. "One-time" is then
+  be null carries no value, so `bin/generate-config` deletes it. "One-time" is then
   spelled by omitting `recurring_interval`, which is the right shape anyway.
 - **The version prefix is not part of a resource's name.** `/v1` comes off every
   path and goes onto the servers, so a resource is `polar_product` rather than

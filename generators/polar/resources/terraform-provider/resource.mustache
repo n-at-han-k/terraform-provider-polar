@@ -90,56 +90,9 @@ func (r *{{resourceClassName}}Resource) Schema(_ context.Context, _ resource.Sch
 {{#isList}}
 				ElementType: {{listElementType}},
 {{/isList}}
-{{!
-    A LIST WRAPS ITS OBJECT, A SINGLE ONE DOES NOT. ListNestedAttribute carries
-    `NestedObject: schema.NestedAttributeObject{...}`; SingleNestedAttribute
-    carries `Attributes` itself and has no NestedObject field at all -- "unknown
-    field NestedObject in struct literal", once per block.
-}}
-{{#isNestedList}}
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-{{#nested}}
-						"{{terraformName}}": {{terraformAttrType}}{
-{{#isJson}}
-							CustomType:  jsontypes.NormalizedType{},
-{{/isJson}}
-{{#isRequired}}
-							Required:    true,
-{{/isRequired}}
-{{#isComputed}}
-							Computed:    true,
-{{/isComputed}}
-{{#isOptional}}
-							Optional:    true,
-{{/isOptional}}
-							Description: "{{{description}}}",
-						},
-{{/nested}}
-					},
-				},
-{{/isNestedList}}
-{{#isNestedObject}}
-				Attributes: map[string]schema.Attribute{
-{{#nested}}
-					"{{terraformName}}": {{terraformAttrType}}{
-{{#isJson}}
-						CustomType:  jsontypes.NormalizedType{},
-{{/isJson}}
-{{#isRequired}}
-						Required:    true,
-{{/isRequired}}
-{{#isComputed}}
-						Computed:    true,
-{{/isComputed}}
-{{#isOptional}}
-						Optional:    true,
-{{/isOptional}}
-						Description: "{{{description}}}",
-					},
-{{/nested}}
-				},
-{{/isNestedObject}}
+{{#isNested}}
+{{>nested_schema}}
+{{/isNested}}
 				Description: "{{{description}}}",
 			},
 {{/tfAttributes}}

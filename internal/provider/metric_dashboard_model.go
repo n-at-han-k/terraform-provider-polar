@@ -11,11 +11,11 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-// MetricsDashboardModel is the Terraform model for metrics_dashboard.
-type MetricsDashboardModel struct {
+// MetricDashboardModel is the Terraform model for metric_dashboard.
+type MetricDashboardModel struct {
+	Id types.String `tfsdk:"id"`
 	CreatedAt types.String `tfsdk:"created_at"`
 	ModifiedAt types.String `tfsdk:"modified_at"`
-	Id types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Metrics jsontypes.Normalized `tfsdk:"metrics"`
 	OrganizationId types.String `tfsdk:"organization_id"`
@@ -23,7 +23,7 @@ type MetricsDashboardModel struct {
 
 
 // ToClientModel converts a Terraform model to a client model.
-func (m *MetricsDashboardModel) ToClientModel() (*client.MetricDashboardCreate, error) {
+func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, error) {
 	out := &client.MetricDashboardCreate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
@@ -50,7 +50,7 @@ func (m *MetricsDashboardModel) ToClientModel() (*client.MetricDashboardCreate, 
 //
 // Fields the patch model does not declare are simply absent here -- the
 // generator only emits the ones it has.
-func (m *MetricsDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, error) {
+func (m *MetricDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, error) {
 	out := &client.MetricDashboardUpdate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		out.Name = m.Name.ValueString()
@@ -64,10 +64,10 @@ func (m *MetricsDashboardModel) ToUpdateModel() (*client.MetricDashboardUpdate, 
 }
 
 // FromClientModel updates the Terraform model from a client model.
-func (m *MetricsDashboardModel) FromClientModel(c *client.MetricDashboardSchema) {
+func (m *MetricDashboardModel) FromClientModel(c *client.MetricDashboardSchema) {
+	m.Id = types.StringValue(c.Id)
 	m.CreatedAt = types.StringValue(c.CreatedAt)
 	m.ModifiedAt = types.StringValue(c.ModifiedAt)
-	m.Id = types.StringValue(c.Id)
 	m.Name = types.StringValue(c.Name)
 	// Marshalling a Go value cannot fail in a way worth surfacing here; an
 	// unrepresentable one would have failed on the way in.

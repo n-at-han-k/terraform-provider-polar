@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -54,589 +55,45 @@ func (r *OrderResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
-			"status": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"paid": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether the order has been paid for.",
-			},
-			"subtotal_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, before discounts and taxes.",
-			},
-			"discount_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Discount amount in cents.",
-			},
-			"net_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts but before taxes.",
-			},
-			"tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax amount in cents.",
-			},
-			"total_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts and taxes.",
-			},
-			"applied_balance_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Customer's balance amount applied to this invoice. Can increase the total amount paid, if the customer has a negative balance,  or decrease it, if the customer has a positive balance.Amount in cents.",
-			},
-			"due_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents that is due for this order.",
-			},
-			"refunded_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount refunded in cents.",
-			},
-			"refunded_tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax refunded in cents.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"billing_reason": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"billing_name": schema.StringAttribute{
+			"custom_field_data": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
-				Description: "The name of the customer that should appear on the invoice. ",
-			},
-			"billing_address": schema.SingleNestedAttribute{
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"line1": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"line2": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"postal_code": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"city": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"state": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"country": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"invoice_number": schema.StringAttribute{
-				Computed:    true,
-				Description: "The invoice number associated with this order. `null` while the order is in `draft` status; assigned at finalize.",
-			},
-			"is_invoice_generated": schema.BoolAttribute{
-				Computed:    true,
-				Description: "Whether an invoice has been generated for this order.",
-			},
-			"receipt_number": schema.StringAttribute{
-				Computed:    true,
-				Description: "The receipt number for this order. Set once the order is paid for organizations with receipts enabled. When set, a downloadable receipt PDF can be obtained via the receipt endpoint.",
-			},
-			"seats": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of seats purchased (for seat-based one-time orders).",
-			},
-			"customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"discount_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"subscription_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"checkout_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"next_payment_attempt_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "When the next automatic payment retry is scheduled. `null` if the order is not in dunning or all retries have been exhausted.",
+				Description: "Key-value object storing custom field values.",
 			},
 			"metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
+				Optional:    true,
 				Description: "",
 			},
-			"custom_field_data": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Key-value object storing custom field values.",
-			},
-			"platform_fee_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Platform fee amount in cents.",
-			},
-			"platform_fee_currency": schema.StringAttribute{
-				Computed:    true,
-				Description: "Filter by description.",
-			},
-			"customer": schema.SingleNestedAttribute{
+			"organization_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the customer.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"external_id": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The ID of the customer in your system. This must be unique within the organization. Once set, it can't be updated.",
-					},
-					"email": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The email address of the customer. This must be unique within the organization.",
-					},
-					"email_verified": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the customer email address is verified. The address is automatically verified when the customer accesses the customer portal using their email address.",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "The type of customer: 'individual' for single users, 'team' for customers with multiple members.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the customer.",
-					},
-					"billing_name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name that should appear on the customer's invoices. Falls back to the customer name when not explicitly set.",
-					},
-					"billing_address": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"tax_id": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"locale": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the organization owning the customer.",
-					},
-					"default_payment_method_id": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The ID of the customer's default payment method, if any. Use the payment methods endpoint to retrieve its details.",
-					},
-					"deleted_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp for when the customer was soft deleted.",
-					},
-					"first_user_event_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp of the first event ingested for this customer. Can predate `created_at`, and is null if no event was ever ingested.",
-					},
-					"avatar_url": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
+				Description: "The organization ID.",
+			},
+			"customer_id": schema.StringAttribute{
+				Required:    true,
 				Description: "",
 			},
-			"product": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"trial_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The interval unit for the trial period.",
-					},
-					"trial_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "The number of interval units for the trial period.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the product.",
-					},
-					"description": schema.StringAttribute{
-						Required:    true,
-						Description: "The description of the product.",
-					},
-					"visibility": schema.StringAttribute{
-						Required:    true,
-						Description: "The visibility of the product.",
-					},
-					"recurring_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
-					},
-					"recurring_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
-					},
-					"meter_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
-					},
-					"meter_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of meter interval units. None when no meter cycle is set.",
-					},
-					"is_recurring": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is a subscription.",
-					},
-					"is_archived": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is archived and no longer available.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the organization owning the product.",
-					},
-				},
+			"product_id": schema.StringAttribute{
+				Required:    true,
 				Description: "",
 			},
-			"discount": schema.SingleNestedAttribute{
+			"currency": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"duration": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"currency": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"amounts": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Map of currency to fixed amount to discount from the total.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
-					},
-					"code": schema.StringAttribute{
-						Required:    true,
-						Description: "Code customers can use to apply the discount during checkout.",
-					},
-					"starts_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is redeemable.",
-					},
-					"ends_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is no longer redeemable.",
-					},
-					"max_redemptions": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed.",
-					},
-					"max_redemptions_per_customer": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed by a single customer.",
-					},
-					"redemptions_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of times the discount has been redeemed.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The organization ID.",
-					},
-					"duration_in_months": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"basis_points": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
-					},
-				},
 				Description: "",
 			},
-			"subscription": schema.SingleNestedAttribute{
+			"amount": schema.Int64Attribute{
 				Computed:    true,
 				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"amount": schema.Int64Attribute{
-						Required:    true,
-						Description: "The amount of the subscription.",
-					},
-					"currency": schema.StringAttribute{
-						Required:    true,
-						Description: "The currency of the subscription.",
-					},
-					"recurring_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The interval at which the subscription recurs.",
-					},
-					"recurring_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on.",
-					},
-					"status": schema.StringAttribute{
-						Required:    true,
-						Description: "The status of the subscription.",
-					},
-					"current_period_start": schema.StringAttribute{
-						Required:    true,
-						Description: "The start timestamp of the current billing period.",
-					},
-					"current_period_end": schema.StringAttribute{
-						Required:    true,
-						Description: "The end timestamp of the current billing period.",
-					},
-					"current_meter_period_start": schema.StringAttribute{
-						Required:    true,
-						Description: "The start timestamp of the current meter period, if the product has a meter cycle set. Metered credits are granted and overage is settled on this cadence.",
-					},
-					"current_meter_period_end": schema.StringAttribute{
-						Required:    true,
-						Description: "The end timestamp of the current meter period, if the product has a meter cycle set. This is when credits next renew.",
-					},
-					"trial_start": schema.StringAttribute{
-						Required:    true,
-						Description: "The start timestamp of the trial period, if any.",
-					},
-					"trial_end": schema.StringAttribute{
-						Required:    true,
-						Description: "The end timestamp of the trial period, if any.",
-					},
-					"cancel_at_period_end": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the subscription will be canceled at the end of the current period.",
-					},
-					"canceled_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when the subscription was canceled. The subscription might still be active if `cancel_at_period_end` is `true`.",
-					},
-					"started_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when the subscription started.",
-					},
-					"ends_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when the subscription will end.",
-					},
-					"ended_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when the subscription ended.",
-					},
-					"past_due_at": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The timestamp when the subscription entered `past_due` status.",
-					},
-					"pause_at_period_end": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the subscription will be paused at the end of the current period.",
-					},
-					"paused_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when the subscription was paused.",
-					},
-					"resumes_at": schema.StringAttribute{
-						Required:    true,
-						Description: "The timestamp when a paused subscription is scheduled to automatically resume, if set.",
-					},
-					"customer_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the subscribed customer.",
-					},
-					"product_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the subscribed product.",
-					},
-					"discount_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the applied discount, if any.",
-					},
-					"checkout_id": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"seats": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The number of seats for seat-based subscriptions. None for non-seat subscriptions.",
-					},
-					"customer_cancellation_reason": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"customer_cancellation_comment": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "",
-			},
-			"items": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"created_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Creation timestamp of the object.",
-						},
-						"modified_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Last modification timestamp of the object.",
-						},
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the object.",
-						},
-						"label": schema.StringAttribute{
-							Required:    true,
-							Description: "Description of the line item charge.",
-						},
-						"amount": schema.Int64Attribute{
-							Required:    true,
-							Description: "Amount in cents, before discounts and taxes.",
-						},
-						"tax_amount": schema.Int64Attribute{
-							Required:    true,
-							Description: "Sales tax amount in cents.",
-						},
-						"proration": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether this charge is due to a proration.",
-						},
-						"product_price_id": schema.StringAttribute{
-							Required:    true,
-							Description: "Associated price ID, if any.",
-						},
-					},
-				},
-				Description: "Line items composing the order.",
+				Description: "A custom amount to charge, in the smallest currency unit. Overrides the product's price; defaults to the product's configured price (0 for free products). A positive amount must be at least the currency's minimum.",
 			},
 			"description": schema.StringAttribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "A summary description of the order.",
-			},
-			"refundable_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents that can still be refunded (net, before taxes). Accounts for any applied customer balance and previous refunds.",
-			},
-			"refundable_tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax in cents that would be refunded if the full refundable amount is refunded.",
 			},
 		},
 	}
@@ -660,7 +117,52 @@ func (r *OrderResource) Configure(_ context.Context, req resource.ConfigureReque
 }
 
 func (r *OrderResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for order")
+	var plan OrderModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid order configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/orders/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating order", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/orders/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created order", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Order
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created order resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *OrderResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

@@ -7,7 +7,7 @@ type SubscriptionCustomer struct {
 	Id string `json:"id,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	ModifiedAt string `json:"modified_at,omitempty"`
-	Metadata map[string]MetadataOutputTypeValue `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	ExternalId string `json:"external_id,omitempty"`
 	Email string `json:"email,omitempty"`
 	EmailVerified *bool `json:"email_verified,omitempty"`

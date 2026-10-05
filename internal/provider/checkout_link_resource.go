@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -54,6 +55,12 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
 			"trial_interval": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
@@ -64,29 +71,9 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "The number of interval units for the trial period.",
 			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
 			"payment_processor": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Payment processor used.",
-			},
-			"client_secret": schema.StringAttribute{
-				Computed:    true,
-				Description: "Client secret used to access the checkout link.",
-			},
-			"success_url": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "URL where the customer will be redirected after a successful payment.",
-			},
-			"return_url": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "When set, a back button will be shown in the checkout to return to this URL.",
 			},
 			"label": schema.StringAttribute{
 				Computed:    true,
@@ -113,108 +100,30 @@ func (r *CheckoutLinkResource) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Description: "Preconfigured number of seats for seat-based pricing. When set, checkout sessions created from this link are locked to this number of seats and the customer won't be able to change it. All products on the link must use seat-based pricing and allow this number of seats. If the products no longer accommodate this value when the link is opened, it'll be ignored.",
 			},
-			"organization_id": schema.StringAttribute{
+			"success_url": schema.StringAttribute{
 				Computed:    true,
-				Description: "The organization ID.",
+				Optional:    true,
+				Description: "URL where the customer will be redirected after a successful payment.",
+			},
+			"return_url": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "When set, a back button will be shown in the checkout to return to this URL.",
+			},
+			"product_price_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"product_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
 			},
 			"products": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
-				Description: "",
-			},
-			"discount": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"duration": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"currency": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"amounts": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Map of currency to fixed amount to discount from the total.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"metadata": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "Name of the discount. Will be displayed to the customer when the discount is applied.",
-					},
-					"code": schema.StringAttribute{
-						Required:    true,
-						Description: "Code customers can use to apply the discount during checkout.",
-					},
-					"starts_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is redeemable.",
-					},
-					"ends_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Timestamp after which the discount is no longer redeemable.",
-					},
-					"max_redemptions": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed.",
-					},
-					"max_redemptions_per_customer": schema.Int64Attribute{
-						Required:    true,
-						Description: "Maximum number of times the discount can be redeemed by a single customer.",
-					},
-					"redemptions_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of times the discount has been redeemed.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The organization ID.",
-					},
-					"duration_in_months": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"basis_points": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
-					},
-				},
-				Description: "",
-			},
-			"url": schema.StringAttribute{
-				Computed:    true,
 				Description: "",
 			},
 		},
@@ -239,7 +148,52 @@ func (r *CheckoutLinkResource) Configure(_ context.Context, req resource.Configu
 }
 
 func (r *CheckoutLinkResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for checkout_link")
+	var plan CheckoutLinkModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid checkout_link configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/checkout-links/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating checkout_link", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/checkout-links/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created checkout_link", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.CheckoutLink
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created checkout_link resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *CheckoutLinkResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -308,7 +262,8 @@ func (r *CheckoutLinkResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid checkout_link configuration", err.Error())
 		return

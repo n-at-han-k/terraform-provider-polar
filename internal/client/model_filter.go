@@ -5,5 +5,5 @@ package client
 // Filter - Filter struct
 type Filter struct {
 	Conjunction string `json:"conjunction,omitempty"`
-	Clauses []ClausesInner `json:"clauses,omitempty"`
+	Clauses []FilterClause `json:"clauses,omitempty"`
 }

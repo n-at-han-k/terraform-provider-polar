@@ -14,8 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
-	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 
@@ -54,120 +55,27 @@ func (r *CheckoutResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
 			},
+			"trial_interval": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The interval unit for the trial period.",
+			},
+			"trial_interval_count": schema.Int64Attribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "The number of interval units for the trial period.",
+			},
+			"metadata": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
 			"custom_field_data": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
 				Description: "Key-value object storing custom field values.",
-			},
-			"payment_processor": schema.StringAttribute{
-				Computed:    true,
-				Description: "Payment processor used.",
-			},
-			"status": schema.StringAttribute{
-				Computed:    true,
-				Description: "         Status of the checkout session.          - Open: the checkout session was opened.         - Expired: the checkout session was expired and is no more accessible.         - Confirmed: the user on the checkout session clicked Pay. This is not indicative of the payment's success status.         - Failed: the checkout definitely failed for technical reasons and cannot be retried. In most cases, this state is never reached.         - Succeeded: the payment on the checkout was performed successfully.         ",
-			},
-			"client_secret": schema.StringAttribute{
-				Computed:    true,
-				Description: "Client secret used to update and complete the checkout session from the client.",
-			},
-			"url": schema.StringAttribute{
-				Computed:    true,
-				Description: "URL where the customer can access the checkout session.",
-			},
-			"expires_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "Expiration date and time of the checkout session.",
-			},
-			"success_url": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "URL where the customer will be redirected after a successful payment.",
-			},
-			"return_url": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "When set, a back button will be shown in the checkout to return to this URL.",
-			},
-			"embed_origin": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "When checkout is embedded, represents the Origin of the page embedding the checkout. Used as a security measure to send messages only to the embedding page.",
-			},
-			"amount": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Amount in cents, before discounts and taxes.",
-			},
-			"seats": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Predefined number of seats (works with seat-based pricing only)",
-			},
-			"min_seats": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Minimum number of seats (works with seat-based pricing only)",
-			},
-			"max_seats": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Maximum number of seats (works with seat-based pricing only)",
-			},
-			"discount_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Discount amount in cents.",
-			},
-			"net_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts but before taxes.",
-			},
-			"tax_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Sales tax amount in cents. If `null`, it means there is no enough information yet to calculate it.",
-			},
-			"tax_behavior": schema.StringAttribute{
-				Computed:    true,
-				Description: "Tax behavior of the checkout. `inclusive` means the price includes tax, `exclusive` means tax is added on top. If `null`, tax is not yet calculated.",
-			},
-			"total_amount": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Amount in cents, after discounts and taxes.",
-			},
-			"currency": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Currency code of the checkout session.",
-			},
-			"allow_trial": schema.BoolAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.",
-			},
-			"active_trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Description: "Interval unit of the trial period, if any. This value is either set from the checkout, if `trial_interval` is set, or from the selected product.",
-			},
-			"active_trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Description: "Number of interval units of the trial period, if any. This value is either set from the checkout, if `trial_interval_count` is set, or from the selected product.",
-			},
-			"trial_end": schema.StringAttribute{
-				Computed:    true,
-				Description: "End date and time of the trial period, if any.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the organization owning the checkout session.",
-			},
-			"product_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "ID of the product to checkout.",
-			},
-			"product_price_id": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "ID of the product price to checkout.",
 			},
 			"discount_id": schema.StringAttribute{
 				Computed:    true,
@@ -184,34 +92,45 @@ func (r *CheckoutResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "Whether to require the customer to fill their full billing address, instead of just the country. Customers in the US will always be required to fill their full address, regardless of this setting. If you preset the billing address, this setting will be automatically set to `true`.",
 			},
-			"is_discount_applicable": schema.BoolAttribute{
+			"amount": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Whether the discount is applicable to the checkout. Typically, free and custom prices are not discountable.",
+				Optional:    true,
+				Description: "Amount in cents, before discounts and taxes.",
 			},
-			"is_free_product_price": schema.BoolAttribute{
+			"seats": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Whether the product price is free, regardless of discounts.",
+				Optional:    true,
+				Description: "Predefined number of seats (works with seat-based pricing only)",
 			},
-			"is_payment_required": schema.BoolAttribute{
+			"min_seats": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Whether the checkout requires payment, e.g. in case of free products or discounts that cover the total amount.",
+				Optional:    true,
+				Description: "Minimum number of seats (works with seat-based pricing only)",
 			},
-			"is_payment_setup_required": schema.BoolAttribute{
+			"max_seats": schema.Int64Attribute{
 				Computed:    true,
-				Description: "Whether the checkout requires setting up a payment method, regardless of the amount, e.g. subscriptions that have first free cycles.",
+				Optional:    true,
+				Description: "Maximum number of seats (works with seat-based pricing only)",
 			},
-			"is_payment_form_required": schema.BoolAttribute{
+			"allow_trial": schema.BoolAttribute{
 				Computed:    true,
-				Description: "Whether the checkout requires a payment form, whether because of a payment or payment method setup.",
+				Optional:    true,
+				Description: "Whether to enable the trial period for the checkout session. If `false`, the trial period will be disabled, even if the selected product has a trial configured.",
 			},
 			"customer_id": schema.StringAttribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "",
 			},
 			"is_business_customer": schema.BoolAttribute{
 				Computed:    true,
 				Optional:    true,
 				Description: "Whether the customer is a business or an individual. If `true`, the customer will be required to fill their full billing address and billing name.",
+			},
+			"external_customer_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.",
 			},
 			"customer_name": schema.StringAttribute{
 				Computed:    true,
@@ -273,438 +192,52 @@ func (r *CheckoutResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Description: "",
 			},
-			"locale": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"payment_method_type": schema.StringAttribute{
-				Computed:    true,
-				Description: "Payment method type selected by the customer in the checkout form, e.g. `card`, `apple_pay` or `upi`.",
-			},
-			"payment_processor_metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "",
-			},
-			"billing_address_fields": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"country": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"state": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"city": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"postal_code": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"line1": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"line2": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-				},
-				Description: "Determine which billing address fields should be disabled, optional or required in the checkout form.",
-			},
-			"trial_interval": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The interval unit for the trial period.",
-			},
-			"trial_interval_count": schema.Int64Attribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "The number of interval units for the trial period.",
-			},
-			"metadata": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Optional:    true,
-				Description: "",
-			},
-			"external_customer_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID of the customer in your system. If a matching customer exists on Polar, the resulting order will be linked to this customer. Otherwise, a new customer will be created with this external ID set.",
-			},
-			"products": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the object.",
-						},
-						"created_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Creation timestamp of the object.",
-						},
-						"modified_at": schema.StringAttribute{
-							Required:    true,
-							Description: "Last modification timestamp of the object.",
-						},
-						"trial_interval": schema.StringAttribute{
-							Required:    true,
-							Description: "The interval unit for the trial period.",
-						},
-						"trial_interval_count": schema.Int64Attribute{
-							Required:    true,
-							Description: "The number of interval units for the trial period.",
-						},
-						"name": schema.StringAttribute{
-							Required:    true,
-							Description: "The name of the product.",
-						},
-						"description": schema.StringAttribute{
-							Required:    true,
-							Description: "The description of the product.",
-						},
-						"visibility": schema.StringAttribute{
-							Required:    true,
-							Description: "The visibility of the product.",
-						},
-						"recurring_interval": schema.StringAttribute{
-							Required:    true,
-							Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
-						},
-						"recurring_interval_count": schema.Int64Attribute{
-							Required:    true,
-							Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
-						},
-						"meter_interval": schema.StringAttribute{
-							Required:    true,
-							Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
-						},
-						"meter_interval_count": schema.Int64Attribute{
-							Required:    true,
-							Description: "Number of meter interval units. None when no meter cycle is set.",
-						},
-						"is_recurring": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the product is a subscription.",
-						},
-						"is_archived": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the product is archived and no longer available.",
-						},
-						"organization_id": schema.StringAttribute{
-							Required:    true,
-							Description: "The ID of the organization owning the product.",
-						},
-						"prices": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
-							Required:    true,
-							Description: "List of prices for this product.",
-						},
-						"benefits": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
-							Required:    true,
-							Description: "List of benefits granted by the product.",
-						},
-						"medias": schema.StringAttribute{
-							CustomType:  jsontypes.NormalizedType{},
-							Required:    true,
-							Description: "List of medias associated to the product.",
-						},
-					},
-				},
-				Description: "List of products available to select.",
-			},
-			"product": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"trial_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The interval unit for the trial period.",
-					},
-					"trial_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "The number of interval units for the trial period.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "The name of the product.",
-					},
-					"description": schema.StringAttribute{
-						Required:    true,
-						Description: "The description of the product.",
-					},
-					"visibility": schema.StringAttribute{
-						Required:    true,
-						Description: "The visibility of the product.",
-					},
-					"recurring_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The recurring interval of the product. If `None`, the product is a one-time purchase.",
-					},
-					"recurring_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of interval units of the subscription. If this is set to 1 the charge will happen every interval (e.g. every month), if set to 2 it will be every other month, and so on. None for one-time products.",
-					},
-					"meter_interval": schema.StringAttribute{
-						Required:    true,
-						Description: "The meter cycle of the product, independent of the billing interval. If `None`, metered concerns follow the billing interval.",
-					},
-					"meter_interval_count": schema.Int64Attribute{
-						Required:    true,
-						Description: "Number of meter interval units. None when no meter cycle is set.",
-					},
-					"is_recurring": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is a subscription.",
-					},
-					"is_archived": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the product is archived and no longer available.",
-					},
-					"organization_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the organization owning the product.",
-					},
-					"prices": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of prices for this product.",
-					},
-					"benefits": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of benefits granted by the product.",
-					},
-					"medias": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Required:    true,
-						Description: "List of medias associated to the product.",
-					},
-				},
-				Description: "Product selected to checkout.",
-			},
-			"product_price": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"created_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Creation timestamp of the object.",
-					},
-					"modified_at": schema.StringAttribute{
-						Required:    true,
-						Description: "Last modification timestamp of the object.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the price.",
-					},
-					"source": schema.StringAttribute{
-						Required:    true,
-						Description: "The source of the price . `catalog` is a predefined price, while `ad_hoc` is a price created dynamically on a Checkout session.",
-					},
-					"price_currency": schema.StringAttribute{
-						Required:    true,
-						Description: "The currency in which the customer will be charged.",
-					},
-					"tax_behavior": schema.StringAttribute{
-						Required:    true,
-						Description: "The tax behavior of the price. If null, it defaults to the organization's default tax behavior.",
-					},
-					"is_archived": schema.BoolAttribute{
-						Required:    true,
-						Description: "Whether the price is archived and no longer available.",
-					},
-					"product_id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the product owning the price.",
-					},
-					"type": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The type of the price.",
-					},
-					"recurring_interval": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The recurring interval of the price.",
-					},
-					"price_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The price in cents.",
-					},
-					"legacy": schema.BoolAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"minimum_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The minimum amount the customer can pay. If 0, the price is 'free or pay what you want'.",
-					},
-					"maximum_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The maximum amount the customer can pay.",
-					},
-					"preset_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The initial amount shown to the customer.",
-					},
-					"legacy_recurring_product_price_amount_type": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Which variant this is. Selects which of the optional blocks above applies.",
-					},
-					"product_price_amount_type": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Which variant this is. Selects which of the optional blocks above applies.",
-					},
-					"seat_tiers": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Tiered pricing based on seat quantity",
-					},
-					"unit_amount": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The price per unit in cents.",
-					},
-					"cap_amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The maximum amount in cents that can be charged, regardless of the number of units consumed.",
-					},
-					"meter_id": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The ID of the meter associated to the price.",
-					},
-					"meter": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "The meter associated to the price.",
-					},
-				},
-				Description: "",
-			},
-			"prices": schema.StringAttribute{
-				CustomType:  jsontypes.NormalizedType{},
-				Computed:    true,
-				Description: "Mapping of product IDs to their list of prices.",
-			},
-			"discount": schema.SingleNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				Attributes: map[string]schema.Attribute{
-					"duration": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"type": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"amount": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"currency": schema.StringAttribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"amounts": schema.StringAttribute{
-						CustomType:  jsontypes.NormalizedType{},
-						Computed:    true,
-						Optional:    true,
-						Description: "Map of currency to fixed amount to discount from the total.",
-					},
-					"id": schema.StringAttribute{
-						Required:    true,
-						Description: "The ID of the object.",
-					},
-					"name": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"code": schema.StringAttribute{
-						Required:    true,
-						Description: "",
-					},
-					"duration_in_months": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "",
-					},
-					"basis_points": schema.Int64Attribute{
-						Computed:    true,
-						Optional:    true,
-						Description: "Discount percentage in basis points. A basis point is 1/100th of a percent. For example, 1000 basis points equals a 10% discount.",
-					},
-				},
-				Description: "",
-			},
-			"subscription_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "",
-			},
-			"attached_custom_fields": schema.ListNestedAttribute{
-				Computed:    true,
-				Optional:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"custom_field_id": schema.StringAttribute{
-							Required:    true,
-							Description: "ID of the custom field.",
-						},
-						"custom_field": schema.StringAttribute{
-							Required:    true,
-							Description: "",
-						},
-						"order": schema.Int64Attribute{
-							Required:    true,
-							Description: "Order of the custom field in the resource.",
-						},
-						"required": schema.BoolAttribute{
-							Required:    true,
-							Description: "Whether the value is required for this custom field.",
-						},
-					},
-				},
-				Description: "",
-			},
 			"customer_metadata": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Computed:    true,
 				Optional:    true,
 				Description: "",
+			},
+			"subscription_id": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"success_url": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "URL where the customer will be redirected after a successful payment.",
+			},
+			"return_url": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "When set, a back button will be shown in the checkout to return to this URL.",
+			},
+			"embed_origin": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "When checkout is embedded, represents the Origin of the page embedding the checkout. Used as a security measure to send messages only to the embedding page.",
+			},
+			"locale": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "",
+			},
+			"currency": schema.StringAttribute{
+				Computed:    true,
+				Optional:    true,
+				Description: "Currency code of the checkout session.",
+			},
+			"products": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Required:    true,
+				Description: "List of products available to select.",
+			},
+			"prices": schema.StringAttribute{
+				CustomType:  jsontypes.NormalizedType{},
+				Computed:    true,
+				Optional:    true,
+				Description: "Mapping of product IDs to their list of prices.",
 			},
 		},
 	}
@@ -728,7 +261,52 @@ func (r *CheckoutResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 func (r *CheckoutResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	resp.Diagnostics.AddError("Not Supported", "Create is not supported for checkout")
+	var plan CheckoutModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	reqBody, err := plan.ToClientModel()
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid checkout configuration", err.Error())
+		return
+	}
+
+	respBody, location, err := r.client.DoCreateRequest(ctx, "POST", "/checkouts/", reqBody)
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating checkout", err.Error())
+		return
+	}
+
+	// A create may answer a 201 whose body is an identifier and a link, not
+	// the resource -- and sometimes only a Location header. Either way what
+	// was created has to be READ BACK, not taken from the create's own
+	// answer: taking it wrote empty strings over the values just sent,
+	// "provider produced inconsistent result after apply".
+	if created := client.IDFromCreate(respBody, location); created != "" {
+		plan.Id = types.StringValue(created)
+	}
+
+	respBody, err = r.client.DoRequest(ctx, "GET", fmt.Sprintf("/checkouts/%v", plan.Id.ValueString()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading back the created checkout", err.Error())
+		return
+	}
+
+	if len(respBody) > 0 {
+		var result client.Checkout
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			resp.Diagnostics.AddError("Error parsing response", err.Error())
+			return
+		}
+
+		plan.FromClientModel(&result)
+	}
+
+	tflog.Trace(ctx, "created checkout resource")
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *CheckoutResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -797,7 +375,8 @@ func (r *CheckoutResource) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	reqBody, err := plan.ToClientModel()
+	// The UPDATE model, not the create one -- see ToUpdateModel.
+	reqBody, err := plan.ToUpdateModel()
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid checkout configuration", err.Error())
 		return

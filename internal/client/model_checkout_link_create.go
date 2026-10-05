@@ -4,7 +4,7 @@ package client
 
 // CheckoutLinkCreate - CheckoutLinkCreate struct
 type CheckoutLinkCreate struct {
-	Metadata map[string]MetadataValue1 `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	TrialInterval string `json:"trial_interval,omitempty"`
 	TrialIntervalCount int32 `json:"trial_interval_count,omitempty"`
 	PaymentProcessor string `json:"payment_processor,omitempty"`

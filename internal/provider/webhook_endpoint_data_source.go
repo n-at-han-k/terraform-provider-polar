@@ -16,24 +16,28 @@ import (
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
 )
 
-var _ datasource.DataSource = &WebhooksEndpointDataSource{}
+var _ datasource.DataSource = &WebhookEndpointDataSource{}
 
-func NewWebhooksEndpointDataSource() datasource.DataSource {
-	return &WebhooksEndpointDataSource{}
+func NewWebhookEndpointDataSource() datasource.DataSource {
+	return &WebhookEndpointDataSource{}
 }
 
-type WebhooksEndpointDataSource struct {
+type WebhookEndpointDataSource struct {
 	client *client.Client
 }
 
-func (d *WebhooksEndpointDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_webhooks_endpoint"
+func (d *WebhookEndpointDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_webhook_endpoint"
 }
 
-func (d *WebhooksEndpointDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *WebhookEndpointDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches a webhooks_endpoint data source.",
+		Description: "Fetches a webhook_endpoint data source.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "The ID of the object.",
+			},
 			"created_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Creation timestamp of the object.",
@@ -41,10 +45,6 @@ func (d *WebhooksEndpointDataSource) Schema(_ context.Context, _ datasource.Sche
 			"modified_at": schema.StringAttribute{
 				Computed:    true,
 				Description: "Last modification timestamp of the object.",
-			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The ID of the object.",
 			},
 			"url": schema.StringAttribute{
 				Required:    true,
@@ -58,28 +58,20 @@ func (d *WebhooksEndpointDataSource) Schema(_ context.Context, _ datasource.Sche
 				Required:    true,
 				Description: "The format of the webhook payload.",
 			},
-			"secret": schema.StringAttribute{
-				Computed:    true,
-				Description: "The secret used to sign the webhook events.",
-			},
-			"organization_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "The organization ID associated with the webhook endpoint.",
-			},
 			"events": schema.StringAttribute{
 				CustomType:  jsontypes.NormalizedType{},
 				Required:    true,
 				Description: "The events that will trigger the webhook.",
 			},
-			"enabled": schema.BoolAttribute{
+			"organization_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Whether the webhook endpoint is enabled and will receive events.",
+				Description: "The organization ID associated with the webhook endpoint.",
 			},
 		},
 	}
 }
 
-func (d *WebhooksEndpointDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *WebhookEndpointDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -96,8 +88,8 @@ func (d *WebhooksEndpointDataSource) Configure(_ context.Context, req datasource
 	d.client = c
 }
 
-func (d *WebhooksEndpointDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config WebhooksEndpointModel
+func (d *WebhookEndpointDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config WebhookEndpointModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -106,7 +98,7 @@ func (d *WebhooksEndpointDataSource) Read(ctx context.Context, req datasource.Re
 
 	respBody, err := d.client.DoRequest(ctx, "GET", fmt.Sprintf("/webhooks/endpoints/%v", config.Id.ValueString()), nil)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading webhooks_endpoint", err.Error())
+		resp.Diagnostics.AddError("Error reading webhook_endpoint", err.Error())
 		return
 	}
 
@@ -118,6 +110,6 @@ func (d *WebhooksEndpointDataSource) Read(ctx context.Context, req datasource.Re
 
 	config.FromClientModel(&result)
 
-	tflog.Trace(ctx, "read webhooks_endpoint data source")
+	tflog.Trace(ctx, "read webhook_endpoint data source")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
