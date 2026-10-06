@@ -8,5 +8,5 @@ type CustomFieldUpdate struct {
 	Name       *string                    `json:"name,omitempty"`
 	Slug       *string                    `json:"slug,omitempty"`
 	Properties *CustomFieldTextProperties `json:"properties,omitempty"`
-	Type       string                     `json:"type,omitempty"`
+	Type       *string                    `json:"type,omitempty"`
 }

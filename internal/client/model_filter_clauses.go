@@ -4,7 +4,7 @@ package client
 
 // FilterClauses - FilterClauses struct
 type FilterClauses struct {
-	Property string `json:"property,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	Value    string `json:"value,omitempty"`
+	Property string  `json:"property,omitempty"`
+	Operator string  `json:"operator,omitempty"`
+	Value    *string `json:"value,omitempty"`
 }

@@ -4,5 +4,5 @@ package client
 
 // OrganizationDisputeSettings - `auto_accept_below_amount` is in Polar's settlement currency (USD).
 type OrganizationDisputeSettings struct {
-	AutoAcceptBelowAmount int32 `json:"auto_accept_below_amount,omitempty"`
+	AutoAcceptBelowAmount *int32 `json:"auto_accept_below_amount,omitempty"`
 }

@@ -4,7 +4,7 @@ package client
 
 // MetricDashboardCreate - Schema for creating a metrics dashboard.
 type MetricDashboardCreate struct {
-	Name           string   `json:"name,omitempty"`
+	Name           *string  `json:"name,omitempty"`
 	Metrics        []string `json:"metrics,omitempty"`
 	OrganizationId *string  `json:"organization_id,omitempty"`
 }

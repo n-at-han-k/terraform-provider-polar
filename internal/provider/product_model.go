@@ -182,7 +182,8 @@ type ProductPricesModelSeatTiersModel struct {
 func (m *ProductPricesModelSeatTiersModel) ToClientModel() (*client.ProductPriceSeatTier, error) {
 	out := &client.ProductPriceSeatTier{}
 	if !m.MinSeats.IsNull() && !m.MinSeats.IsUnknown() {
-		out.MinSeats = int32(m.MinSeats.ValueInt64())
+		MinSeats := int32(m.MinSeats.ValueInt64())
+		out.MinSeats = &MinSeats
 	}
 	if !m.MaxSeats.IsNull() && !m.MaxSeats.IsUnknown() {
 		MaxSeats := int32(m.MaxSeats.ValueInt64())
@@ -201,7 +202,13 @@ func (m *ProductPricesModelSeatTiersModel) ToClientModel() (*client.ProductPrice
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductPricesModelSeatTiersModel) FromClientModel(c *client.ProductPriceSeatTier) {
-	m.MinSeats = types.Int64Value(int64(c.MinSeats))
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MinSeats != nil {
+		m.MinSeats = types.Int64Value(int64(*c.MinSeats))
+	} else {
+		m.MinSeats = types.Int64Null()
+	}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
 	if c.MaxSeats != nil {
@@ -261,7 +268,8 @@ func (m *ProductModel) ToClientModel() (*client.ProductCreate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
 		Description := m.Description.ValueString()
@@ -472,7 +480,13 @@ func (m *ProductModel) FromAnswer(c *client.Product) {
 }
 
 func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -492,7 +506,31 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
+	}
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Description != nil {
+			m.Description = types.StringValue(*c.Description)
+		} else {
+			m.Description = types.StringNull()
+		}
+	}
+	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Visibility != nil {
+			m.Visibility = types.StringValue(*c.Visibility)
+		} else {
+			m.Visibility = types.StringNull()
+		}
 	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
@@ -501,5 +539,59 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.Medias.IsUnknown() {
 		m.Medias = types.ListNull(types.StringType)
+	}
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialInterval != nil {
+			m.TrialInterval = types.StringValue(*c.TrialInterval)
+		} else {
+			m.TrialInterval = types.StringNull()
+		}
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialIntervalCount != nil {
+			m.TrialIntervalCount = types.Int64Value(int64(*c.TrialIntervalCount))
+		} else {
+			m.TrialIntervalCount = types.Int64Null()
+		}
+	}
+	if everything || !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.RecurringInterval != nil {
+			m.RecurringInterval = types.StringValue(*c.RecurringInterval)
+		} else {
+			m.RecurringInterval = types.StringNull()
+		}
+	}
+	if everything || !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.RecurringIntervalCount != nil {
+			m.RecurringIntervalCount = types.Int64Value(int64(*c.RecurringIntervalCount))
+		} else {
+			m.RecurringIntervalCount = types.Int64Null()
+		}
+	}
+	if everything || !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MeterInterval != nil {
+			m.MeterInterval = types.StringValue(*c.MeterInterval)
+		} else {
+			m.MeterInterval = types.StringNull()
+		}
+	}
+	if everything || !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MeterIntervalCount != nil {
+			m.MeterIntervalCount = types.Int64Value(int64(*c.MeterIntervalCount))
+		} else {
+			m.MeterIntervalCount = types.Int64Null()
+		}
 	}
 }

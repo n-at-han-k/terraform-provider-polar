@@ -4,6 +4,6 @@ package client
 
 // OrganizationSocialLink - OrganizationSocialLink struct
 type OrganizationSocialLink struct {
-	Platform string `json:"platform,omitempty"`
-	Url      string `json:"url,omitempty"`
+	Platform string  `json:"platform,omitempty"`
+	Url      *string `json:"url,omitempty"`
 }

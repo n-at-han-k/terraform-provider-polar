@@ -4,6 +4,6 @@ package client
 
 // PaymentFailed - PaymentFailed struct
 type PaymentFailed struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

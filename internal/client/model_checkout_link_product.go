@@ -5,21 +5,21 @@ package client
 // CheckoutLinkProduct - Product data for a checkout link.
 type CheckoutLinkProduct struct {
 	Metadata               map[string]string          `json:"metadata,omitempty"`
-	Id                     string                     `json:"id,omitempty"`
-	CreatedAt              string                     `json:"created_at,omitempty"`
-	ModifiedAt             string                     `json:"modified_at,omitempty"`
-	TrialInterval          string                     `json:"trial_interval,omitempty"`
-	TrialIntervalCount     int32                      `json:"trial_interval_count,omitempty"`
-	Name                   string                     `json:"name,omitempty"`
-	Description            string                     `json:"description,omitempty"`
-	Visibility             string                     `json:"visibility,omitempty"`
-	RecurringInterval      string                     `json:"recurring_interval,omitempty"`
-	RecurringIntervalCount int32                      `json:"recurring_interval_count,omitempty"`
-	MeterInterval          string                     `json:"meter_interval,omitempty"`
-	MeterIntervalCount     int32                      `json:"meter_interval_count,omitempty"`
+	Id                     *string                    `json:"id,omitempty"`
+	CreatedAt              *string                    `json:"created_at,omitempty"`
+	ModifiedAt             *string                    `json:"modified_at,omitempty"`
+	TrialInterval          *string                    `json:"trial_interval,omitempty"`
+	TrialIntervalCount     *int32                     `json:"trial_interval_count,omitempty"`
+	Name                   *string                    `json:"name,omitempty"`
+	Description            *string                    `json:"description,omitempty"`
+	Visibility             *string                    `json:"visibility,omitempty"`
+	RecurringInterval      *string                    `json:"recurring_interval,omitempty"`
+	RecurringIntervalCount *int32                     `json:"recurring_interval_count,omitempty"`
+	MeterInterval          *string                    `json:"meter_interval,omitempty"`
+	MeterIntervalCount     *int32                     `json:"meter_interval_count,omitempty"`
 	IsRecurring            *bool                      `json:"is_recurring,omitempty"`
 	IsArchived             *bool                      `json:"is_archived,omitempty"`
-	OrganizationId         string                     `json:"organization_id,omitempty"`
+	OrganizationId         *string                    `json:"organization_id,omitempty"`
 	Prices                 []CheckoutPricesValueInner `json:"prices,omitempty"`
 	Benefits               []BenefitPublic            `json:"benefits,omitempty"`
 	Medias                 []ProductMediaFileRead     `json:"medias,omitempty"`

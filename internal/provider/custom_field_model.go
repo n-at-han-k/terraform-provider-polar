@@ -153,10 +153,12 @@ type CustomFieldPropertiesModelOptionsModel struct {
 func (m *CustomFieldPropertiesModelOptionsModel) ToClientModel() (*client.CustomFieldSelectOption, error) {
 	out := &client.CustomFieldSelectOption{}
 	if !m.Value.IsNull() && !m.Value.IsUnknown() {
-		out.Value = m.Value.ValueString()
+		Value := m.Value.ValueString()
+		out.Value = &Value
 	}
 	if !m.Label.IsNull() && !m.Label.IsUnknown() {
-		out.Label = m.Label.ValueString()
+		Label := m.Label.ValueString()
+		out.Label = &Label
 	}
 	return out, nil
 }
@@ -168,8 +170,20 @@ func (m *CustomFieldPropertiesModelOptionsModel) ToClientModel() (*client.Custom
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomFieldPropertiesModelOptionsModel) FromClientModel(c *client.CustomFieldSelectOption) {
-	m.Value = types.StringValue(c.Value)
-	m.Label = types.StringValue(c.Label)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Value != nil {
+		m.Value = types.StringValue(*c.Value)
+	} else {
+		m.Value = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Label != nil {
+		m.Label = types.StringValue(*c.Label)
+	} else {
+		m.Label = types.StringNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -182,10 +196,12 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 		}
 	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
-		out.Slug = m.Slug.ValueString()
+		Slug := m.Slug.ValueString()
+		out.Slug = &Slug
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if m.Properties != nil {
 		converted, err := m.Properties.ToClientModel()
@@ -195,7 +211,8 @@ func (m *CustomFieldModel) ToClientModel() (*client.CustomFieldCreate, error) {
 		out.Properties = converted
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -225,7 +242,8 @@ func (m *CustomFieldModel) ToUpdateModel() (*client.CustomFieldUpdate, error) {
 		out.Name = &Name
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -283,7 +301,13 @@ func (m *CustomFieldModel) FromAnswer(c *client.CustomField) {
 }
 
 func (m *CustomFieldModel) fromAnswer(c *client.CustomField, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -294,12 +318,30 @@ func (m *CustomFieldModel) fromAnswer(c *client.CustomField, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.Slug.IsNull() && !m.Slug.IsUnknown() {
-		m.Slug = types.StringValue(c.Slug)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Slug != nil {
+			m.Slug = types.StringValue(*c.Slug)
+		} else {
+			m.Slug = types.StringNull()
+		}
 	}
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
 	}
 	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
-		m.Type = types.StringValue(c.Type)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Type != nil {
+			m.Type = types.StringValue(*c.Type)
+		} else {
+			m.Type = types.StringNull()
+		}
 	}
 }

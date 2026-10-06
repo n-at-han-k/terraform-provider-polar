@@ -38,7 +38,8 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Code.IsNull() && !m.Code.IsUnknown() {
 		Code := m.Code.ValueString()
@@ -69,7 +70,8 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		}
 	}
 	if !m.Duration.IsNull() && !m.Duration.IsUnknown() {
-		out.Duration = m.Duration.ValueString()
+		Duration := m.Duration.ValueString()
+		out.Duration = &Duration
 	}
 	if !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
 		DurationInMonths := int32(m.DurationInMonths.ValueInt64())
@@ -94,7 +96,8 @@ func (m *DiscountModel) ToClientModel() (*client.DiscountCreate, error) {
 		out.BasisPoints = &BasisPoints
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -263,7 +266,13 @@ func (m *DiscountModel) FromAnswer(c *client.Discount) {
 }
 
 func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -274,10 +283,67 @@ func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
+	}
+	if everything || !m.Code.IsNull() && !m.Code.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Code != nil {
+			m.Code = types.StringValue(*c.Code)
+		} else {
+			m.Code = types.StringNull()
+		}
+	}
+	if everything || !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.StartsAt != nil {
+			m.StartsAt = types.StringValue(*c.StartsAt)
+		} else {
+			m.StartsAt = types.StringNull()
+		}
+	}
+	if everything || !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.EndsAt != nil {
+			m.EndsAt = types.StringValue(*c.EndsAt)
+		} else {
+			m.EndsAt = types.StringNull()
+		}
+	}
+	if everything || !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MaxRedemptions != nil {
+			m.MaxRedemptions = types.Int64Value(int64(*c.MaxRedemptions))
+		} else {
+			m.MaxRedemptions = types.Int64Null()
+		}
+	}
+	if everything || !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.MaxRedemptionsPerCustomer != nil {
+			m.MaxRedemptionsPerCustomer = types.Int64Value(int64(*c.MaxRedemptionsPerCustomer))
+		} else {
+			m.MaxRedemptionsPerCustomer = types.Int64Null()
+		}
 	}
 	if everything || !m.Duration.IsNull() && !m.Duration.IsUnknown() {
-		m.Duration = types.StringValue(c.Duration)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Duration != nil {
+			m.Duration = types.StringValue(*c.Duration)
+		} else {
+			m.Duration = types.StringNull()
+		}
 	}
 	if everything || !m.DurationInMonths.IsNull() && !m.DurationInMonths.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than
@@ -327,6 +393,12 @@ func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 		}
 	}
 	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
-		m.Type = types.StringValue(c.Type)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Type != nil {
+			m.Type = types.StringValue(*c.Type)
+		} else {
+			m.Type = types.StringNull()
+		}
 	}
 }

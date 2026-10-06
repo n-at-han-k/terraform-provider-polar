@@ -245,9 +245,27 @@ func (m *CheckoutLinkModel) FromAnswer(c *client.CheckoutLink) {
 }
 
 func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) {
-	m.Id = types.StringValue(c.Id)
-	m.Url = types.StringValue(c.Url)
-	m.ClientSecret = types.StringValue(c.ClientSecret)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Url != nil {
+		m.Url = types.StringValue(*c.Url)
+	} else {
+		m.Url = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ClientSecret != nil {
+		m.ClientSecret = types.StringValue(*c.ClientSecret)
+	} else {
+		m.ClientSecret = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -257,7 +275,34 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		}
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialInterval != nil {
+			m.TrialInterval = types.StringValue(*c.TrialInterval)
+		} else {
+			m.TrialInterval = types.StringNull()
+		}
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialIntervalCount != nil {
+			m.TrialIntervalCount = types.Int64Value(int64(*c.TrialIntervalCount))
+		} else {
+			m.TrialIntervalCount = types.Int64Null()
+		}
+	}
 	m.PaymentProcessor = types.StringValue(c.PaymentProcessor)
+	if everything || !m.Label.IsNull() && !m.Label.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Label != nil {
+			m.Label = types.StringValue(*c.Label)
+		} else {
+			m.Label = types.StringNull()
+		}
+	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -275,5 +320,41 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		m.RequireBillingAddress = types.BoolValue(*c.RequireBillingAddress)
 	} else if m.RequireBillingAddress.IsUnknown() {
 		m.RequireBillingAddress = types.BoolNull()
+	}
+	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.DiscountId != nil {
+			m.DiscountId = types.StringValue(*c.DiscountId)
+		} else {
+			m.DiscountId = types.StringNull()
+		}
+	}
+	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Seats != nil {
+			m.Seats = types.Int64Value(int64(*c.Seats))
+		} else {
+			m.Seats = types.Int64Null()
+		}
+	}
+	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.SuccessUrl != nil {
+			m.SuccessUrl = types.StringValue(*c.SuccessUrl)
+		} else {
+			m.SuccessUrl = types.StringNull()
+		}
+	}
+	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ReturnUrl != nil {
+			m.ReturnUrl = types.StringValue(*c.ReturnUrl)
+		} else {
+			m.ReturnUrl = types.StringNull()
+		}
 	}
 }

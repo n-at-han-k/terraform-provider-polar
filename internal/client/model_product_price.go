@@ -4,14 +4,14 @@ package client
 
 // ProductPrice - ProductPrice struct
 type ProductPrice struct {
-	CreatedAt     string                       `json:"created_at,omitempty"`
-	ModifiedAt    string                       `json:"modified_at,omitempty"`
-	Id            string                       `json:"id,omitempty"`
-	Source        string                       `json:"source,omitempty"`
+	CreatedAt     *string                      `json:"created_at,omitempty"`
+	ModifiedAt    *string                      `json:"modified_at,omitempty"`
+	Id            *string                      `json:"id,omitempty"`
+	Source        *string                      `json:"source,omitempty"`
 	PriceCurrency string                       `json:"price_currency,omitempty"`
-	TaxBehavior   string                       `json:"tax_behavior,omitempty"`
+	TaxBehavior   *string                      `json:"tax_behavior,omitempty"`
 	IsArchived    *bool                        `json:"is_archived,omitempty"`
-	ProductId     string                       `json:"product_id,omitempty"`
+	ProductId     *string                      `json:"product_id,omitempty"`
 	PriceAmount   *int32                       `json:"price_amount,omitempty"`
 	MinimumAmount *int32                       `json:"minimum_amount,omitempty"`
 	MaximumAmount *int32                       `json:"maximum_amount,omitempty"`

@@ -5,6 +5,6 @@ package client
 // SubscriptionCreateCustomer - Create a subscription for an existing customer.
 type SubscriptionCreateCustomer struct {
 	Metadata   map[string]string `json:"metadata,omitempty"`
-	ProductId  string            `json:"product_id,omitempty"`
-	CustomerId string            `json:"customer_id,omitempty"`
+	ProductId  *string           `json:"product_id,omitempty"`
+	CustomerId *string           `json:"customer_id,omitempty"`
 }

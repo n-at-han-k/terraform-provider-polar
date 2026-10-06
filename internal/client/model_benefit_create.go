@@ -5,7 +5,7 @@ package client
 // BenefitCreate - BenefitCreate struct
 type BenefitCreate struct {
 	Metadata                     map[string]string                          `json:"metadata,omitempty"`
-	Description                  string                                     `json:"description,omitempty"`
+	Description                  *string                                    `json:"description,omitempty"`
 	OrganizationId               *string                                    `json:"organization_id,omitempty"`
 	Visibility                   *string                                    `json:"visibility,omitempty"`
 	CustomProperties             *BenefitCustomCreateProperties             `json:"custom_properties,omitempty"`
@@ -16,5 +16,5 @@ type BenefitCreate struct {
 	MeterCreditProperties        *BenefitMeterCreditCreateProperties        `json:"meter_credit_properties,omitempty"`
 	FeatureFlagProperties        map[string]interface{}                     `json:"feature_flag_properties,omitempty"`
 	SlackSharedChannelProperties *BenefitSlackSharedChannelCreateProperties `json:"slack_shared_channel_properties,omitempty"`
-	Type                         string                                     `json:"type,omitempty"`
+	Type                         *string                                    `json:"type,omitempty"`
 }

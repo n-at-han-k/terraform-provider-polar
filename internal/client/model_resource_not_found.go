@@ -4,6 +4,6 @@ package client
 
 // ResourceNotFound - ResourceNotFound struct
 type ResourceNotFound struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

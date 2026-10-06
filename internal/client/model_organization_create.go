@@ -4,8 +4,8 @@ package client
 
 // OrganizationCreate - OrganizationCreate struct
 type OrganizationCreate struct {
-	Name                       string                              `json:"name,omitempty"`
-	Slug                       string                              `json:"slug,omitempty"`
+	Name                       *string                             `json:"name,omitempty"`
+	Slug                       *string                             `json:"slug,omitempty"`
 	AvatarUrl                  *string                             `json:"avatar_url,omitempty"`
 	LegalEntity                *OrganizationCreateLegalEntity      `json:"legal_entity,omitempty"`
 	Email                      *string                             `json:"email,omitempty"`

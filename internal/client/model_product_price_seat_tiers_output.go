@@ -7,5 +7,5 @@ type ProductPriceSeatTiersOutput struct {
 	SeatTierType *string                `json:"seat_tier_type,omitempty"`
 	Tiers        []ProductPriceSeatTier `json:"tiers,omitempty"`
 	MinimumSeats int32                  `json:"minimum_seats,omitempty"`
-	MaximumSeats int32                  `json:"maximum_seats,omitempty"`
+	MaximumSeats *int32                 `json:"maximum_seats,omitempty"`
 }

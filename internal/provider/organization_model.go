@@ -47,7 +47,8 @@ func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCrea
 		out.RegisteredName = &RegisteredName
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -66,7 +67,13 @@ func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCre
 	} else {
 		m.RegisteredName = types.StringNull()
 	}
-	m.Type = types.StringValue(c.Type)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Type != nil {
+		m.Type = types.StringValue(*c.Type)
+	} else {
+		m.Type = types.StringNull()
+	}
 }
 
 // OrganizationSocialsModel is one `socials` block.
@@ -87,7 +94,8 @@ func (m *OrganizationSocialsModel) ToClientModel() (*client.OrganizationSocialLi
 		out.Platform = m.Platform.ValueString()
 	}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
-		out.Url = m.Url.ValueString()
+		Url := m.Url.ValueString()
+		out.Url = &Url
 	}
 	return out, nil
 }
@@ -100,7 +108,13 @@ func (m *OrganizationSocialsModel) ToClientModel() (*client.OrganizationSocialLi
 // returned invalid result object after apply".
 func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialLink) {
 	m.Platform = types.StringValue(c.Platform)
-	m.Url = types.StringValue(c.Url)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Url != nil {
+		m.Url = types.StringValue(*c.Url)
+	} else {
+		m.Url = types.StringNull()
+	}
 }
 
 // OrganizationDetailsModel is one `details` block.
@@ -355,7 +369,8 @@ func (m *OrganizationSubscriptionSettingsModel) ToClientModel() (*client.Organiz
 		out.AllowMultipleSubscriptions = &AllowMultipleSubscriptions
 	}
 	if !m.ProrationBehavior.IsNull() && !m.ProrationBehavior.IsUnknown() {
-		out.ProrationBehavior = m.ProrationBehavior.ValueString()
+		ProrationBehavior := m.ProrationBehavior.ValueString()
+		out.ProrationBehavior = &ProrationBehavior
 	}
 	if !m.BenefitRevocationGracePeriod.IsNull() && !m.BenefitRevocationGracePeriod.IsUnknown() {
 		out.BenefitRevocationGracePeriod = int32(m.BenefitRevocationGracePeriod.ValueInt64())
@@ -383,7 +398,13 @@ func (m *OrganizationSubscriptionSettingsModel) FromClientModel(c *client.Organi
 	} else {
 		m.AllowMultipleSubscriptions = types.BoolNull()
 	}
-	m.ProrationBehavior = types.StringValue(c.ProrationBehavior)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ProrationBehavior != nil {
+		m.ProrationBehavior = types.StringValue(*c.ProrationBehavior)
+	} else {
+		m.ProrationBehavior = types.StringNull()
+	}
 	m.BenefitRevocationGracePeriod = types.Int64Value(int64(c.BenefitRevocationGracePeriod))
 	if c.PreventTrialAbuse != nil {
 		m.PreventTrialAbuse = types.BoolValue(*c.PreventTrialAbuse)
@@ -714,10 +735,12 @@ func (m *OrganizationCustomerPortalSettingsModelCustomerModel) FromClientModel(c
 func (m *OrganizationModel) ToClientModel() (*client.OrganizationCreate, error) {
 	out := &client.OrganizationCreate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Slug.IsNull() && !m.Slug.IsUnknown() {
-		out.Slug = m.Slug.ValueString()
+		Slug := m.Slug.ValueString()
+		out.Slug = &Slug
 	}
 	if !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
 		AvatarUrl := m.AvatarUrl.ValueString()
@@ -960,11 +983,56 @@ func (m *OrganizationModel) FromAnswer(c *client.Organization) {
 }
 
 func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) {
-	m.Id = types.StringValue(c.Id)
-	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
 	}
-	m.Slug = types.StringValue(c.Slug)
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Slug != nil {
+		m.Slug = types.StringValue(*c.Slug)
+	} else {
+		m.Slug = types.StringNull()
+	}
+	if everything || !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.AvatarUrl != nil {
+			m.AvatarUrl = types.StringValue(*c.AvatarUrl)
+		} else {
+			m.AvatarUrl = types.StringNull()
+		}
+	}
+	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Email != nil {
+			m.Email = types.StringValue(*c.Email)
+		} else {
+			m.Email = types.StringNull()
+		}
+	}
+	if everything || !m.Website.IsNull() && !m.Website.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Website != nil {
+			m.Website = types.StringValue(*c.Website)
+		} else {
+			m.Website = types.StringNull()
+		}
+	}
 	if everything || m.Socials != nil {
 		// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
 		// compares element by element, so a server that reorders or adds a price is
@@ -1031,5 +1099,23 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.CustomerPortalSettings = &block
 	} else {
 		m.CustomerPortalSettings = nil
+	}
+	if everything || !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.DefaultPresentmentCurrency != nil {
+			m.DefaultPresentmentCurrency = types.StringValue(*c.DefaultPresentmentCurrency)
+		} else {
+			m.DefaultPresentmentCurrency = types.StringNull()
+		}
+	}
+	if everything || !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.DefaultTaxBehavior != nil {
+			m.DefaultTaxBehavior = types.StringValue(*c.DefaultTaxBehavior)
+		} else {
+			m.DefaultTaxBehavior = types.StringNull()
+		}
 	}
 }

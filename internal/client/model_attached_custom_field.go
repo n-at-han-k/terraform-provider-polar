@@ -6,6 +6,6 @@ package client
 type AttachedCustomField struct {
 	CustomFieldId string       `json:"custom_field_id,omitempty"`
 	CustomField   *CustomField `json:"custom_field,omitempty"`
-	Order         int32        `json:"order,omitempty"`
+	Order         *int32       `json:"order,omitempty"`
 	Required      *bool        `json:"required,omitempty"`
 }

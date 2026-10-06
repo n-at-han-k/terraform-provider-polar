@@ -5,7 +5,7 @@ package client
 // ProductCreate - ProductCreate struct
 type ProductCreate struct {
 	Metadata               map[string]string              `json:"metadata,omitempty"`
-	Name                   string                         `json:"name,omitempty"`
+	Name                   *string                        `json:"name,omitempty"`
 	Description            *string                        `json:"description,omitempty"`
 	Visibility             *string                        `json:"visibility,omitempty"`
 	Prices                 []ProductCreateRecurringPrices `json:"prices,omitempty"`

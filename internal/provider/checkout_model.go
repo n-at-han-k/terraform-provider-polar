@@ -86,7 +86,8 @@ func (m *CheckoutCustomerBillingAddressModel) ToClientModel() (*client.AddressIn
 		out.State = &State
 	}
 	if !m.Country.IsNull() && !m.Country.IsUnknown() {
-		out.Country = m.Country.ValueString()
+		Country := m.Country.ValueString()
+		out.Country = &Country
 	}
 	return out, nil
 }
@@ -133,7 +134,13 @@ func (m *CheckoutCustomerBillingAddressModel) FromClientModel(c *client.AddressI
 	} else {
 		m.State = types.StringNull()
 	}
-	m.Country = types.StringValue(c.Country)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Country != nil {
+		m.Country = types.StringValue(*c.Country)
+	} else {
+		m.Country = types.StringNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.
@@ -530,7 +537,31 @@ func (m *CheckoutModel) FromAnswer(c *client.Checkout) {
 }
 
 func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialInterval != nil {
+			m.TrialInterval = types.StringValue(*c.TrialInterval)
+		} else {
+			m.TrialInterval = types.StringNull()
+		}
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.TrialIntervalCount != nil {
+			m.TrialIntervalCount = types.Int64Value(int64(*c.TrialIntervalCount))
+		} else {
+			m.TrialIntervalCount = types.Int64Null()
+		}
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -555,6 +586,15 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			}
 		}
 	}
+	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.DiscountId != nil {
+			m.DiscountId = types.StringValue(*c.DiscountId)
+		} else {
+			m.DiscountId = types.StringNull()
+		}
+	}
 	if everything || !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -575,6 +615,15 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.RequireBillingAddress = types.BoolValue(*c.RequireBillingAddress)
 		} else if m.RequireBillingAddress.IsUnknown() {
 			m.RequireBillingAddress = types.BoolNull()
+		}
+	}
+	if everything || !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Amount != nil {
+			m.Amount = types.Int64Value(int64(*c.Amount))
+		} else {
+			m.Amount = types.Int64Null()
 		}
 	}
 	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
@@ -615,6 +664,15 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.AllowTrial = types.BoolNull()
 		}
 	}
+	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerId != nil {
+			m.CustomerId = types.StringValue(*c.CustomerId)
+		} else {
+			m.CustomerId = types.StringNull()
+		}
+	}
 	if everything || !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -624,6 +682,60 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.IsBusinessCustomer = types.BoolValue(*c.IsBusinessCustomer)
 		} else if m.IsBusinessCustomer.IsUnknown() {
 			m.IsBusinessCustomer = types.BoolNull()
+		}
+	}
+	if everything || !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ExternalCustomerId != nil {
+			m.ExternalCustomerId = types.StringValue(*c.ExternalCustomerId)
+		} else {
+			m.ExternalCustomerId = types.StringNull()
+		}
+	}
+	if everything || !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerName != nil {
+			m.CustomerName = types.StringValue(*c.CustomerName)
+		} else {
+			m.CustomerName = types.StringNull()
+		}
+	}
+	if everything || !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerEmail != nil {
+			m.CustomerEmail = types.StringValue(*c.CustomerEmail)
+		} else {
+			m.CustomerEmail = types.StringNull()
+		}
+	}
+	if everything || !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerIpAddress != nil {
+			m.CustomerIpAddress = types.StringValue(*c.CustomerIpAddress)
+		} else {
+			m.CustomerIpAddress = types.StringNull()
+		}
+	}
+	if everything || !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerBillingName != nil {
+			m.CustomerBillingName = types.StringValue(*c.CustomerBillingName)
+		} else {
+			m.CustomerBillingName = types.StringNull()
+		}
+	}
+	if everything || !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerTaxId != nil {
+			m.CustomerTaxId = types.StringValue(*c.CustomerTaxId)
+		} else {
+			m.CustomerTaxId = types.StringNull()
 		}
 	}
 	if everything || !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
@@ -637,6 +749,42 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.CustomerMetadata = types.MapValueMust(types.StringType, CustomerMetadata)
 		}
 	}
+	if everything || !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.SubscriptionId != nil {
+			m.SubscriptionId = types.StringValue(*c.SubscriptionId)
+		} else {
+			m.SubscriptionId = types.StringNull()
+		}
+	}
+	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.SuccessUrl != nil {
+			m.SuccessUrl = types.StringValue(*c.SuccessUrl)
+		} else {
+			m.SuccessUrl = types.StringNull()
+		}
+	}
+	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ReturnUrl != nil {
+			m.ReturnUrl = types.StringValue(*c.ReturnUrl)
+		} else {
+			m.ReturnUrl = types.StringNull()
+		}
+	}
+	if everything || !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.EmbedOrigin != nil {
+			m.EmbedOrigin = types.StringValue(*c.EmbedOrigin)
+		} else {
+			m.EmbedOrigin = types.StringNull()
+		}
+	}
 	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than
 		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
@@ -644,6 +792,15 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.Locale = types.StringValue(*c.Locale)
 		} else {
 			m.Locale = types.StringNull()
+		}
+	}
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Currency != nil {
+			m.Currency = types.StringValue(*c.Currency)
+		} else {
+			m.Currency = types.StringNull()
 		}
 	}
 }

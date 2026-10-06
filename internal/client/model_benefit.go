@@ -4,16 +4,16 @@ package client
 
 // Benefit - Benefit struct
 type Benefit struct {
-	Id                           string                               `json:"id,omitempty"`
-	CreatedAt                    string                               `json:"created_at,omitempty"`
-	ModifiedAt                   string                               `json:"modified_at,omitempty"`
-	Description                  string                               `json:"description,omitempty"`
+	Id                           *string                              `json:"id,omitempty"`
+	CreatedAt                    *string                              `json:"created_at,omitempty"`
+	ModifiedAt                   *string                              `json:"modified_at,omitempty"`
+	Description                  *string                              `json:"description,omitempty"`
 	Selectable                   *bool                                `json:"selectable,omitempty"`
 	Deletable                    *bool                                `json:"deletable,omitempty"`
 	IsDeleted                    *bool                                `json:"is_deleted,omitempty"`
-	OrganizationId               string                               `json:"organization_id,omitempty"`
+	OrganizationId               *string                              `json:"organization_id,omitempty"`
 	Metadata                     map[string]string                    `json:"metadata,omitempty"`
-	Visibility                   string                               `json:"visibility,omitempty"`
+	Visibility                   *string                              `json:"visibility,omitempty"`
 	CustomProperties             *BenefitCustomProperties             `json:"custom_properties,omitempty"`
 	DiscordProperties            *BenefitDiscordProperties            `json:"discord_properties,omitempty"`
 	GithubRepositoryProperties   *BenefitGitHubRepositoryProperties   `json:"github_repository_properties,omitempty"`
@@ -23,5 +23,5 @@ type Benefit struct {
 	FeatureFlagProperties        map[string]interface{}               `json:"feature_flag_properties,omitempty"`
 	SlackSharedChannelProperties *BenefitSlackSharedChannelProperties `json:"slack_shared_channel_properties,omitempty"`
 	VisibilityConfigurable       *bool                                `json:"visibility_configurable,omitempty"`
-	Type                         string                               `json:"type,omitempty"`
+	Type                         *string                              `json:"type,omitempty"`
 }

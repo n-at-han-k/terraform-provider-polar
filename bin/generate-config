@@ -33,7 +33,7 @@ MANIFEST = File.join(ROOT, "reference", "resources.md")
 
 PROVIDER_NAME = "polar"
 PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
-PROVIDER_VERSION = "1.5.0"
+PROVIDER_VERSION = "1.6.0"
 
 # The leading segment that is the API version rather than part of a resource's
 # name. It belongs in the base URL the client already carries.
@@ -522,6 +522,50 @@ end
 # `interface{}` and the attribute becomes a string holding JSON.
 #
 # Computed from the document rather than guessed at: `type` is right there.
+# WHICH PROPERTIES THE DOCUMENT SAYS MAY BE NULL, by property NAME.
+#
+# OpenAPI 3.1 spells nullable as a union with the null type --
+# `anyOf: [{$ref: RecurringInterval}, {type: null}]` -- rather than 3.0's
+# `nullable: true`, and openapi-generator collapses that to the declared type
+# without carrying the nullability across. The generator cannot see it, so it is
+# told.
+#
+# WHY IT MATTERS: a field that can be absent needs a way to say so. A product's
+# `recurring_interval` is REQUIRED and nullable at once, so a rule based on
+# optionality alone left it a plain string -- the answer's zero went into state,
+# the create body had it as a pointer, the two models disagreed about the type and
+# read-back switched off entirely. An imported product then planned
+# `+ recurring_interval = "month"` against one that already had it, and drift in
+# it was never detected.
+def nullable_properties
+  nullable = []
+
+  (SPEC.dig("components", "schemas") || {}).each do |schema, body|
+    next unless body.is_a?(Hash)
+
+    (body["properties"] || {}).each do |property, definition|
+      next unless definition.is_a?(Hash)
+
+      members = definition["anyOf"] || definition["oneOf"] || []
+      next unless members.any? { |m| m.is_a?(Hash) && m["type"] == "null" }
+
+      # BY PROPERTY NAME, not `<Schema>.<property>`. The schemas the generator
+      # ends up with are not all in the document: `Discount` is a union this
+      # config flattens, so its `max_redemptions` is declared on
+      # DiscountPercentageOnce and seven siblings and never under the name the
+      # generated model carries. Keyed by name, a flattened schema inherits the
+      # nullability of whatever declared it.
+      #
+      # Over-applying is harmless -- a pointer where a plain value would do is a
+      # nil check that never fires -- and under-applying is a field that cannot
+      # represent absence, which is the bug this exists to stop.
+      nullable << property
+    end
+  end
+
+  nullable.uniq.sort
+end
+
 def scalar_schemas
   SCHEMAS.each_with_object({}) do |(name, schema), found|
     next unless schema.is_a?(Hash)
@@ -651,6 +695,9 @@ config = {
   },
   "unions" => union_entries,
   "scalars" => scalar_schemas,
+  # Required and nullable at once is a real combination here -- see
+  # nullable_properties for what it cost to miss it.
+  "nullable" => nullable_properties,
   "aliases" => alias_schemas,
 }
 

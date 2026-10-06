@@ -4,5 +4,5 @@ package client
 
 // ExistingProductPrice - A price that already exists for this product.  Useful when updating a product if you want to keep an existing price.
 type ExistingProductPrice struct {
-	Id string `json:"id,omitempty"`
+	Id *string `json:"id,omitempty"`
 }

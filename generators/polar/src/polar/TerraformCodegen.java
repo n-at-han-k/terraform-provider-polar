@@ -87,6 +87,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     private boolean nestedAttributes = true;
     private int nestedMaxDepth = 3;
     private final Set<String> jsonAttributes = new HashSet<>();
+    private final Set<String> nullableProperties = new HashSet<>();
 
     /**
      * Property names no resource exposes, at the top level or inside a block.
@@ -288,6 +289,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
         // how a list of a string enum became a string holding JSON.
         section("scalars").forEach((name, type) -> namedScalars.put(name, String.valueOf(type)));
         section("aliases").forEach((name, target) -> aliases.put(name, String.valueOf(target)));
+
+        // PROPERTIES THE DOCUMENT SAYS MAY BE NULL. 3.1 spells that as a union
+        // with the null type and openapi-generator drops it, so the generator is
+        // told -- see nullable_properties in bin/generate-config for what missing
+        // it cost on a product's recurring_interval.
+        nullableProperties.addAll(strings(config, "nullable"));
 
         Map<String, Object> attributes = section("attributes");
         if (attributes.get("nestedMaxDepth") != null) {
@@ -3081,6 +3088,50 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     }
 
     /**
+     * Whether the document says this property may be null.
+     *
+     * OpenAPI 3.1 spells nullable as a union with the null type --
+     * {@code anyOf: [{$ref: RecurringInterval}, {type: null}]} -- rather than 3.0's
+     * {@code nullable: true}, and openapi-generator collapses that to the declared
+     * type without always carrying the nullability across. Both forms are checked,
+     * because a document may use either and being wrong here is a field that cannot
+     * represent absence.
+     */
+    private boolean isNullable(CodegenProperty property) {
+        if (property.isNullable) {
+            return true;
+        }
+        if (property.baseName != null && nullableProperties.contains(property.baseName)) {
+            return true;
+        }
+        if (property.getComposedSchemas() == null) {
+            return false;
+        }
+
+        List<List<CodegenProperty>> unions = Arrays.asList(
+                property.getComposedSchemas().getAnyOf(),
+                property.getComposedSchemas().getOneOf());
+
+        for (List<CodegenProperty> union : unions) {
+            if (union == null) {
+                continue;
+            }
+            for (CodegenProperty member : union) {
+                if (member == null) {
+                    continue;
+                }
+                if (member.isNull
+                        || "null".equals(member.openApiType)
+                        || "nil".equals(member.dataType)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * A pointer to a scalar is still that scalar.
      *
      * Upstream decides an attribute's Terraform type by matching the Go type
@@ -3483,7 +3534,20 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 // AND NOT BY SKIPPING ZEROES INSTEAD, which was the cheaper fix and
                 // the wrong one: Polar documents `price_amount = 0` as a free
                 // price, so a zero is a value and has to survive.
-                if (!property.required
+                // NULLABILITY IS WHAT DECIDES THIS, not optionality alone, and that
+                // took a wrong turn to learn. A product's `recurring_interval` is
+                // REQUIRED and `anyOf [RecurringInterval, null]` -- required and
+                // nullable at once -- so "not required" left it a plain string, the
+                // answer's zero went into state, and because the create body had it
+                // as a pointer the two models disagreed and read-back switched off
+                // entirely. An imported product then planned
+                // `+ recurring_interval = "month"` against one that had it, and
+                // drift in it was never detected.
+                //
+                // A position that can be absent needs a way to say so, whether it
+                // is absent because the document does not require it or because the
+                // document says it may be null.
+                if ((!property.required || isNullable(property))
                         && Arrays.asList("string", "int32", "int64", "float32", "float64")
                                 .contains(property.dataType)) {
                     property.dataType = "*" + property.dataType;

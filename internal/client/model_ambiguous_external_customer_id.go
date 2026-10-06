@@ -4,6 +4,6 @@ package client
 
 // AmbiguousExternalCustomerId - AmbiguousExternalCustomerId struct
 type AmbiguousExternalCustomerId struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

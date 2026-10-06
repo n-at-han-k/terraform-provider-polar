@@ -7,6 +7,6 @@ type BenefitCustomUpdate struct {
 	Metadata    map[string]string        `json:"metadata,omitempty"`
 	Description *string                  `json:"description,omitempty"`
 	Visibility  *string                  `json:"visibility,omitempty"`
-	Type        string                   `json:"type,omitempty"`
+	Type        *string                  `json:"type,omitempty"`
 	Properties  *BenefitCustomProperties `json:"properties,omitempty"`
 }

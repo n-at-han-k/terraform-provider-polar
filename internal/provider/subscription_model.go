@@ -27,13 +27,16 @@ func (m *SubscriptionModel) ToClientModel() (*client.SubscriptionCreate, error) 
 		}
 	}
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
+		ProductId := m.ProductId.ValueString()
+		out.ProductId = &ProductId
 	}
 	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		out.CustomerId = m.CustomerId.ValueString()
+		CustomerId := m.CustomerId.ValueString()
+		out.CustomerId = &CustomerId
 	}
 	if !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
-		out.ExternalCustomerId = m.ExternalCustomerId.ValueString()
+		ExternalCustomerId := m.ExternalCustomerId.ValueString()
+		out.ExternalCustomerId = &ExternalCustomerId
 	}
 	return out, nil
 }
@@ -105,7 +108,13 @@ func (m *SubscriptionModel) FromAnswer(c *client.Subscription) {
 }
 
 func (m *SubscriptionModel) fromAnswer(c *client.Subscription, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -116,9 +125,21 @@ func (m *SubscriptionModel) fromAnswer(c *client.Subscription, everything bool) 
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		m.ProductId = types.StringValue(c.ProductId)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ProductId != nil {
+			m.ProductId = types.StringValue(*c.ProductId)
+		} else {
+			m.ProductId = types.StringNull()
+		}
 	}
 	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		m.CustomerId = types.StringValue(c.CustomerId)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerId != nil {
+			m.CustomerId = types.StringValue(*c.CustomerId)
+		} else {
+			m.CustomerId = types.StringNull()
+		}
 	}
 }

@@ -4,23 +4,23 @@ package client
 
 // CheckoutLink - Checkout link data.
 type CheckoutLink struct {
-	Id                    string                `json:"id,omitempty"`
-	CreatedAt             string                `json:"created_at,omitempty"`
-	ModifiedAt            string                `json:"modified_at,omitempty"`
-	TrialInterval         string                `json:"trial_interval,omitempty"`
-	TrialIntervalCount    int32                 `json:"trial_interval_count,omitempty"`
+	Id                    *string               `json:"id,omitempty"`
+	CreatedAt             *string               `json:"created_at,omitempty"`
+	ModifiedAt            *string               `json:"modified_at,omitempty"`
+	TrialInterval         *string               `json:"trial_interval,omitempty"`
+	TrialIntervalCount    *int32                `json:"trial_interval_count,omitempty"`
 	Metadata              map[string]string     `json:"metadata,omitempty"`
 	PaymentProcessor      string                `json:"payment_processor,omitempty"`
-	ClientSecret          string                `json:"client_secret,omitempty"`
-	SuccessUrl            string                `json:"success_url,omitempty"`
-	ReturnUrl             string                `json:"return_url,omitempty"`
-	Label                 string                `json:"label,omitempty"`
+	ClientSecret          *string               `json:"client_secret,omitempty"`
+	SuccessUrl            *string               `json:"success_url,omitempty"`
+	ReturnUrl             *string               `json:"return_url,omitempty"`
+	Label                 *string               `json:"label,omitempty"`
 	AllowDiscountCodes    *bool                 `json:"allow_discount_codes,omitempty"`
 	RequireBillingAddress *bool                 `json:"require_billing_address,omitempty"`
-	DiscountId            string                `json:"discount_id,omitempty"`
-	Seats                 int32                 `json:"seats,omitempty"`
-	OrganizationId        string                `json:"organization_id,omitempty"`
+	DiscountId            *string               `json:"discount_id,omitempty"`
+	Seats                 *int32                `json:"seats,omitempty"`
+	OrganizationId        *string               `json:"organization_id,omitempty"`
 	Products              []CheckoutLinkProduct `json:"products,omitempty"`
 	Discount              *CheckoutLinkDiscount `json:"discount,omitempty"`
-	Url                   string                `json:"url,omitempty"`
+	Url                   *string               `json:"url,omitempty"`
 }

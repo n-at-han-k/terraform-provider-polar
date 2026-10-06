@@ -4,6 +4,6 @@ package client
 
 // AlreadyCanceledSubscription - AlreadyCanceledSubscription struct
 type AlreadyCanceledSubscription struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

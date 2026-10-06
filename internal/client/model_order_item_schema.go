@@ -4,12 +4,12 @@ package client
 
 // OrderItemSchema - An order line item.
 type OrderItemSchema struct {
-	CreatedAt      string `json:"created_at,omitempty"`
-	ModifiedAt     string `json:"modified_at,omitempty"`
-	Id             string `json:"id,omitempty"`
-	Label          string `json:"label,omitempty"`
-	Amount         int32  `json:"amount,omitempty"`
-	TaxAmount      int32  `json:"tax_amount,omitempty"`
-	Proration      *bool  `json:"proration,omitempty"`
-	ProductPriceId string `json:"product_price_id,omitempty"`
+	CreatedAt      *string `json:"created_at,omitempty"`
+	ModifiedAt     *string `json:"modified_at,omitempty"`
+	Id             *string `json:"id,omitempty"`
+	Label          *string `json:"label,omitempty"`
+	Amount         *int32  `json:"amount,omitempty"`
+	TaxAmount      *int32  `json:"tax_amount,omitempty"`
+	Proration      *bool   `json:"proration,omitempty"`
+	ProductPriceId *string `json:"product_price_id,omitempty"`
 }

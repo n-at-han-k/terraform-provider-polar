@@ -5,7 +5,7 @@ package client
 // SubscriptionCreate - SubscriptionCreate struct
 type SubscriptionCreate struct {
 	Metadata           map[string]string `json:"metadata,omitempty"`
-	ProductId          string            `json:"product_id,omitempty"`
-	CustomerId         string            `json:"customer_id,omitempty"`
-	ExternalCustomerId string            `json:"external_customer_id,omitempty"`
+	ProductId          *string           `json:"product_id,omitempty"`
+	CustomerId         *string           `json:"customer_id,omitempty"`
+	ExternalCustomerId *string           `json:"external_customer_id,omitempty"`
 }

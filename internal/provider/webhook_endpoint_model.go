@@ -23,14 +23,16 @@ type WebhookEndpointModel struct {
 func (m *WebhookEndpointModel) ToClientModel() (*client.WebhookEndpointCreate, error) {
 	out := &client.WebhookEndpointCreate{}
 	if !m.Url.IsNull() && !m.Url.IsUnknown() {
-		out.Url = m.Url.ValueString()
+		Url := m.Url.ValueString()
+		out.Url = &Url
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		Name := m.Name.ValueString()
 		out.Name = &Name
 	}
 	if !m.Format.IsNull() && !m.Format.IsUnknown() {
-		out.Format = m.Format.ValueString()
+		Format := m.Format.ValueString()
+		out.Format = &Format
 	}
 	// A SET, not a list: which webhook event types this endpoint listens to does
 	// not depend on the order they were written in, and a server that answers
@@ -132,7 +134,13 @@ func (m *WebhookEndpointModel) FromAnswer(c *client.WebhookEndpoint) {
 }
 
 func (m *WebhookEndpointModel) fromAnswer(c *client.WebhookEndpoint, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -144,7 +152,13 @@ func (m *WebhookEndpointModel) fromAnswer(c *client.WebhookEndpoint, everything 
 	}
 	m.Secret = types.StringValue(c.Secret)
 	if everything || !m.Url.IsNull() && !m.Url.IsUnknown() {
-		m.Url = types.StringValue(c.Url)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Url != nil {
+			m.Url = types.StringValue(*c.Url)
+		} else {
+			m.Url = types.StringNull()
+		}
 	}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
@@ -154,7 +168,13 @@ func (m *WebhookEndpointModel) fromAnswer(c *client.WebhookEndpoint, everything 
 		m.Name = types.StringNull()
 	}
 	if everything || !m.Format.IsNull() && !m.Format.IsUnknown() {
-		m.Format = types.StringValue(c.Format)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Format != nil {
+			m.Format = types.StringValue(*c.Format)
+		} else {
+			m.Format = types.StringNull()
+		}
 	}
 	if everything || !m.Events.IsNull() && !m.Events.IsUnknown() {
 		// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know

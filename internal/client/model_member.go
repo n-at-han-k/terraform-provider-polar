@@ -4,12 +4,12 @@ package client
 
 // Member - A member of a customer.
 type Member struct {
-	Id         string `json:"id,omitempty"`
-	CreatedAt  string `json:"created_at,omitempty"`
-	ModifiedAt string `json:"modified_at,omitempty"`
-	CustomerId string `json:"customer_id,omitempty"`
-	Email      string `json:"email,omitempty"`
-	Name       string `json:"name,omitempty"`
-	ExternalId string `json:"external_id,omitempty"`
-	Role       string `json:"role,omitempty"`
+	Id         *string `json:"id,omitempty"`
+	CreatedAt  *string `json:"created_at,omitempty"`
+	ModifiedAt *string `json:"modified_at,omitempty"`
+	CustomerId *string `json:"customer_id,omitempty"`
+	Email      *string `json:"email,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	ExternalId *string `json:"external_id,omitempty"`
+	Role       *string `json:"role,omitempty"`
 }

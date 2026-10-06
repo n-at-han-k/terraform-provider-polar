@@ -5,5 +5,5 @@ package client
 // OrganizationCreateLegalEntity - OrganizationCreateLegalEntity struct
 type OrganizationCreateLegalEntity struct {
 	RegisteredName *string `json:"registered_name,omitempty"`
-	Type           string  `json:"type,omitempty"`
+	Type           *string `json:"type,omitempty"`
 }

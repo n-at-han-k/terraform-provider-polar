@@ -4,6 +4,6 @@ package client
 
 // Response403SubscriptionsUpdate - Response403SubscriptionsUpdate struct
 type Response403SubscriptionsUpdate struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

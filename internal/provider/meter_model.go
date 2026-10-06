@@ -73,7 +73,8 @@ func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClauses, e
 		out.Operator = m.Operator.ValueString()
 	}
 	if !m.Value.IsNull() && !m.Value.IsUnknown() {
-		out.Value = m.Value.ValueString()
+		Value := m.Value.ValueString()
+		out.Value = &Value
 	}
 	return out, nil
 }
@@ -87,7 +88,13 @@ func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClauses, e
 func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClauses) {
 	m.Property = types.StringValue(c.Property)
 	m.Operator = types.StringValue(c.Operator)
-	m.Value = types.StringValue(c.Value)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Value != nil {
+		m.Value = types.StringValue(*c.Value)
+	} else {
+		m.Value = types.StringNull()
+	}
 }
 
 // MeterAggregationModel is one `aggregation` block.
@@ -141,7 +148,8 @@ func (m *MeterModel) ToClientModel() (*client.MeterCreate, error) {
 		}
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
 		Unit := m.Unit.ValueString()
@@ -273,7 +281,13 @@ func (m *MeterModel) FromAnswer(c *client.Meter) {
 }
 
 func (m *MeterModel) fromAnswer(c *client.Meter, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -284,7 +298,22 @@ func (m *MeterModel) fromAnswer(c *client.Meter, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
+	}
+	if everything || !m.Unit.IsNull() && !m.Unit.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Unit != nil {
+			m.Unit = types.StringValue(*c.Unit)
+		} else {
+			m.Unit = types.StringNull()
+		}
 	}
 	if everything || !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than

@@ -4,13 +4,13 @@ package client
 
 // BenefitPublic - BenefitPublic struct
 type BenefitPublic struct {
-	Id             string `json:"id,omitempty"`
-	CreatedAt      string `json:"created_at,omitempty"`
-	ModifiedAt     string `json:"modified_at,omitempty"`
-	Type           string `json:"type,omitempty"`
-	Description    string `json:"description,omitempty"`
-	Selectable     *bool  `json:"selectable,omitempty"`
-	Deletable      *bool  `json:"deletable,omitempty"`
-	IsDeleted      *bool  `json:"is_deleted,omitempty"`
-	OrganizationId string `json:"organization_id,omitempty"`
+	Id             *string `json:"id,omitempty"`
+	CreatedAt      *string `json:"created_at,omitempty"`
+	ModifiedAt     *string `json:"modified_at,omitempty"`
+	Type           *string `json:"type,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	Selectable     *bool   `json:"selectable,omitempty"`
+	Deletable      *bool   `json:"deletable,omitempty"`
+	IsDeleted      *bool   `json:"is_deleted,omitempty"`
+	OrganizationId *string `json:"organization_id,omitempty"`
 }

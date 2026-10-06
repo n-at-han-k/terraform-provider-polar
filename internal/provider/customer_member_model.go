@@ -20,7 +20,8 @@ type CustomerMemberModel struct {
 func (m *CustomerMemberModel) ToClientModel() (*client.MemberCreateFromCustomer, error) {
 	out := &client.MemberCreateFromCustomer{}
 	if !m.Email.IsNull() && !m.Email.IsUnknown() {
-		out.Email = m.Email.ValueString()
+		Email := m.Email.ValueString()
+		out.Email = &Email
 	}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
 		Name := m.Name.ValueString()
@@ -112,8 +113,47 @@ func (m *CustomerMemberModel) FromAnswer(c *client.Member) {
 }
 
 func (m *CustomerMemberModel) fromAnswer(c *client.Member, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
-		m.Email = types.StringValue(c.Email)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Email != nil {
+			m.Email = types.StringValue(*c.Email)
+		} else {
+			m.Email = types.StringNull()
+		}
+	}
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
+	}
+	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ExternalId != nil {
+			m.ExternalId = types.StringValue(*c.ExternalId)
+		} else {
+			m.ExternalId = types.StringNull()
+		}
+	}
+	if everything || !m.Role.IsNull() && !m.Role.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Role != nil {
+			m.Role = types.StringValue(*c.Role)
+		} else {
+			m.Role = types.StringNull()
+		}
 	}
 }

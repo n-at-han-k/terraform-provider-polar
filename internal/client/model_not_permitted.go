@@ -4,6 +4,6 @@ package client
 
 // NotPermitted - NotPermitted struct
 type NotPermitted struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

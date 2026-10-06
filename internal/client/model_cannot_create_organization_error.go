@@ -4,6 +4,6 @@ package client
 
 // CannotCreateOrganizationError - CannotCreateOrganizationError struct
 type CannotCreateOrganizationError struct {
-	Error  string `json:"error,omitempty"`
-	Detail string `json:"detail,omitempty"`
+	Error  *string `json:"error,omitempty"`
+	Detail string  `json:"detail,omitempty"`
 }

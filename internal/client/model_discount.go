@@ -4,23 +4,23 @@ package client
 
 // Discount - Discount struct
 type Discount struct {
-	Duration                  string            `json:"duration,omitempty"`
-	Type                      string            `json:"type,omitempty"`
+	Duration                  *string           `json:"duration,omitempty"`
+	Type                      *string           `json:"type,omitempty"`
 	Amount                    *int32            `json:"amount,omitempty"`
 	Currency                  *string           `json:"currency,omitempty"`
 	Amounts                   map[string]int32  `json:"amounts,omitempty"`
-	CreatedAt                 string            `json:"created_at,omitempty"`
-	ModifiedAt                string            `json:"modified_at,omitempty"`
-	Id                        string            `json:"id,omitempty"`
+	CreatedAt                 *string           `json:"created_at,omitempty"`
+	ModifiedAt                *string           `json:"modified_at,omitempty"`
+	Id                        *string           `json:"id,omitempty"`
 	Metadata                  map[string]string `json:"metadata,omitempty"`
-	Name                      string            `json:"name,omitempty"`
-	Code                      string            `json:"code,omitempty"`
-	StartsAt                  string            `json:"starts_at,omitempty"`
-	EndsAt                    string            `json:"ends_at,omitempty"`
-	MaxRedemptions            int32             `json:"max_redemptions,omitempty"`
-	MaxRedemptionsPerCustomer int32             `json:"max_redemptions_per_customer,omitempty"`
+	Name                      *string           `json:"name,omitempty"`
+	Code                      *string           `json:"code,omitempty"`
+	StartsAt                  *string           `json:"starts_at,omitempty"`
+	EndsAt                    *string           `json:"ends_at,omitempty"`
+	MaxRedemptions            *int32            `json:"max_redemptions,omitempty"`
+	MaxRedemptionsPerCustomer *int32            `json:"max_redemptions_per_customer,omitempty"`
 	RedemptionsCount          int32             `json:"redemptions_count,omitempty"`
-	OrganizationId            string            `json:"organization_id,omitempty"`
+	OrganizationId            *string           `json:"organization_id,omitempty"`
 	Products                  []DiscountProduct `json:"products,omitempty"`
 	DurationInMonths          *int32            `json:"duration_in_months,omitempty"`
 	BasisPoints               *int32            `json:"basis_points,omitempty"`

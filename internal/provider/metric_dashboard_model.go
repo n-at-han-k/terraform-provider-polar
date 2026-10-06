@@ -19,7 +19,8 @@ type MetricDashboardModel struct {
 func (m *MetricDashboardModel) ToClientModel() (*client.MetricDashboardCreate, error) {
 	out := &client.MetricDashboardCreate{}
 	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		out.Name = m.Name.ValueString()
+		Name := m.Name.ValueString()
+		out.Name = &Name
 	}
 	// ELEMENT BY ELEMENT, so no conversion needs a context: types.ListValueFrom
 	// takes one and these functions have none to give.
@@ -101,9 +102,21 @@ func (m *MetricDashboardModel) FromAnswer(c *client.MetricDashboardSchema) {
 }
 
 func (m *MetricDashboardModel) fromAnswer(c *client.MetricDashboardSchema, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Name != nil {
+			m.Name = types.StringValue(*c.Name)
+		} else {
+			m.Name = types.StringNull()
+		}
 	}
 	if everything || !m.Metrics.IsNull() && !m.Metrics.IsUnknown() {
 		// NULL WHERE THE SERVER ANSWERED NOTHING, and a value the plan does not know

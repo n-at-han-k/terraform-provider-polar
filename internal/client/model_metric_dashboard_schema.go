@@ -4,10 +4,10 @@ package client
 
 // MetricDashboardSchema - A user-defined metrics dashboard.
 type MetricDashboardSchema struct {
-	CreatedAt      string   `json:"created_at,omitempty"`
-	ModifiedAt     string   `json:"modified_at,omitempty"`
-	Id             string   `json:"id,omitempty"`
-	Name           string   `json:"name,omitempty"`
+	CreatedAt      *string  `json:"created_at,omitempty"`
+	ModifiedAt     *string  `json:"modified_at,omitempty"`
+	Id             *string  `json:"id,omitempty"`
+	Name           *string  `json:"name,omitempty"`
 	Metrics        []string `json:"metrics,omitempty"`
-	OrganizationId string   `json:"organization_id,omitempty"`
+	OrganizationId *string  `json:"organization_id,omitempty"`
 }

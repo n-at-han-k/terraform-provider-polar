@@ -42,10 +42,12 @@ func (m *OrderModel) ToClientModel() (*client.OrderCreate, error) {
 		}
 	}
 	if !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		out.CustomerId = m.CustomerId.ValueString()
+		CustomerId := m.CustomerId.ValueString()
+		out.CustomerId = &CustomerId
 	}
 	if !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		out.ProductId = m.ProductId.ValueString()
+		ProductId := m.ProductId.ValueString()
+		out.ProductId = &ProductId
 	}
 	if !m.Currency.IsNull() && !m.Currency.IsUnknown() {
 		Currency := m.Currency.ValueString()
@@ -121,7 +123,13 @@ func (m *OrderModel) FromAnswer(c *client.Order) {
 }
 
 func (m *OrderModel) fromAnswer(c *client.Order, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if everything || !m.CustomFieldData.IsNull() && !m.CustomFieldData.IsUnknown() {
 		// Marshalling a Go value cannot fail in a way worth surfacing here; an
 		// unrepresentable one would have failed on the way in.
@@ -147,9 +155,39 @@ func (m *OrderModel) fromAnswer(c *client.Order, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
-		m.CustomerId = types.StringValue(c.CustomerId)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.CustomerId != nil {
+			m.CustomerId = types.StringValue(*c.CustomerId)
+		} else {
+			m.CustomerId = types.StringNull()
+		}
 	}
 	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
-		m.ProductId = types.StringValue(c.ProductId)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.ProductId != nil {
+			m.ProductId = types.StringValue(*c.ProductId)
+		} else {
+			m.ProductId = types.StringNull()
+		}
+	}
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Currency != nil {
+			m.Currency = types.StringValue(*c.Currency)
+		} else {
+			m.Currency = types.StringNull()
+		}
+	}
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Description != nil {
+			m.Description = types.StringValue(*c.Description)
+		} else {
+			m.Description = types.StringNull()
+		}
 	}
 }

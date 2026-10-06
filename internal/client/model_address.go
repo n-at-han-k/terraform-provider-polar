@@ -9,5 +9,5 @@ type Address struct {
 	PostalCode *string `json:"postal_code,omitempty"`
 	City       *string `json:"city,omitempty"`
 	State      *string `json:"state,omitempty"`
-	Country    string  `json:"country,omitempty"`
+	Country    *string `json:"country,omitempty"`
 }

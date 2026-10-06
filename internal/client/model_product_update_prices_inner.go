@@ -4,5 +4,5 @@ package client
 
 // ProductUpdatePricesInner - ProductUpdatePricesInner struct
 type ProductUpdatePricesInner struct {
-	Id string `json:"id,omitempty"`
+	Id *string `json:"id,omitempty"`
 }

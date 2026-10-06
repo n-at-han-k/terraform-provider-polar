@@ -418,7 +418,8 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitCreate, error) {
 		}
 	}
 	if !m.Description.IsNull() && !m.Description.IsUnknown() {
-		out.Description = m.Description.ValueString()
+		Description := m.Description.ValueString()
+		out.Description = &Description
 	}
 	if !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
 		Visibility := m.Visibility.ValueString()
@@ -482,7 +483,8 @@ func (m *BenefitModel) ToClientModel() (*client.BenefitCreate, error) {
 		out.SlackSharedChannelProperties = converted
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -512,7 +514,8 @@ func (m *BenefitModel) ToUpdateModel() (*client.BenefitUpdate, error) {
 		out.Visibility = &Visibility
 	}
 	if !m.Type.IsNull() && !m.Type.IsUnknown() {
-		out.Type = m.Type.ValueString()
+		Type := m.Type.ValueString()
+		out.Type = &Type
 	}
 	return out, nil
 }
@@ -591,7 +594,13 @@ func (m *BenefitModel) FromAnswer(c *client.Benefit) {
 }
 
 func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
-	m.Id = types.StringValue(c.Id)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Id != nil {
+		m.Id = types.StringValue(*c.Id)
+	} else {
+		m.Id = types.StringNull()
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -602,7 +611,22 @@ func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
 	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
-		m.Description = types.StringValue(c.Description)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Description != nil {
+			m.Description = types.StringValue(*c.Description)
+		} else {
+			m.Description = types.StringNull()
+		}
+	}
+	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Visibility != nil {
+			m.Visibility = types.StringValue(*c.Visibility)
+		} else {
+			m.Visibility = types.StringNull()
+		}
 	}
 	if everything || !m.FeatureFlagProperties.IsNull() && !m.FeatureFlagProperties.IsUnknown() {
 		// Marshalling a Go value cannot fail in a way worth surfacing here; an
@@ -620,6 +644,12 @@ func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
 		}
 	}
 	if everything || !m.Type.IsNull() && !m.Type.IsUnknown() {
-		m.Type = types.StringValue(c.Type)
+		// NIL IS ABSENT. The server omitted it, so state says null rather than
+		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+		if c.Type != nil {
+			m.Type = types.StringValue(*c.Type)
+		} else {
+			m.Type = types.StringNull()
+		}
 	}
 }

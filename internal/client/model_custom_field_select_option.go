@@ -4,6 +4,6 @@ package client
 
 // CustomFieldSelectOption - CustomFieldSelectOption struct
 type CustomFieldSelectOption struct {
-	Value string `json:"value,omitempty"`
-	Label string `json:"label,omitempty"`
+	Value *string `json:"value,omitempty"`
+	Label *string `json:"label,omitempty"`
 }
