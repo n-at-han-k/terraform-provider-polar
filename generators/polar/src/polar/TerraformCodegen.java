@@ -1763,8 +1763,21 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // against a product that already had one. The conversions handle
             // pointers on each side independently, so only the underlying type
             // matters here.
+            // EXACT, POINTER AND ALL, and that is deliberate after trying it the
+            // other way. Ignoring the pointer switched read-back ON for fields the
+            // create body has as *int32 and the answer has as a plain int64 --
+            // a discount's `max_redemptions` -- and the API omits those, so Go's
+            // zero went into state and every plan proposed `- max_redemptions =
+            // 0 -> null` again. A position the two models spell differently is one
+            // this cannot safely refresh, which is what the strict test says.
+            //
+            // The cost is a position that COULD be refreshed and is not: a
+            // product's `prices` (ProductCreateRecurringPrices going out,
+            // something else coming back) and its `recurring_interval`. Those
+            // import as additions and drift in them is not detected. Fixing it
+            // properly means reading the answer's own type, not relaxing this.
             boolean sameShape = writes == null
-                    || bare(writes.dataType).equals(bare(String.valueOf(attribute.get("goType"))));
+                    || writes.dataType.equals(String.valueOf(attribute.get("goType")));
             attribute.put("inRequest", writes != null);
             attribute.put("inUpdateRequest", patchable.containsKey(name));
 

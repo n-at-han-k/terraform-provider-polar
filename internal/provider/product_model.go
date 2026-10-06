@@ -494,12 +494,6 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
 		m.Name = types.StringValue(c.Name)
 	}
-	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
-		m.Description = types.StringValue(c.Description)
-	}
-	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
-		m.Visibility = types.StringValue(c.Visibility)
-	}
 	// The create body takes this and no response of the same shape answers it --
 	// AssociationRequest against AssociationResponse -- so nothing above writes
 	// it, and a Computed attribute the configuration left out stays UNKNOWN once
@@ -507,23 +501,5 @@ func (m *ProductModel) fromAnswer(c *client.Product, everything bool) {
 	// Unknown becomes null; a value the plan already knows is left alone.
 	if m.Medias.IsUnknown() {
 		m.Medias = types.ListNull(types.StringType)
-	}
-	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
-		m.TrialInterval = types.StringValue(c.TrialInterval)
-	}
-	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
-		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
-	}
-	if everything || !m.RecurringInterval.IsNull() && !m.RecurringInterval.IsUnknown() {
-		m.RecurringInterval = types.StringValue(c.RecurringInterval)
-	}
-	if everything || !m.RecurringIntervalCount.IsNull() && !m.RecurringIntervalCount.IsUnknown() {
-		m.RecurringIntervalCount = types.Int64Value(int64(c.RecurringIntervalCount))
-	}
-	if everything || !m.MeterInterval.IsNull() && !m.MeterInterval.IsUnknown() {
-		m.MeterInterval = types.StringValue(c.MeterInterval)
-	}
-	if everything || !m.MeterIntervalCount.IsNull() && !m.MeterIntervalCount.IsUnknown() {
-		m.MeterIntervalCount = types.Int64Value(int64(c.MeterIntervalCount))
 	}
 }

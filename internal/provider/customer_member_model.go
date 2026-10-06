@@ -116,13 +116,4 @@ func (m *CustomerMemberModel) fromAnswer(c *client.Member, everything bool) {
 	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
 		m.Email = types.StringValue(c.Email)
 	}
-	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
-		m.Name = types.StringValue(c.Name)
-	}
-	if everything || !m.ExternalId.IsNull() && !m.ExternalId.IsUnknown() {
-		m.ExternalId = types.StringValue(c.ExternalId)
-	}
-	if everything || !m.Role.IsNull() && !m.Role.IsUnknown() {
-		m.Role = types.StringValue(c.Role)
-	}
 }

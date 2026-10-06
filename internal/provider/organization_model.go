@@ -965,15 +965,6 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.Name = types.StringValue(c.Name)
 	}
 	m.Slug = types.StringValue(c.Slug)
-	if everything || !m.AvatarUrl.IsNull() && !m.AvatarUrl.IsUnknown() {
-		m.AvatarUrl = types.StringValue(c.AvatarUrl)
-	}
-	if everything || !m.Email.IsNull() && !m.Email.IsUnknown() {
-		m.Email = types.StringValue(c.Email)
-	}
-	if everything || !m.Website.IsNull() && !m.Website.IsUnknown() {
-		m.Website = types.StringValue(c.Website)
-	}
 	if everything || m.Socials != nil {
 		// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
 		// compares element by element, so a server that reorders or adds a price is
@@ -1040,11 +1031,5 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 		m.CustomerPortalSettings = &block
 	} else {
 		m.CustomerPortalSettings = nil
-	}
-	if everything || !m.DefaultPresentmentCurrency.IsNull() && !m.DefaultPresentmentCurrency.IsUnknown() {
-		m.DefaultPresentmentCurrency = types.StringValue(c.DefaultPresentmentCurrency)
-	}
-	if everything || !m.DefaultTaxBehavior.IsNull() && !m.DefaultTaxBehavior.IsUnknown() {
-		m.DefaultTaxBehavior = types.StringValue(c.DefaultTaxBehavior)
 	}
 }
