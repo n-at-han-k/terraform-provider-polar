@@ -106,7 +106,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 		if err != nil {
 			return nil, "", fmt.Errorf("error marshaling request body: %w", err)
 		}
-		reqBody = bytes.NewBuffer(jsonBody)
+		reqBody = bytes.NewBuffer(UnflattenVariantProperties(jsonBody))
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, c.BaseURL+path, reqBody)
@@ -141,5 +141,85 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 		return nil, "", &APIError{StatusCode: resp.StatusCode, Body: string(respBody)}
 	}
 
-	return respBody, resp.Header.Get("Location"), nil
+	return FlattenVariantProperties(respBody), resp.Header.Get("Location"), nil
+}
+
+// THE FLATTENING IS A TERRAFORM SHAPE, NOT A WIRE SHAPE, and these two put the
+// wire back.
+//
+// A discriminated union of objects becomes one object here, because HCL has no
+// union and a Terraform attribute has to be one concrete shape -- so a
+// `properties` that differs between variants is emitted once per variant, named
+// for the discriminator value that selects it: `meter_credit_properties`,
+// `license_keys_properties`, six more. That rename reaches the generated model's
+// JSON tag as well as its Terraform attribute, and the API knows nothing about
+// it: it wants `{"type":"meter_credit","properties":{...}}` and answers the
+// same. Sent flat it is a 422 naming `body.meter_credit.properties` as missing;
+// read flat the variant block is never populated and every refresh shows drift.
+//
+// KEYED ON THE DISCRIMINATOR THE BODY ALREADY CARRIES, so there is nothing to
+// configure: a key `<v>_properties` beside `"type":"<v>"` is the renamed one, by
+// construction, and no other key can collide with that pattern.
+//
+// ponytail: top level only, discriminator `type` only, suffix `_properties`
+// only -- which is every flattened union Polar's document actually has. The
+// proper home is the generator: record the wire name on the renamed property
+// and emit a MarshalJSON/UnmarshalJSON pair on the model, which would also
+// cover a union nested inside another object.
+const variantPropertiesSuffix = "_properties"
+
+const variantPropertiesWireName = "properties"
+
+// UnflattenVariantProperties rewrites `<type>_properties` to `properties` on the
+// way out.
+func UnflattenVariantProperties(raw []byte) []byte {
+	return rewriteVariantProperties(raw, func(variant string) (string, string) {
+		return variant + variantPropertiesSuffix, variantPropertiesWireName
+	})
+}
+
+// FlattenVariantProperties rewrites `properties` to `<type>_properties` on the
+// way back in, so the model unmarshals into the block it declared.
+func FlattenVariantProperties(raw []byte) []byte {
+	return rewriteVariantProperties(raw, func(variant string) (string, string) {
+		return variantPropertiesWireName, variant + variantPropertiesSuffix
+	})
+}
+
+// rewriteVariantProperties renames one key of a JSON object when the object
+// carries a `type` discriminator, leaving anything else -- an array, a scalar,
+// an error page that is not JSON at all -- exactly as it arrived.
+func rewriteVariantProperties(raw []byte, names func(variant string) (string, string)) []byte {
+	if len(raw) == 0 {
+		return raw
+	}
+
+	var object map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &object); err != nil {
+		return raw
+	}
+
+	var variant string
+	if err := json.Unmarshal(object["type"], &variant); err != nil || variant == "" {
+		return raw
+	}
+
+	from, to := names(variant)
+
+	value, ok := object[from]
+	if !ok {
+		return raw
+	}
+
+	delete(object, from)
+	object[to] = value
+
+	// A re-marshal that fails leaves the original alone: a request that is
+	// refused for its shape is a better failure than one silently emptied.
+	rewritten, err := json.Marshal(object)
+	if err != nil {
+		return raw
+	}
+
+	return rewritten
 }
