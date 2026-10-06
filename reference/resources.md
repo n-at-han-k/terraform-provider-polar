@@ -133,6 +133,6 @@ generator configuration say.
 | `polar_metric_dashboard` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
 | `polar_order` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
 | `polar_organization` | `created_at`, `modified_at`, `organization_id` |  |  | `order_confirmation`, `subscription_cancellation`, `subscription_confirmation`, `subscription_cycled`, `subscription_cycled_after_trial`, `subscription_past_due`, `subscription_revoked`, `subscription_uncanceled`, `subscription_updated`, `allow_customer_updates`, `allow_multiple_subscriptions`, `benefit_revocation_grace_period`, `prevent_trial_abuse`, `proration_behavior`, `issue_funding_enabled`, `revops_enabled`, `wallets_enabled`, `member_model_enabled`, `seat_based_pricing_enabled` |  |
-| `polar_product` | `created_at`, `modified_at`, `organization_id` |  | `is_archived` | `medias`, `is_archived` |  |
+| `polar_product` | `created_at`, `modified_at`, `organization_id` | `seat_tiers` | `is_archived` | `medias`, `is_archived`, `visibility`, `recurring_interval_count` |  |
 | `polar_subscription` | `created_at`, `modified_at`, `organization_id` |  |  |  |  |
 | `polar_webhook_endpoint` | `created_at`, `modified_at`, `organization_id` |  | `enabled`, `secret` | `enabled`, `name` | `secret` |

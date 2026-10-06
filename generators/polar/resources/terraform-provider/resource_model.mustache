@@ -60,35 +60,35 @@ func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) 
 {{#inChildRequest}}
 {{#isString}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-{{#isPointer}}
+{{#isCreatePointer}}
 		{{goName}} := m.{{goName}}.ValueString()
 		out.{{goName}} = &{{goName}}
-{{/isPointer}}
-{{^isPointer}}
+{{/isCreatePointer}}
+{{^isCreatePointer}}
 		out.{{goName}} = m.{{goName}}.ValueString()
-{{/isPointer}}
+{{/isCreatePointer}}
 	}
 {{/isString}}
 {{#isInt64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-{{#isPointer}}
-		{{goName}} := {{scalarType}}(m.{{goName}}.ValueInt64())
+{{#isCreatePointer}}
+		{{goName}} := {{createScalarType}}(m.{{goName}}.ValueInt64())
 		out.{{goName}} = &{{goName}}
-{{/isPointer}}
-{{^isPointer}}
+{{/isCreatePointer}}
+{{^isCreatePointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueInt64())
-{{/isPointer}}
+{{/isCreatePointer}}
 	}
 {{/isInt64}}
 {{#isFloat64}}
 	if !m.{{goName}}.IsNull() && !m.{{goName}}.IsUnknown() {
-{{#isPointer}}
-		{{goName}} := {{scalarType}}(m.{{goName}}.ValueFloat64())
+{{#isCreatePointer}}
+		{{goName}} := {{createScalarType}}(m.{{goName}}.ValueFloat64())
 		out.{{goName}} = &{{goName}}
-{{/isPointer}}
-{{^isPointer}}
+{{/isCreatePointer}}
+{{^isCreatePointer}}
 		out.{{goName}} = {{goType}}(m.{{goName}}.ValueFloat64())
-{{/isPointer}}
+{{/isCreatePointer}}
 	}
 {{/isFloat64}}
 {{#isBool}}

@@ -1057,6 +1057,21 @@ func (m *OrganizationModel) fromAnswer(c *client.Organization, everything bool) 
 			m.Country = types.StringNull()
 		}
 	}
+	if everything || m.FeatureSettings != nil {
+		// A pointer the server left nil is a block that is not there. Writing an
+		// empty one instead would be a diff against a configuration that correctly
+		// omitted it.
+		if c.FeatureSettings != nil {
+			block := OrganizationFeatureSettingsModel{}
+			if m.FeatureSettings != nil {
+				block = *m.FeatureSettings
+			}
+			block.FromClientModel(c.FeatureSettings)
+			m.FeatureSettings = &block
+		} else {
+			m.FeatureSettings = nil
+		}
+	}
 	if everything || m.SubscriptionSettings != nil {
 		// A pointer the server left nil is a block that is not there. Writing an
 		// empty one instead would be a diff against a configuration that correctly

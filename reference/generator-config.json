@@ -3,7 +3,7 @@
   "provider": {
     "name": "polar",
     "address": "ghcr.io/n-at-han-k/polar",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "token": {
       "attribute": "access_token",
       "scheme": "oat",
@@ -87,14 +87,19 @@
         ],
         "optionalComputed": [
           "medias",
-          "is_archived"
+          "is_archived",
+          "visibility",
+          "recurring_interval_count"
+        ],
+        "responseBlocks": [
+          "prices"
+        ],
+        "drop": [
+          "seat_tiers"
         ],
         "unwrap": {
           "seat_tiers": "tiers"
-        },
-        "optional": [
-          "seat_tiers"
-        ]
+        }
       },
       "polar_meter": {},
       "polar_discount": {

@@ -33,7 +33,7 @@ MANIFEST = File.join(ROOT, "reference", "resources.md")
 
 PROVIDER_NAME = "polar"
 PROVIDER_ADDRESS = "ghcr.io/n-at-han-k/polar"
-PROVIDER_VERSION = "1.6.0"
+PROVIDER_VERSION = "1.7.0"
 
 # The leading segment that is the API version rather than part of a resource's
 # name. It belongs in the base URL the client already carries.
@@ -160,14 +160,30 @@ PER_RESOURCE = {
     # with no DELETE at all is archived through this -- so the update body's one
     # field has to be reachable.
     "include" => %w[is_archived],
-    "optionalComputed" => %w[medias is_archived],
+    # `visibility` and `recurring_interval_count` are SERVER DEFAULTS: Polar
+    # answers "public" and 1 for a product that said neither, so Optional alone
+    # means every plan proposes removing a value the configuration never set
+    # (`- visibility = "public" -> null`). Optional AND Computed is "say it if you
+    # mean to, otherwise the server decides".
+    "optionalComputed" => %w[medias is_archived visibility recurring_interval_count],
+    # PRICES ARE TYPED FROM THE ANSWER, so an imported product refreshes them and
+    # a price changed in Polar's dashboard shows up as drift. Typed from the
+    # request there is nothing to convert an answer into, so read-back was off and
+    # `prices` imported as an addition -- an undetectable change to what a customer
+    # is charged, which is not a tolerable blind spot.
+    "responseBlocks" => %w[prices],
+    # SEAT-BASED PRICING IS NOT SOLD HERE, and the answer's price variant reaches a
+    # seat-tier schema the generator cannot name (`ProductPriceSeatTiersInput`
+    # undefined). Dropping the block removes the reference along with a tier model
+    # nothing in this catalogue would ever set.
+    "drop" => %w[seat_tiers],
+
     # `seat_tiers` is a wrapper object whose only required field is `tiers`, and
     # whose other field defaults to `volume`. As the wrapper it is a block
     # holding a block; as the list it is what a configuration actually means.
     "unwrap" => { "seat_tiers" => "tiers" },
     # The document requires the tiers list because its own form does; the tier
     # whose maximum is left out is how an unlimited one is spelled.
-    "optional" => %w[seat_tiers],
   },
 
   "polar_meter" => {

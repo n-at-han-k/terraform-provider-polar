@@ -2817,14 +2817,39 @@ public class TerraformCodegen extends TerraformProviderCodegen {
                 attribute.put("nestedResponseType", bare(responseShape));
             }
 
+            // AND EVERY DESCENDANT NEEDS THE REQUEST'S POINTER-NESS FOR THE SEND.
+            // A block typed from the answer has children shaped like the answer,
+            // while ToClientModel assigns into the REQUEST struct -- a price's
+            // `price_currency` is *string there and string in the answer. That is
+            // "cannot use m.PriceCurrency.ValueString() (value of type string) as
+            // *string value in assignment".
+            //
+            // RECURSIVELY, which the first attempt missed: a meter's `value` lives
+            // in filter.clauses[], two levels down, and a grandchild left without
+            // this took the wrong arm and broke resources that have nothing to do
+            // with response typing.
+            sendPointerness(attribute, allModels,
+                    fromResponse && !requestShape.equals(responseShape) ? bare(requestShape) : null);
+
             // READ BACK WHEREVER THE ANSWER CAN BE CONVERTED INTO THIS STRUCT,
             // which is true even where the two shapes differ, as long as the
             // block was typed from the answer. Where they differ and the block
             // was typed from the request there is nothing to convert an answer
             // into, so the attribute is not refreshed -- exactly as a scalar
             // whose request and response spellings diverge is not.
-            boolean readBack = Boolean.TRUE.equals(attribute.get("readBack"))
-                    && (go.equals(responseShape) || fromResponse);
+            // TYPING A BLOCK FROM THE ANSWER GRANTS READ-BACK, it does not merely
+            // survive it. The earlier test compares the create type with the
+            // answer's and had already said no for a product's `prices` -- two
+            // differently-named flattened unions -- so an `&&` could never turn it
+            // back on, and the whole point of nestedResponseType was unreachable:
+            // the block had a FromClientModel taking the answer's type that nothing
+            // ever called, and drift in a product's price stayed invisible.
+            //
+            // Write-only still wins. A position no answer carries has nothing to
+            // convert, whatever it is typed from.
+            boolean sendOnly = Boolean.TRUE.equals(attribute.get("isWriteOnly"));
+            boolean readBack = !sendOnly
+                    && (fromResponse || Boolean.TRUE.equals(attribute.get("readBack")));
             attribute.put("readBack", readBack);
 
             // AND THE PATCH HAS TO TAKE THE SAME TYPE. A nested block is
@@ -3266,6 +3291,41 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /** A Go type with its slice and pointer markers taken off. */
     private String bare(String go) {
         return go == null ? "" : go.replace("[]", "").replace("*", "");
+    }
+
+    /**
+     * Gives a block's children -- and theirs, all the way down -- the pointer-ness
+     * of the model the SEND direction assigns into.
+     *
+     * Defaulted to each child's own shape, so a block whose two client types agree
+     * is unaffected; overridden from the request model where they differ. A
+     * descendant left without it takes the wrong conversion arm, and the compiler
+     * says so in a resource that has nothing to do with the block being typed.
+     */
+    private void sendPointerness(Map<String, Object> attribute, List<ModelMap> allModels,
+                                 String requestType) {
+        CodegenModel sending = requestType == null ? null : modelNamed(allModels, requestType);
+
+        for (Map<String, Object> child : nestedOf(attribute)) {
+            child.putIfAbsent("isCreatePointer", child.get("isPointer"));
+            child.putIfAbsent("createScalarType", child.get("scalarType"));
+
+            CodegenProperty sends = sending == null || sending.vars == null ? null
+                    : propertyNamed(sending.vars, String.valueOf(child.get("name")));
+
+            if (sends != null && sends.dataType != null) {
+                boolean pointer = sends.dataType.startsWith("*");
+                child.put("isCreatePointer", pointer);
+                child.put("createScalarType", pointer ? sends.dataType.substring(1) : "");
+            }
+
+            // A block inside a block: its own children are the next model down, and
+            // without the request type for THAT one their own shape is the default.
+            if (child.get("nested") != null) {
+                sendPointerness(child, allModels,
+                        sends == null ? null : bare(String.valueOf(sends.dataType)));
+            }
+        }
     }
 
     /** One property of a model, by the name it is declared under. */
