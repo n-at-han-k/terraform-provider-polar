@@ -60,6 +60,20 @@ func (m *OrganizationLegalEntityModel) ToClientModel() (*client.OrganizationCrea
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationLegalEntityModel) FromClientModel(c *client.OrganizationCreateLegalEntity) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.RegisteredName != nil {
+		m.RegisteredName = types.StringValue(*c.RegisteredName)
+	} else {
+		m.RegisteredName = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Type != nil {
+		m.Type = types.StringValue(*c.Type)
+	} else {
+		m.Type = types.StringNull()
+	}
 }
 
 // OrganizationSocialsModel is one `socials` block.
@@ -93,6 +107,14 @@ func (m *OrganizationSocialsModel) ToClientModel() (*client.OrganizationSocialLi
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationSocialsModel) FromClientModel(c *client.OrganizationSocialLink) {
+	m.Platform = types.StringValue(c.Platform)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Url != nil {
+		m.Url = types.StringValue(*c.Url)
+	} else {
+		m.Url = types.StringNull()
+	}
 }
 
 // OrganizationDetailsModel is one `details` block.
@@ -155,6 +177,53 @@ func (m *OrganizationDetailsModel) ToClientModel() (*client.OrganizationDetails,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationDetailsModel) FromClientModel(c *client.OrganizationDetails) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.About != nil {
+		m.About = types.StringValue(*c.About)
+	} else {
+		m.About = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ProductDescription != nil {
+		m.ProductDescription = types.StringValue(*c.ProductDescription)
+	} else {
+		m.ProductDescription = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.IntendedUse != nil {
+		m.IntendedUse = types.StringValue(*c.IntendedUse)
+	} else {
+		m.IntendedUse = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FutureAnnualRevenue != nil {
+		m.FutureAnnualRevenue = types.Int64Value(int64(*c.FutureAnnualRevenue))
+	} else {
+		m.FutureAnnualRevenue = types.Int64Null()
+	}
+	if c.Switching != nil {
+		m.Switching = types.BoolValue(*c.Switching)
+	} else {
+		m.Switching = types.BoolNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.SwitchingFrom != nil {
+		m.SwitchingFrom = types.StringValue(*c.SwitchingFrom)
+	} else {
+		m.SwitchingFrom = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PreviousAnnualRevenue != nil {
+		m.PreviousAnnualRevenue = types.Int64Value(int64(*c.PreviousAnnualRevenue))
+	} else {
+		m.PreviousAnnualRevenue = types.Int64Null()
+	}
 }
 
 // OrganizationFeatureSettingsModel is one `feature_settings` block.
@@ -206,6 +275,76 @@ func (m *OrganizationFeatureSettingsModel) ToClientModel() (*client.Organization
 // the generator configuration. The struct is the same either way, so the two
 // conversions have the same fields to work with and do not.
 func (m *OrganizationFeatureSettingsModel) FromClientModel(c *client.OrganizationFeatureSettings) {
+	if c.IssueFundingEnabled != nil {
+		m.IssueFundingEnabled = types.BoolValue(*c.IssueFundingEnabled)
+	} else {
+		m.IssueFundingEnabled = types.BoolNull()
+	}
+	if c.SeatBasedPricingEnabled != nil {
+		m.SeatBasedPricingEnabled = types.BoolValue(*c.SeatBasedPricingEnabled)
+	} else {
+		m.SeatBasedPricingEnabled = types.BoolNull()
+	}
+	if c.WalletsEnabled != nil {
+		m.WalletsEnabled = types.BoolValue(*c.WalletsEnabled)
+	} else {
+		m.WalletsEnabled = types.BoolNull()
+	}
+	if c.MemberModelEnabled != nil {
+		m.MemberModelEnabled = types.BoolValue(*c.MemberModelEnabled)
+	} else {
+		m.MemberModelEnabled = types.BoolNull()
+	}
+	if c.CheckoutLocalizationEnabled != nil {
+		m.CheckoutLocalizationEnabled = types.BoolValue(*c.CheckoutLocalizationEnabled)
+	} else {
+		m.CheckoutLocalizationEnabled = types.BoolNull()
+	}
+	if c.ResetProrationBehaviorEnabled != nil {
+		m.ResetProrationBehaviorEnabled = types.BoolValue(*c.ResetProrationBehaviorEnabled)
+	} else {
+		m.ResetProrationBehaviorEnabled = types.BoolNull()
+	}
+	if c.OffSessionChargesEnabled != nil {
+		m.OffSessionChargesEnabled = types.BoolValue(*c.OffSessionChargesEnabled)
+	} else {
+		m.OffSessionChargesEnabled = types.BoolNull()
+	}
+	if c.SlackBenefitEnabled != nil {
+		m.SlackBenefitEnabled = types.BoolValue(*c.SlackBenefitEnabled)
+	} else {
+		m.SlackBenefitEnabled = types.BoolNull()
+	}
+	if c.PreviewAccessEnabled != nil {
+		m.PreviewAccessEnabled = types.BoolValue(*c.PreviewAccessEnabled)
+	} else {
+		m.PreviewAccessEnabled = types.BoolNull()
+	}
+	if c.DisputesEnabled != nil {
+		m.DisputesEnabled = types.BoolValue(*c.DisputesEnabled)
+	} else {
+		m.DisputesEnabled = types.BoolNull()
+	}
+	if c.SsoEnabled != nil {
+		m.SsoEnabled = types.BoolValue(*c.SsoEnabled)
+	} else {
+		m.SsoEnabled = types.BoolNull()
+	}
+	if c.DisputeAutoAcceptEnabled != nil {
+		m.DisputeAutoAcceptEnabled = types.BoolValue(*c.DisputeAutoAcceptEnabled)
+	} else {
+		m.DisputeAutoAcceptEnabled = types.BoolNull()
+	}
+	if c.CompassEnabled != nil {
+		m.CompassEnabled = types.BoolValue(*c.CompassEnabled)
+	} else {
+		m.CompassEnabled = types.BoolNull()
+	}
+	if c.MerchantMigrationEnabled != nil {
+		m.MerchantMigrationEnabled = types.BoolValue(*c.MerchantMigrationEnabled)
+	} else {
+		m.MerchantMigrationEnabled = types.BoolNull()
+	}
 }
 
 // OrganizationSubscriptionSettingsModel is one `subscription_settings` block.
@@ -254,6 +393,29 @@ func (m *OrganizationSubscriptionSettingsModel) ToClientModel() (*client.Organiz
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationSubscriptionSettingsModel) FromClientModel(c *client.OrganizationSubscriptionSettings) {
+	if c.AllowMultipleSubscriptions != nil {
+		m.AllowMultipleSubscriptions = types.BoolValue(*c.AllowMultipleSubscriptions)
+	} else {
+		m.AllowMultipleSubscriptions = types.BoolNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ProrationBehavior != nil {
+		m.ProrationBehavior = types.StringValue(*c.ProrationBehavior)
+	} else {
+		m.ProrationBehavior = types.StringNull()
+	}
+	m.BenefitRevocationGracePeriod = types.Int64Value(int64(c.BenefitRevocationGracePeriod))
+	if c.PreventTrialAbuse != nil {
+		m.PreventTrialAbuse = types.BoolValue(*c.PreventTrialAbuse)
+	} else {
+		m.PreventTrialAbuse = types.BoolNull()
+	}
+	if c.AllowCustomerUpdates != nil {
+		m.AllowCustomerUpdates = types.BoolValue(*c.AllowCustomerUpdates)
+	} else {
+		m.AllowCustomerUpdates = types.BoolNull()
+	}
 }
 
 // OrganizationCustomerEmailSettingsModel is one `customer_email_settings` block.
@@ -348,6 +510,76 @@ func (m *OrganizationCustomerEmailSettingsModel) ToClientModel() (*client.Organi
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerEmailSettingsModel) FromClientModel(c *client.OrganizationCustomerEmailSettings) {
+	if c.OrderConfirmation != nil {
+		m.OrderConfirmation = types.BoolValue(*c.OrderConfirmation)
+	} else {
+		m.OrderConfirmation = types.BoolNull()
+	}
+	if c.PaymentMethodExpirationReminder != nil {
+		m.PaymentMethodExpirationReminder = types.BoolValue(*c.PaymentMethodExpirationReminder)
+	} else {
+		m.PaymentMethodExpirationReminder = types.BoolNull()
+	}
+	if c.SubscriptionCancellation != nil {
+		m.SubscriptionCancellation = types.BoolValue(*c.SubscriptionCancellation)
+	} else {
+		m.SubscriptionCancellation = types.BoolNull()
+	}
+	if c.SubscriptionConfirmation != nil {
+		m.SubscriptionConfirmation = types.BoolValue(*c.SubscriptionConfirmation)
+	} else {
+		m.SubscriptionConfirmation = types.BoolNull()
+	}
+	if c.SubscriptionCycled != nil {
+		m.SubscriptionCycled = types.BoolValue(*c.SubscriptionCycled)
+	} else {
+		m.SubscriptionCycled = types.BoolNull()
+	}
+	if c.SubscriptionCycledAfterTrial != nil {
+		m.SubscriptionCycledAfterTrial = types.BoolValue(*c.SubscriptionCycledAfterTrial)
+	} else {
+		m.SubscriptionCycledAfterTrial = types.BoolNull()
+	}
+	if c.SubscriptionPastDue != nil {
+		m.SubscriptionPastDue = types.BoolValue(*c.SubscriptionPastDue)
+	} else {
+		m.SubscriptionPastDue = types.BoolNull()
+	}
+	if c.SubscriptionPaused != nil {
+		m.SubscriptionPaused = types.BoolValue(*c.SubscriptionPaused)
+	} else {
+		m.SubscriptionPaused = types.BoolNull()
+	}
+	if c.SubscriptionResumed != nil {
+		m.SubscriptionResumed = types.BoolValue(*c.SubscriptionResumed)
+	} else {
+		m.SubscriptionResumed = types.BoolNull()
+	}
+	if c.SubscriptionRenewalReminder != nil {
+		m.SubscriptionRenewalReminder = types.BoolValue(*c.SubscriptionRenewalReminder)
+	} else {
+		m.SubscriptionRenewalReminder = types.BoolNull()
+	}
+	if c.SubscriptionRevoked != nil {
+		m.SubscriptionRevoked = types.BoolValue(*c.SubscriptionRevoked)
+	} else {
+		m.SubscriptionRevoked = types.BoolNull()
+	}
+	if c.SubscriptionTrialConversionReminder != nil {
+		m.SubscriptionTrialConversionReminder = types.BoolValue(*c.SubscriptionTrialConversionReminder)
+	} else {
+		m.SubscriptionTrialConversionReminder = types.BoolNull()
+	}
+	if c.SubscriptionUncanceled != nil {
+		m.SubscriptionUncanceled = types.BoolValue(*c.SubscriptionUncanceled)
+	} else {
+		m.SubscriptionUncanceled = types.BoolNull()
+	}
+	if c.SubscriptionUpdated != nil {
+		m.SubscriptionUpdated = types.BoolValue(*c.SubscriptionUpdated)
+	} else {
+		m.SubscriptionUpdated = types.BoolNull()
+	}
 }
 
 // OrganizationCustomerPortalSettingsModel is one `customer_portal_settings` block.
@@ -365,6 +597,27 @@ type OrganizationCustomerPortalSettingsModel struct {
 // ToClientModel converts one block to the client type the request carries.
 func (m *OrganizationCustomerPortalSettingsModel) ToClientModel() (*client.OrganizationCustomerPortalSettings, error) {
 	out := &client.OrganizationCustomerPortalSettings{}
+	if m.Usage != nil {
+		converted, err := m.Usage.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("usage: %w", err)
+		}
+		out.Usage = converted
+	}
+	if m.Subscription != nil {
+		converted, err := m.Subscription.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("subscription: %w", err)
+		}
+		out.Subscription = converted
+	}
+	if m.Customer != nil {
+		converted, err := m.Customer.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("customer: %w", err)
+		}
+		out.Customer = converted
+	}
 	return out, nil
 }
 
@@ -375,6 +628,45 @@ func (m *OrganizationCustomerPortalSettingsModel) ToClientModel() (*client.Organ
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModel) FromClientModel(c *client.OrganizationCustomerPortalSettings) {
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Usage != nil {
+		block := OrganizationCustomerPortalSettingsModelUsageModel{}
+		if m.Usage != nil {
+			block = *m.Usage
+		}
+		block.FromClientModel(c.Usage)
+		m.Usage = &block
+	} else {
+		m.Usage = nil
+	}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Subscription != nil {
+		block := OrganizationCustomerPortalSettingsModelSubscriptionModel{}
+		if m.Subscription != nil {
+			block = *m.Subscription
+		}
+		block.FromClientModel(c.Subscription)
+		m.Subscription = &block
+	} else {
+		m.Subscription = nil
+	}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Customer != nil {
+		block := OrganizationCustomerPortalSettingsModelCustomerModel{}
+		if m.Customer != nil {
+			block = *m.Customer
+		}
+		block.FromClientModel(c.Customer)
+		m.Customer = &block
+	} else {
+		m.Customer = nil
+	}
 }
 
 // OrganizationCustomerPortalSettingsModelUsageModel is one `usage` block.
@@ -404,6 +696,11 @@ func (m *OrganizationCustomerPortalSettingsModelUsageModel) ToClientModel() (*cl
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModelUsageModel) FromClientModel(c *client.CustomerPortalUsageSettings) {
+	if c.Show != nil {
+		m.Show = types.BoolValue(*c.Show)
+	} else {
+		m.Show = types.BoolNull()
+	}
 }
 
 // OrganizationCustomerPortalSettingsModelSubscriptionModel is one `subscription` block.
@@ -443,6 +740,21 @@ func (m *OrganizationCustomerPortalSettingsModelSubscriptionModel) ToClientModel
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModelSubscriptionModel) FromClientModel(c *client.CustomerPortalSubscriptionSettings) {
+	if c.UpdateSeats != nil {
+		m.UpdateSeats = types.BoolValue(*c.UpdateSeats)
+	} else {
+		m.UpdateSeats = types.BoolNull()
+	}
+	if c.UpdatePlan != nil {
+		m.UpdatePlan = types.BoolValue(*c.UpdatePlan)
+	} else {
+		m.UpdatePlan = types.BoolNull()
+	}
+	if c.Pause != nil {
+		m.Pause = types.BoolValue(*c.Pause)
+	} else {
+		m.Pause = types.BoolNull()
+	}
 }
 
 // OrganizationCustomerPortalSettingsModelCustomerModel is one `customer` block.
@@ -472,6 +784,11 @@ func (m *OrganizationCustomerPortalSettingsModelCustomerModel) ToClientModel() (
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *OrganizationCustomerPortalSettingsModelCustomerModel) FromClientModel(c *client.CustomerPortalCustomerSettings) {
+	if c.AllowEmailChange != nil {
+		m.AllowEmailChange = types.BoolValue(*c.AllowEmailChange)
+	} else {
+		m.AllowEmailChange = types.BoolNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

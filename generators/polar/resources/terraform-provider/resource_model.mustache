@@ -105,6 +105,7 @@ func (m *{{nestedModel}}) ToClientModel() (*client.{{nestedClientType}}, error) 
 		}
 	}
 {{/isJson}}
+{{>nested_send}}
 {{/inChildRequest}}
 {{/nested}}
 	return out, nil
@@ -186,6 +187,7 @@ func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
 		}
 	}
 {{/isJson}}
+{{>nested_read}}
 {{/inAnswer}}
 {{/nested}}
 }
@@ -248,47 +250,7 @@ func (m *{{resourceClassName}}Model) ToClientModel() (*client.{{requestModel}}, 
 		}
 	}
 {{/isJson}}
-{{#isNested}}
-{{#isNestedList}}
-{{#unwrappedGo}}
-	// A WRAPPER AROUND THE LIST. The client field is an object whose one field is
-	// this list and whose other fields are server defaults -- the document's
-	// spelling, not the one a configuration means.
-	if m.{{goName}} != nil {
-		out.{{goName}} = &client.{{nestedWrapperType}}{}
-		out.{{goName}}.{{unwrappedGo}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
-		for index := range m.{{goName}} {
-			converted, err := m.{{goName}}[index].ToClientModel()
-			if err != nil {
-				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
-			}
-			out.{{goName}}.{{unwrappedGo}} = append(out.{{goName}}.{{unwrappedGo}}, *converted)
-		}
-	}
-{{/unwrappedGo}}
-{{^unwrappedGo}}
-	if len(m.{{goName}}) > 0 {
-		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
-		for index := range m.{{goName}} {
-			converted, err := m.{{goName}}[index].ToClientModel()
-			if err != nil {
-				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
-			}
-			out.{{goName}} = append(out.{{goName}}, *converted)
-		}
-	}
-{{/unwrappedGo}}
-{{/isNestedList}}
-{{#isNestedObject}}
-	if m.{{goName}} != nil {
-		converted, err := m.{{goName}}.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("{{terraformName}}: %w", err)
-		}
-		out.{{goName}} = {{^nestedPointer}}*{{/nestedPointer}}converted
-	}
-{{/isNestedObject}}
-{{/isNested}}
+{{>nested_send}}
 {{#isScalarList}}
 {{#isScalarSet}}
 	// A SET, not a list: which webhook event types this endpoint listens to does
@@ -385,47 +347,7 @@ func (m *{{resourceClassName}}Model) ToUpdateModel() (*client.{{updateRequestMod
 		}
 	}
 {{/isJson}}
-{{#isNested}}
-{{#isNestedList}}
-{{#unwrappedGo}}
-	// A WRAPPER AROUND THE LIST. The client field is an object whose one field is
-	// this list and whose other fields are server defaults -- the document's
-	// spelling, not the one a configuration means.
-	if m.{{goName}} != nil {
-		out.{{goName}} = &client.{{nestedWrapperType}}{}
-		out.{{goName}}.{{unwrappedGo}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
-		for index := range m.{{goName}} {
-			converted, err := m.{{goName}}[index].ToClientModel()
-			if err != nil {
-				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
-			}
-			out.{{goName}}.{{unwrappedGo}} = append(out.{{goName}}.{{unwrappedGo}}, *converted)
-		}
-	}
-{{/unwrappedGo}}
-{{^unwrappedGo}}
-	if len(m.{{goName}}) > 0 {
-		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
-		for index := range m.{{goName}} {
-			converted, err := m.{{goName}}[index].ToClientModel()
-			if err != nil {
-				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
-			}
-			out.{{goName}} = append(out.{{goName}}, *converted)
-		}
-	}
-{{/unwrappedGo}}
-{{/isNestedList}}
-{{#isNestedObject}}
-	if m.{{goName}} != nil {
-		converted, err := m.{{goName}}.ToClientModel()
-		if err != nil {
-			return out, fmt.Errorf("{{terraformName}}: %w", err)
-		}
-		out.{{goName}} = {{^nestedPointer}}*{{/nestedPointer}}converted
-	}
-{{/isNestedObject}}
-{{/isNested}}
+{{>nested_send}}
 {{#isScalarList}}
 {{#isScalarSet}}
 	// A SET, not a list: which webhook event types this endpoint listens to does
@@ -640,50 +562,7 @@ func (m *{{resourceClassName}}Model) fromAnswer(c *client.{{responseModel}}, eve
 		m.{{goName}} = types.MapValueMust({{listElementType}}, {{goName}})
 	}
 {{/isScalarMap}}
-{{#isNested}}
-{{#isNestedList}}
-	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
-	// compares element by element, so a server that reorders or adds a price is
-	// a diff -- which is correct: it did something the configuration did not say.
-	{{goName}} := make([]{{nestedModel}}, 0, len(c.{{goName}}))
-	for index := range c.{{goName}} {
-		block := {{nestedModel}}{}
-		if index < len(m.{{goName}}) {
-			block = m.{{goName}}[index]
-		}
-		block.FromClientModel(&c.{{goName}}[index])
-		{{goName}} = append({{goName}}, block)
-	}
-	m.{{goName}} = {{goName}}
-{{/isNestedList}}
-{{#isNestedObject}}
-{{#nestedPointer}}
-	// A pointer the server left nil is a block that is not there. Writing an
-	// empty one instead would be a diff against a configuration that correctly
-	// omitted it.
-	if c.{{goName}} != nil {
-		block := {{nestedModel}}{}
-		if m.{{goName}} != nil {
-			block = *m.{{goName}}
-		}
-		block.FromClientModel(c.{{goName}})
-		m.{{goName}} = &block
-	} else {
-		m.{{goName}} = nil
-	}
-{{/nestedPointer}}
-{{^nestedPointer}}
-	{
-		block := {{nestedModel}}{}
-		if m.{{goName}} != nil {
-			block = *m.{{goName}}
-		}
-		block.FromClientModel(&c.{{goName}})
-		m.{{goName}} = &block
-	}
-{{/nestedPointer}}
-{{/isNestedObject}}
-{{/isNested}}
+{{>nested_read}}
 {{^isComputed}}
 	}
 {{/isComputed}}

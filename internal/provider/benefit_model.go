@@ -56,6 +56,13 @@ func (m *BenefitCustomPropertiesModel) ToClientModel() (*client.BenefitCustomCre
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitCustomPropertiesModel) FromClientModel(c *client.BenefitCustomCreateProperties) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Note != nil {
+		m.Note = types.StringValue(*c.Note)
+	} else {
+		m.Note = types.StringNull()
+	}
 }
 
 // BenefitDiscordPropertiesModel is one `discord_properties` block.
@@ -93,6 +100,13 @@ func (m *BenefitDiscordPropertiesModel) ToClientModel() (*client.BenefitDiscordC
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitDiscordPropertiesModel) FromClientModel(c *client.BenefitDiscordCreateProperties) {
+	m.GuildToken = types.StringValue(c.GuildToken)
+	m.RoleId = types.StringValue(c.RoleId)
+	if c.KickMember != nil {
+		m.KickMember = types.BoolValue(*c.KickMember)
+	} else {
+		m.KickMember = types.BoolNull()
+	}
 }
 
 // BenefitGithubRepositoryPropertiesModel is one `github_repository_properties` block.
@@ -129,6 +143,9 @@ func (m *BenefitGithubRepositoryPropertiesModel) ToClientModel() (*client.Benefi
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitGithubRepositoryPropertiesModel) FromClientModel(c *client.BenefitGitHubRepositoryCreateProperties) {
+	m.RepositoryOwner = types.StringValue(c.RepositoryOwner)
+	m.RepositoryName = types.StringValue(c.RepositoryName)
+	m.Permission = types.StringValue(c.Permission)
 }
 
 // BenefitDownloadablesPropertiesModel is one `downloadables_properties` block.
@@ -177,6 +194,20 @@ func (m *BenefitLicenseKeysPropertiesModel) ToClientModel() (*client.BenefitLice
 		Prefix := m.Prefix.ValueString()
 		out.Prefix = &Prefix
 	}
+	if m.Expires != nil {
+		converted, err := m.Expires.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("expires: %w", err)
+		}
+		out.Expires = converted
+	}
+	if m.Activations != nil {
+		converted, err := m.Activations.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("activations: %w", err)
+		}
+		out.Activations = converted
+	}
 	if !m.LimitUsage.IsNull() && !m.LimitUsage.IsUnknown() {
 		LimitUsage := int32(m.LimitUsage.ValueInt64())
 		out.LimitUsage = &LimitUsage
@@ -191,6 +222,46 @@ func (m *BenefitLicenseKeysPropertiesModel) ToClientModel() (*client.BenefitLice
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitLicenseKeysPropertiesModel) FromClientModel(c *client.BenefitLicenseKeysCreateProperties) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Prefix != nil {
+		m.Prefix = types.StringValue(*c.Prefix)
+	} else {
+		m.Prefix = types.StringNull()
+	}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Expires != nil {
+		block := BenefitLicenseKeysPropertiesModelExpiresModel{}
+		if m.Expires != nil {
+			block = *m.Expires
+		}
+		block.FromClientModel(c.Expires)
+		m.Expires = &block
+	} else {
+		m.Expires = nil
+	}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.Activations != nil {
+		block := BenefitLicenseKeysPropertiesModelActivationsModel{}
+		if m.Activations != nil {
+			block = *m.Activations
+		}
+		block.FromClientModel(c.Activations)
+		m.Activations = &block
+	} else {
+		m.Activations = nil
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.LimitUsage != nil {
+		m.LimitUsage = types.Int64Value(int64(*c.LimitUsage))
+	} else {
+		m.LimitUsage = types.Int64Null()
+	}
 }
 
 // BenefitLicenseKeysPropertiesModelExpiresModel is one `expires` block.
@@ -223,6 +294,8 @@ func (m *BenefitLicenseKeysPropertiesModelExpiresModel) ToClientModel() (*client
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitLicenseKeysPropertiesModelExpiresModel) FromClientModel(c *client.BenefitLicenseKeyExpirationProperties) {
+	m.Ttl = types.Int64Value(int64(c.Ttl))
+	m.Timeframe = types.StringValue(c.Timeframe)
 }
 
 // BenefitLicenseKeysPropertiesModelActivationsModel is one `activations` block.
@@ -256,6 +329,12 @@ func (m *BenefitLicenseKeysPropertiesModelActivationsModel) ToClientModel() (*cl
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitLicenseKeysPropertiesModelActivationsModel) FromClientModel(c *client.BenefitLicenseKeyActivationCreateProperties) {
+	m.Limit = types.Int64Value(int64(c.Limit))
+	if c.EnableCustomerAdmin != nil {
+		m.EnableCustomerAdmin = types.BoolValue(*c.EnableCustomerAdmin)
+	} else {
+		m.EnableCustomerAdmin = types.BoolNull()
+	}
 }
 
 // BenefitMeterCreditPropertiesModel is one `meter_credit_properties` block.
@@ -293,6 +372,13 @@ func (m *BenefitMeterCreditPropertiesModel) ToClientModel() (*client.BenefitMete
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitMeterCreditPropertiesModel) FromClientModel(c *client.BenefitMeterCreditCreateProperties) {
+	m.Units = types.Int64Value(int64(c.Units))
+	if c.Rollover != nil {
+		m.Rollover = types.BoolValue(*c.Rollover)
+	} else {
+		m.Rollover = types.BoolNull()
+	}
+	m.MeterId = types.StringValue(c.MeterId)
 }
 
 // BenefitSlackSharedChannelPropertiesModel is one `slack_shared_channel_properties` block.
@@ -341,6 +427,25 @@ func (m *BenefitSlackSharedChannelPropertiesModel) ToClientModel() (*client.Bene
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *BenefitSlackSharedChannelPropertiesModel) FromClientModel(c *client.BenefitSlackSharedChannelCreateProperties) {
+	m.SlackIntegrationId = types.StringValue(c.SlackIntegrationId)
+	m.ChannelNameTemplate = types.StringValue(c.ChannelNameTemplate)
+	if c.Private != nil {
+		m.Private = types.BoolValue(*c.Private)
+	} else {
+		m.Private = types.BoolNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.WelcomeMessage != nil {
+		m.WelcomeMessage = types.StringValue(*c.WelcomeMessage)
+	} else {
+		m.WelcomeMessage = types.StringNull()
+	}
+	if c.ArchiveOnRevoke != nil {
+		m.ArchiveOnRevoke = types.BoolValue(*c.ArchiveOnRevoke)
+	} else {
+		m.ArchiveOnRevoke = types.BoolNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

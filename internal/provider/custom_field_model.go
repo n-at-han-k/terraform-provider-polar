@@ -72,6 +72,16 @@ func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldCreateP
 		Le := int32(m.Le.ValueInt64())
 		out.Le = &Le
 	}
+	if len(m.Options) > 0 {
+		out.Options = make([]client.CustomFieldSelectOption, 0, len(m.Options))
+		for index := range m.Options {
+			converted, err := m.Options[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("options[%d]: %w", index, err)
+			}
+			out.Options = append(out.Options, *converted)
+		}
+	}
 	return out, nil
 }
 
@@ -82,6 +92,73 @@ func (m *CustomFieldPropertiesModel) ToClientModel() (*client.CustomFieldCreateP
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomFieldPropertiesModel) FromClientModel(c *client.CustomFieldCreateProperties) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormLabel != nil {
+		m.FormLabel = types.StringValue(*c.FormLabel)
+	} else {
+		m.FormLabel = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormHelpText != nil {
+		m.FormHelpText = types.StringValue(*c.FormHelpText)
+	} else {
+		m.FormHelpText = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.FormPlaceholder != nil {
+		m.FormPlaceholder = types.StringValue(*c.FormPlaceholder)
+	} else {
+		m.FormPlaceholder = types.StringNull()
+	}
+	if c.Textarea != nil {
+		m.Textarea = types.BoolValue(*c.Textarea)
+	} else {
+		m.Textarea = types.BoolNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MinLength != nil {
+		m.MinLength = types.Int64Value(int64(*c.MinLength))
+	} else {
+		m.MinLength = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MaxLength != nil {
+		m.MaxLength = types.Int64Value(int64(*c.MaxLength))
+	} else {
+		m.MaxLength = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Ge != nil {
+		m.Ge = types.Int64Value(int64(*c.Ge))
+	} else {
+		m.Ge = types.Int64Null()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Le != nil {
+		m.Le = types.Int64Value(int64(*c.Le))
+	} else {
+		m.Le = types.Int64Null()
+	}
+	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
+	// compares element by element, so a server that reorders or adds a price is
+	// a diff -- which is correct: it did something the configuration did not say.
+	Options := make([]CustomFieldPropertiesModelOptionsModel, 0, len(c.Options))
+	for index := range c.Options {
+		block := CustomFieldPropertiesModelOptionsModel{}
+		if index < len(m.Options) {
+			block = m.Options[index]
+		}
+		block.FromClientModel(&c.Options[index])
+		Options = append(Options, block)
+	}
+	m.Options = Options
 }
 
 // CustomFieldPropertiesModelOptionsModel is one `options` block.
@@ -116,6 +193,20 @@ func (m *CustomFieldPropertiesModelOptionsModel) ToClientModel() (*client.Custom
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomFieldPropertiesModelOptionsModel) FromClientModel(c *client.CustomFieldSelectOption) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Value != nil {
+		m.Value = types.StringValue(*c.Value)
+	} else {
+		m.Value = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Label != nil {
+		m.Label = types.StringValue(*c.Label)
+	} else {
+		m.Label = types.StringNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

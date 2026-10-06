@@ -38,6 +38,16 @@ func (m *MeterFilterModel) ToClientModel() (*client.Filter, error) {
 	if !m.Conjunction.IsNull() && !m.Conjunction.IsUnknown() {
 		out.Conjunction = m.Conjunction.ValueString()
 	}
+	if len(m.Clauses) > 0 {
+		out.Clauses = make([]client.FilterClauses, 0, len(m.Clauses))
+		for index := range m.Clauses {
+			converted, err := m.Clauses[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("clauses[%d]: %w", index, err)
+			}
+			out.Clauses = append(out.Clauses, *converted)
+		}
+	}
 	return out, nil
 }
 
@@ -48,6 +58,20 @@ func (m *MeterFilterModel) ToClientModel() (*client.Filter, error) {
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterFilterModel) FromClientModel(c *client.Filter) {
+	m.Conjunction = types.StringValue(c.Conjunction)
+	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
+	// compares element by element, so a server that reorders or adds a price is
+	// a diff -- which is correct: it did something the configuration did not say.
+	Clauses := make([]MeterFilterModelClausesModel, 0, len(c.Clauses))
+	for index := range c.Clauses {
+		block := MeterFilterModelClausesModel{}
+		if index < len(m.Clauses) {
+			block = m.Clauses[index]
+		}
+		block.FromClientModel(&c.Clauses[index])
+		Clauses = append(Clauses, block)
+	}
+	m.Clauses = Clauses
 }
 
 // MeterFilterModelClausesModel is one `clauses` block.
@@ -85,6 +109,15 @@ func (m *MeterFilterModelClausesModel) ToClientModel() (*client.FilterClauses, e
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterFilterModelClausesModel) FromClientModel(c *client.FilterClauses) {
+	m.Property = types.StringValue(c.Property)
+	m.Operator = types.StringValue(c.Operator)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Value != nil {
+		m.Value = types.StringValue(*c.Value)
+	} else {
+		m.Value = types.StringNull()
+	}
 }
 
 // MeterAggregationModel is one `aggregation` block.
@@ -118,6 +151,14 @@ func (m *MeterAggregationModel) ToClientModel() (*client.MeterCreateAggregation,
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *MeterAggregationModel) FromClientModel(c *client.MeterCreateAggregation) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Property != nil {
+		m.Property = types.StringValue(*c.Property)
+	} else {
+		m.Property = types.StringNull()
+	}
+	m.Func = types.StringValue(c.Func)
 }
 
 // ToClientModel converts a Terraform model to a client model.

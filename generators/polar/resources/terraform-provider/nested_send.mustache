@@ -1,0 +1,51 @@
+{{!
+  nested_send -- one nested block, or a list of them, into the request body.
+
+  A PARTIAL BECAUSE A BLOCK CAN HOLD A BLOCK. A meter's `filter` is an object
+  whose `clauses` is an array of objects, and the nested-block converter used to
+  handle only scalar children: the clauses were silently dropped and Polar
+  answered 422 {"loc":["body","filter","clauses"],"msg":"Field required"}. The
+  same text now serves the top-level model and every block below it, so a child
+  cannot be left out of one of them again.
+}}
+{{#isNested}}
+{{#isNestedList}}
+{{#unwrappedGo}}
+	// A WRAPPER AROUND THE LIST. The client field is an object whose one field is
+	// this list and whose other fields are server defaults -- the document's
+	// spelling, not the one a configuration means.
+	if m.{{goName}} != nil {
+		out.{{goName}} = &client.{{nestedWrapperType}}{}
+		out.{{goName}}.{{unwrappedGo}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}}.{{unwrappedGo}} = append(out.{{goName}}.{{unwrappedGo}}, *converted)
+		}
+	}
+{{/unwrappedGo}}
+{{^unwrappedGo}}
+	if len(m.{{goName}}) > 0 {
+		out.{{goName}} = make([]client.{{nestedClientType}}, 0, len(m.{{goName}}))
+		for index := range m.{{goName}} {
+			converted, err := m.{{goName}}[index].ToClientModel()
+			if err != nil {
+				return out, fmt.Errorf("{{terraformName}}[%d]: %w", index, err)
+			}
+			out.{{goName}} = append(out.{{goName}}, *converted)
+		}
+	}
+{{/unwrappedGo}}
+{{/isNestedList}}
+{{#isNestedObject}}
+	if m.{{goName}} != nil {
+		converted, err := m.{{goName}}.ToClientModel()
+		if err != nil {
+			return out, fmt.Errorf("{{terraformName}}: %w", err)
+		}
+		out.{{goName}} = {{^nestedPointer}}*{{/nestedPointer}}converted
+	}
+{{/isNestedObject}}
+{{/isNested}}

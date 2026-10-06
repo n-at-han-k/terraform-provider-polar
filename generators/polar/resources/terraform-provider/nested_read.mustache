@@ -1,0 +1,51 @@
+{{!
+  nested_read -- one nested block, or a list of them, out of the answer.
+
+  The read side of nested_send, and included in the same two places for the same
+  reason: a block's own blocks have to be filled in too, or state carries an
+  empty one and the next plan proposes adding what the server already has.
+}}
+{{#isNested}}
+{{#isNestedList}}
+	// REBUILT FROM THE ANSWER, and the order is the server's. A list attribute
+	// compares element by element, so a server that reorders or adds a price is
+	// a diff -- which is correct: it did something the configuration did not say.
+	{{goName}} := make([]{{nestedModel}}, 0, len(c.{{goName}}))
+	for index := range c.{{goName}} {
+		block := {{nestedModel}}{}
+		if index < len(m.{{goName}}) {
+			block = m.{{goName}}[index]
+		}
+		block.FromClientModel(&c.{{goName}}[index])
+		{{goName}} = append({{goName}}, block)
+	}
+	m.{{goName}} = {{goName}}
+{{/isNestedList}}
+{{#isNestedObject}}
+{{#nestedPointer}}
+	// A pointer the server left nil is a block that is not there. Writing an
+	// empty one instead would be a diff against a configuration that correctly
+	// omitted it.
+	if c.{{goName}} != nil {
+		block := {{nestedModel}}{}
+		if m.{{goName}} != nil {
+			block = *m.{{goName}}
+		}
+		block.FromClientModel(c.{{goName}})
+		m.{{goName}} = &block
+	} else {
+		m.{{goName}} = nil
+	}
+{{/nestedPointer}}
+{{^nestedPointer}}
+	{
+		block := {{nestedModel}}{}
+		if m.{{goName}} != nil {
+			block = *m.{{goName}}
+		}
+		block.FromClientModel(&c.{{goName}})
+		m.{{goName}} = &block
+	}
+{{/nestedPointer}}
+{{/isNestedObject}}
+{{/isNested}}

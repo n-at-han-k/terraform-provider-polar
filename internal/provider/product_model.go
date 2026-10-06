@@ -190,6 +190,12 @@ func (m *ProductAttachedCustomFieldsModel) ToClientModel() (*client.AttachedCust
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductAttachedCustomFieldsModel) FromClientModel(c *client.AttachedCustomFieldCreate) {
+	m.CustomFieldId = types.StringValue(c.CustomFieldId)
+	if c.Required != nil {
+		m.Required = types.BoolValue(*c.Required)
+	} else {
+		m.Required = types.BoolNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

@@ -77,6 +77,48 @@ func (m *CustomerBillingAddressModel) ToClientModel() (*client.AddressInput, err
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line1 != nil {
+		m.Line1 = types.StringValue(*c.Line1)
+	} else {
+		m.Line1 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Line2 != nil {
+		m.Line2 = types.StringValue(*c.Line2)
+	} else {
+		m.Line2 = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.PostalCode != nil {
+		m.PostalCode = types.StringValue(*c.PostalCode)
+	} else {
+		m.PostalCode = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.City != nil {
+		m.City = types.StringValue(*c.City)
+	} else {
+		m.City = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.State != nil {
+		m.State = types.StringValue(*c.State)
+	} else {
+		m.State = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Country != nil {
+		m.Country = types.StringValue(*c.Country)
+	} else {
+		m.Country = types.StringNull()
+	}
 }
 
 // CustomerOwnerModel is one `owner` block.
@@ -116,6 +158,27 @@ func (m *CustomerOwnerModel) ToClientModel() (*client.MemberOwnerCreate, error) 
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CustomerOwnerModel) FromClientModel(c *client.MemberOwnerCreate) {
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Email != nil {
+		m.Email = types.StringValue(*c.Email)
+	} else {
+		m.Email = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.Name != nil {
+		m.Name = types.StringValue(*c.Name)
+	} else {
+		m.Name = types.StringNull()
+	}
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.ExternalId != nil {
+		m.ExternalId = types.StringValue(*c.ExternalId)
+	} else {
+		m.ExternalId = types.StringNull()
+	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

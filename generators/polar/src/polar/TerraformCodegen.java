@@ -3063,6 +3063,16 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             attribute.putIfAbsent("isNestedList", false);
             attribute.putIfAbsent("isNestedObject", false);
             attribute.putIfAbsent("nested", new ArrayList<Map<String, Object>>());
+            // READ BACK UNLESS SOMETHING SAID OTHERWISE. readPointerness only runs
+            // where a block's request and answer shapes differ, and it is the only
+            // thing that ever set this -- so every block whose two shapes are the
+            // SAME got no answer at all, the key was falsy, and its children were
+            // read back nowhere. A meter's filter is that case: one client.Filter
+            // for both directions, a FromClientModel with an empty body, and a
+            // conjunction or a clause changed in the Polar dashboard invisible to
+            // every plan. Identical shapes is precisely the case where the answer
+            // does carry the field, so the default is yes.
+            attribute.putIfAbsent("inAnswer", true);
 
             denestDefaults(nestedOf(attribute));
         }
