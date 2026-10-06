@@ -80,6 +80,26 @@ Fifteen resources, from 127 paths. `bin/generate-config` keeps a collection when
   `/webhooks/endpoints/{id}/secret` take a POST and answer nothing addressable,
   so there is no state to refresh and no drift to detect.
 
+## The one hand-written resource
+
+`polar_product_benefits`, in `internal/manual`, which is the only code here a
+regeneration does not produce. Polar attaches a benefit to a product through
+`POST /v1/products/{id}/benefits` -- no create answering 201 and no member read,
+so the structural rule drops the collection as a verb, and the generator is
+right to: there is no object there to refresh. But a catalogue that cannot say
+which benefits a product grants cannot describe a product, and a Credits benefit
+that is attached to nothing grants nothing.
+
+It owns the product's WHOLE benefit set, because that call replaces the list
+rather than appending to it. One per product, naming all of them; `benefit_ids`
+is a set, since Polar answers them in its own order.
+
+`bin/generate` does `rm -rf internal/provider internal/client`, so the package
+sits outside both, and the registration that reaches it is in
+`generators/polar/resources/terraform-provider/provider.mustache` rather than in
+the generated `provider.go` -- a regeneration reproduces it instead of dropping
+it. It depends on `client.Client` and `client.APIError` and no generated model.
+
 The customer portal is dropped whole — its 33 paths authenticate with a customer
 session token minted for one end customer, never with the organization access
 token this provider holds.

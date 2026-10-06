@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/n-at-han-k/terraform-provider-polar/internal/client"
+	"github.com/n-at-han-k/terraform-provider-polar/internal/manual"
 )
 
 var _ provider.Provider = &polarProvider{}
@@ -140,6 +141,16 @@ var providerEnvironments = []providerEnvironment{
 	{Name: "sandbox", URL: "https://sandbox-api.polar.sh/v1"},
 }
 
+// Resources: everything derived from the document, and then the hand-written
+// ones from internal/manual.
+//
+// THE MANUAL ENTRIES ARE HERE AND NOT IN THE GENERATED FILE, because the
+// generated file is deleted and rewritten by bin/generate -- a registration
+// added there survives until the next regeneration and no longer. A collection
+// reaches internal/manual only when the document cannot describe it as a
+// resource: `/v1/products/{id}/benefits` has no member read and no create, so
+// the generator drops it as a verb (see reference/resources.md), and attaching a
+// benefit to a product is the one thing a Polar catalogue cannot otherwise say.
 func (p *polarProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewBenefitResource,
@@ -157,6 +168,7 @@ func (p *polarProvider) Resources(_ context.Context) []func() resource.Resource 
 		NewProductResource,
 		NewSubscriptionResource,
 		NewWebhookEndpointResource,
+		manual.NewProductBenefitsResource,
 	}
 }
 
