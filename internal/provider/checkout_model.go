@@ -99,48 +99,6 @@ func (m *CheckoutCustomerBillingAddressModel) ToClientModel() (*client.AddressIn
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *CheckoutCustomerBillingAddressModel) FromClientModel(c *client.AddressInput) {
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Line1 != nil {
-		m.Line1 = types.StringValue(*c.Line1)
-	} else {
-		m.Line1 = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Line2 != nil {
-		m.Line2 = types.StringValue(*c.Line2)
-	} else {
-		m.Line2 = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.PostalCode != nil {
-		m.PostalCode = types.StringValue(*c.PostalCode)
-	} else {
-		m.PostalCode = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.City != nil {
-		m.City = types.StringValue(*c.City)
-	} else {
-		m.City = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.State != nil {
-		m.State = types.StringValue(*c.State)
-	} else {
-		m.State = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Country != nil {
-		m.Country = types.StringValue(*c.Country)
-	} else {
-		m.Country = types.StringNull()
-	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

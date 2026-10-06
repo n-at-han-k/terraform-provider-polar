@@ -3,7 +3,7 @@
   "provider": {
     "name": "polar",
     "address": "ghcr.io/n-at-han-k/polar",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "token": {
       "attribute": "access_token",
       "scheme": "oat",
@@ -91,7 +91,7 @@
           "visibility",
           "recurring_interval_count"
         ],
-        "responseBlocks": [
+        "answerBlocks": [
           "prices"
         ],
         "drop": [

@@ -35,24 +35,16 @@ type ProductModel struct {
 // pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
 // in step with the fields by hand.
 type ProductPricesModel struct {
-	Id                types.String                  `tfsdk:"id"`
-	Source            types.String                  `tfsdk:"source"`
-	PriceCurrency     types.String                  `tfsdk:"price_currency"`
-	TaxBehavior       types.String                  `tfsdk:"tax_behavior"`
-	IsArchived        types.Bool                    `tfsdk:"is_archived"`
-	ProductId         types.String                  `tfsdk:"product_id"`
-	Type              types.String                  `tfsdk:"type"`
-	RecurringInterval types.String                  `tfsdk:"recurring_interval"`
-	PriceAmount       types.Int64                   `tfsdk:"price_amount"`
-	Legacy            types.Bool                    `tfsdk:"legacy"`
-	MinimumAmount     types.Int64                   `tfsdk:"minimum_amount"`
-	MaximumAmount     types.Int64                   `tfsdk:"maximum_amount"`
-	PresetAmount      types.Int64                   `tfsdk:"preset_amount"`
-	AmountType        types.String                  `tfsdk:"amount_type"`
-	UnitAmount        types.String                  `tfsdk:"unit_amount"`
-	CapAmount         types.Int64                   `tfsdk:"cap_amount"`
-	MeterId           types.String                  `tfsdk:"meter_id"`
-	Meter             *ProductPricesModelMeterModel `tfsdk:"meter"`
+	PriceCurrency types.String `tfsdk:"price_currency"`
+	TaxBehavior   types.String `tfsdk:"tax_behavior"`
+	PriceAmount   types.Int64  `tfsdk:"price_amount"`
+	MinimumAmount types.Int64  `tfsdk:"minimum_amount"`
+	MaximumAmount types.Int64  `tfsdk:"maximum_amount"`
+	PresetAmount  types.Int64  `tfsdk:"preset_amount"`
+	MeterId       types.String `tfsdk:"meter_id"`
+	UnitAmount    types.String `tfsdk:"unit_amount"`
+	CapAmount     types.Int64  `tfsdk:"cap_amount"`
+	AmountType    types.String `tfsdk:"amount_type"`
 }
 
 // ToClientModel converts one block to the client type the request carries.
@@ -82,8 +74,9 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 		PresetAmount := int32(m.PresetAmount.ValueInt64())
 		out.PresetAmount = &PresetAmount
 	}
-	if !m.AmountType.IsNull() && !m.AmountType.IsUnknown() {
-		out.AmountType = m.AmountType.ValueString()
+	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
+		MeterId := m.MeterId.ValueString()
+		out.MeterId = &MeterId
 	}
 	if !m.UnitAmount.IsNull() && !m.UnitAmount.IsUnknown() {
 		UnitAmount := m.UnitAmount.ValueString()
@@ -93,9 +86,8 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 		CapAmount := int32(m.CapAmount.ValueInt64())
 		out.CapAmount = &CapAmount
 	}
-	if !m.MeterId.IsNull() && !m.MeterId.IsUnknown() {
-		MeterId := m.MeterId.ValueString()
-		out.MeterId = &MeterId
+	if !m.AmountType.IsNull() && !m.AmountType.IsUnknown() {
+		out.AmountType = m.AmountType.ValueString()
 	}
 	return out, nil
 }
@@ -107,20 +99,6 @@ func (m *ProductPricesModel) ToClientModel() (*client.ProductCreateRecurringPric
 // the generator configuration. The struct is the same either way, so the two
 // conversions have the same fields to work with and do not.
 func (m *ProductPricesModel) FromClientModel(c *client.CheckoutPricesValueInner) {
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Id != nil {
-		m.Id = types.StringValue(*c.Id)
-	} else {
-		m.Id = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Source != nil {
-		m.Source = types.StringValue(*c.Source)
-	} else {
-		m.Source = types.StringNull()
-	}
 	m.PriceCurrency = types.StringValue(c.PriceCurrency)
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
@@ -129,43 +107,12 @@ func (m *ProductPricesModel) FromClientModel(c *client.CheckoutPricesValueInner)
 	} else {
 		m.TaxBehavior = types.StringNull()
 	}
-	if c.IsArchived != nil {
-		m.IsArchived = types.BoolValue(*c.IsArchived)
-	} else {
-		m.IsArchived = types.BoolNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.ProductId != nil {
-		m.ProductId = types.StringValue(*c.ProductId)
-	} else {
-		m.ProductId = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Type != nil {
-		m.Type = types.StringValue(*c.Type)
-	} else {
-		m.Type = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.RecurringInterval != nil {
-		m.RecurringInterval = types.StringValue(*c.RecurringInterval)
-	} else {
-		m.RecurringInterval = types.StringNull()
-	}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
 	if c.PriceAmount != nil {
 		m.PriceAmount = types.Int64Value(int64(*c.PriceAmount))
 	} else {
 		m.PriceAmount = types.Int64Null()
-	}
-	if c.Legacy != nil {
-		m.Legacy = types.BoolValue(*c.Legacy)
-	} else {
-		m.Legacy = types.BoolNull()
 	}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
@@ -188,7 +135,13 @@ func (m *ProductPricesModel) FromClientModel(c *client.CheckoutPricesValueInner)
 	} else {
 		m.PresetAmount = types.Int64Null()
 	}
-	m.AmountType = types.StringValue(c.AmountType)
+	// NIL IS ABSENT. The server omitted it, so state says null rather than
+	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
+	if c.MeterId != nil {
+		m.MeterId = types.StringValue(*c.MeterId)
+	} else {
+		m.MeterId = types.StringNull()
+	}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
 	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
 	if c.UnitAmount != nil {
@@ -203,97 +156,7 @@ func (m *ProductPricesModel) FromClientModel(c *client.CheckoutPricesValueInner)
 	} else {
 		m.CapAmount = types.Int64Null()
 	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.MeterId != nil {
-		m.MeterId = types.StringValue(*c.MeterId)
-	} else {
-		m.MeterId = types.StringNull()
-	}
-}
-
-// ProductPricesModelMeterModel is one `meter` block.
-//
-// A STRUCT WITH tfsdk TAGS, not a types.Object: terraform-plugin-framework
-// reflects over these, so a slice of them is a ListNestedAttribute and a
-// pointer to one is a SingleNestedAttribute, with no AttributeTypes map to keep
-// in step with the fields by hand.
-type ProductPricesModelMeterModel struct {
-	Id               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	Unit             types.String `tfsdk:"unit"`
-	CustomLabel      types.String `tfsdk:"custom_label"`
-	CustomMultiplier types.Int64  `tfsdk:"custom_multiplier"`
-}
-
-// ToClientModel converts one block to the client type the request carries.
-func (m *ProductPricesModelMeterModel) ToClientModel() (*client.ProductPriceMeter, error) {
-	out := &client.ProductPriceMeter{}
-	if !m.Id.IsNull() && !m.Id.IsUnknown() {
-		Id := m.Id.ValueString()
-		out.Id = &Id
-	}
-	if !m.Name.IsNull() && !m.Name.IsUnknown() {
-		Name := m.Name.ValueString()
-		out.Name = &Name
-	}
-	if !m.Unit.IsNull() && !m.Unit.IsUnknown() {
-		Unit := m.Unit.ValueString()
-		out.Unit = &Unit
-	}
-	if !m.CustomLabel.IsNull() && !m.CustomLabel.IsUnknown() {
-		CustomLabel := m.CustomLabel.ValueString()
-		out.CustomLabel = &CustomLabel
-	}
-	if !m.CustomMultiplier.IsNull() && !m.CustomMultiplier.IsUnknown() {
-		CustomMultiplier := int32(m.CustomMultiplier.ValueInt64())
-		out.CustomMultiplier = &CustomMultiplier
-	}
-	return out, nil
-}
-
-// FromClientModel fills one block from what the server answered.
-//
-// EVERY CHILD IS WRITTEN, not only the ones the configuration set, because they
-// are Optional AND Computed: Polar fills in a price's currency and tax
-// behaviour, and a Computed attribute left unknown after an apply is "provider
-// returned invalid result object after apply".
-func (m *ProductPricesModelMeterModel) FromClientModel(c *client.ProductPriceMeter) {
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Id != nil {
-		m.Id = types.StringValue(*c.Id)
-	} else {
-		m.Id = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Name != nil {
-		m.Name = types.StringValue(*c.Name)
-	} else {
-		m.Name = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.Unit != nil {
-		m.Unit = types.StringValue(*c.Unit)
-	} else {
-		m.Unit = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.CustomLabel != nil {
-		m.CustomLabel = types.StringValue(*c.CustomLabel)
-	} else {
-		m.CustomLabel = types.StringNull()
-	}
-	// NIL IS ABSENT. The server omitted it, so state says null rather than
-	// Go's zero -- otherwise the next plan proposes removing a value nobody set.
-	if c.CustomMultiplier != nil {
-		m.CustomMultiplier = types.Int64Value(int64(*c.CustomMultiplier))
-	} else {
-		m.CustomMultiplier = types.Int64Null()
-	}
+	m.AmountType = types.StringValue(c.AmountType)
 }
 
 // ProductAttachedCustomFieldsModel is one `attached_custom_fields` block.
@@ -327,12 +190,6 @@ func (m *ProductAttachedCustomFieldsModel) ToClientModel() (*client.AttachedCust
 // behaviour, and a Computed attribute left unknown after an apply is "provider
 // returned invalid result object after apply".
 func (m *ProductAttachedCustomFieldsModel) FromClientModel(c *client.AttachedCustomFieldCreate) {
-	m.CustomFieldId = types.StringValue(c.CustomFieldId)
-	if c.Required != nil {
-		m.Required = types.BoolValue(*c.Required)
-	} else {
-		m.Required = types.BoolNull()
-	}
 }
 
 // ToClientModel converts a Terraform model to a client model.

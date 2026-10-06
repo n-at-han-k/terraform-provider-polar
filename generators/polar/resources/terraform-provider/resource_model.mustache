@@ -128,6 +128,7 @@ func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedResponseType}}) {
 func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
 {{/nestedResponseType}}
 {{#nested}}
+{{#inAnswer}}
 {{#isString}}
 {{#isPointer}}
 	// NIL IS ABSENT. The server omitted it, so state says null rather than
@@ -185,6 +186,7 @@ func (m *{{nestedModel}}) FromClientModel(c *client.{{nestedClientType}}) {
 		}
 	}
 {{/isJson}}
+{{/inAnswer}}
 {{/nested}}
 }
 {{/nestedModels}}

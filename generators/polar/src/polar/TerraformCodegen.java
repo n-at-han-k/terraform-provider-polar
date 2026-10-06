@@ -1858,7 +1858,7 @@ public class TerraformCodegen extends TerraformProviderCodegen {
 
         nest(attributes, allModels, writable, patchable,
                 String.valueOf(operations.get("resourceClassName")), map(per.get("unwrap")),
-                strings(per, "responseBlocks"));
+                strings(per, "responseBlocks"), strings(per, "answerBlocks"));
 
         // WHAT THIS RESOURCE DOES NOT EXPOSE, applied to the whole tree: a
         // product's `tax_behavior` lives inside its prices, and the document
@@ -2724,7 +2724,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     private void nest(List<Map<String, Object>> attributes, List<ModelMap> allModels,
                       Map<String, CodegenProperty> writable,
                       Map<String, CodegenProperty> patchable, String resourceClassName,
-                      Map<String, Object> unwraps, List<String> responseBlocks) {
+                      Map<String, Object> unwraps, List<String> responseBlocks,
+                      List<String> answerBlocks) {
         if (!nestedAttributes || nestedMaxDepth < 1) {
             return;
         }
@@ -2783,6 +2784,21 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // struct is the same either way; only the two client types differ,
             // which is what nestedResponseType is for.
             boolean fromResponse = responseBlocks.contains(terraformName);
+            // READ FROM THE ANSWER, TYPED FROM THE REQUEST -- a different thing
+            // from fromResponse above, and the distinction cost a plan to find.
+            //
+            // `responseBlocks` types the whole block from the answer: schema,
+            // children and both conversions. That is right where the answer's
+            // fields ARE the point (an organization's feature settings), and wrong
+            // for a product's prices, where it made a configuration write the
+            // answer's shape: "attributes id, legacy, product_id,
+            // recurring_interval, source, tax_behavior and type are required".
+            // Nobody can set a price's id.
+            //
+            // This mode keeps the schema and the send exactly as they were, and
+            // adds a read conversion from the answer over the fields the two have
+            // in common. The schema stays writable; drift becomes visible.
+            boolean readFromAnswer = answerBlocks.contains(terraformName);
             String responseShape = responseGo;
             String requestShape = go;
 
@@ -2831,6 +2847,12 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             sendPointerness(attribute, allModels,
                     fromResponse && !requestShape.equals(responseShape) ? bare(requestShape) : null);
 
+            if (readFromAnswer && !bare(requestShape).equals(bare(responseGo))) {
+                attribute.put("nestedClientType", bare(requestShape));
+                attribute.put("nestedResponseType", bare(responseGo));
+                readPointerness(attribute, allModels, bare(responseGo));
+            }
+
             // READ BACK WHEREVER THE ANSWER CAN BE CONVERTED INTO THIS STRUCT,
             // which is true even where the two shapes differ, as long as the
             // block was typed from the answer. Where they differ and the block
@@ -2849,7 +2871,8 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // convert, whatever it is typed from.
             boolean sendOnly = Boolean.TRUE.equals(attribute.get("isWriteOnly"));
             boolean readBack = !sendOnly
-                    && (fromResponse || Boolean.TRUE.equals(attribute.get("readBack")));
+                    && (fromResponse || readFromAnswer
+                        || Boolean.TRUE.equals(attribute.get("readBack")));
             attribute.put("readBack", readBack);
 
             // AND THE PATCH HAS TO TAKE THE SAME TYPE. A nested block is
@@ -3291,6 +3314,37 @@ public class TerraformCodegen extends TerraformProviderCodegen {
     /** A Go type with its slice and pointer markers taken off. */
     private String bare(String go) {
         return go == null ? "" : go.replace("[]", "").replace("*", "");
+    }
+
+    /**
+     * Gives a block's children the ANSWER's shape for the READ direction, and says
+     * which of them the answer carries at all.
+     *
+     * The children are the request's -- that is what a configuration writes -- so
+     * the read has to be told, per child, whether the answer has such a field and
+     * whether it is a pointer there. A child the answer does not carry is not read;
+     * assigning one would be a compile error naming a field the answer's struct
+     * does not have.
+     */
+    private void readPointerness(Map<String, Object> attribute, List<ModelMap> allModels,
+                                 String answerType) {
+        CodegenModel answer = modelNamed(allModels, answerType);
+
+        for (Map<String, Object> child : nestedOf(attribute)) {
+            CodegenProperty answers = answer == null || answer.vars == null ? null
+                    : propertyNamed(answer.vars, String.valueOf(child.get("name")));
+
+            if (answers == null || answers.dataType == null) {
+                child.put("inAnswer", false);
+                continue;
+            }
+
+            child.put("inAnswer", true);
+
+            boolean pointer = answers.dataType.startsWith("*");
+            child.put("isPointer", pointer);
+            child.put("scalarType", pointer ? answers.dataType.substring(1) : "");
+        }
     }
 
     /**
