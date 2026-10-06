@@ -357,6 +357,9 @@ func (m *CustomerModel) fromAnswer(c *client.Customer, everything bool) {
 			m.ExternalId = types.StringNull()
 		}
 	}
+	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
+		m.Name = types.StringValue(c.Name)
+	}
 	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than
 		// Go's zero -- otherwise the next plan proposes removing a value nobody set.

@@ -604,6 +604,9 @@ func (m *BenefitModel) fromAnswer(c *client.Benefit, everything bool) {
 	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
 		m.Description = types.StringValue(c.Description)
 	}
+	if everything || !m.Visibility.IsNull() && !m.Visibility.IsUnknown() {
+		m.Visibility = types.StringValue(c.Visibility)
+	}
 	if everything || !m.FeatureFlagProperties.IsNull() && !m.FeatureFlagProperties.IsUnknown() {
 		// Marshalling a Go value cannot fail in a way worth surfacing here; an
 		// unrepresentable one would have failed on the way in.

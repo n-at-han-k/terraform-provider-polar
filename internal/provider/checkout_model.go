@@ -531,6 +531,12 @@ func (m *CheckoutModel) FromAnswer(c *client.Checkout) {
 
 func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 	m.Id = types.StringValue(c.Id)
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		m.TrialInterval = types.StringValue(c.TrialInterval)
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	}
 	if c.Metadata == nil {
 		m.Metadata = types.MapNull(types.StringType)
 	} else {
@@ -555,6 +561,9 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			}
 		}
 	}
+	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		m.DiscountId = types.StringValue(c.DiscountId)
+	}
 	if everything || !m.AllowDiscountCodes.IsNull() && !m.AllowDiscountCodes.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -576,6 +585,9 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 		} else if m.RequireBillingAddress.IsUnknown() {
 			m.RequireBillingAddress = types.BoolNull()
 		}
+	}
+	if everything || !m.Amount.IsNull() && !m.Amount.IsUnknown() {
+		m.Amount = types.Int64Value(int64(c.Amount))
 	}
 	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than
@@ -615,6 +627,9 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.AllowTrial = types.BoolNull()
 		}
 	}
+	if everything || !m.CustomerId.IsNull() && !m.CustomerId.IsUnknown() {
+		m.CustomerId = types.StringValue(c.CustomerId)
+	}
 	if everything || !m.IsBusinessCustomer.IsNull() && !m.IsBusinessCustomer.IsUnknown() {
 		// A bool the server does not answer leaves the pointer nil, and a Computed
 		// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
@@ -625,6 +640,24 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 		} else if m.IsBusinessCustomer.IsUnknown() {
 			m.IsBusinessCustomer = types.BoolNull()
 		}
+	}
+	if everything || !m.ExternalCustomerId.IsNull() && !m.ExternalCustomerId.IsUnknown() {
+		m.ExternalCustomerId = types.StringValue(c.ExternalCustomerId)
+	}
+	if everything || !m.CustomerName.IsNull() && !m.CustomerName.IsUnknown() {
+		m.CustomerName = types.StringValue(c.CustomerName)
+	}
+	if everything || !m.CustomerEmail.IsNull() && !m.CustomerEmail.IsUnknown() {
+		m.CustomerEmail = types.StringValue(c.CustomerEmail)
+	}
+	if everything || !m.CustomerIpAddress.IsNull() && !m.CustomerIpAddress.IsUnknown() {
+		m.CustomerIpAddress = types.StringValue(c.CustomerIpAddress)
+	}
+	if everything || !m.CustomerBillingName.IsNull() && !m.CustomerBillingName.IsUnknown() {
+		m.CustomerBillingName = types.StringValue(c.CustomerBillingName)
+	}
+	if everything || !m.CustomerTaxId.IsNull() && !m.CustomerTaxId.IsUnknown() {
+		m.CustomerTaxId = types.StringValue(c.CustomerTaxId)
 	}
 	if everything || !m.CustomerMetadata.IsNull() && !m.CustomerMetadata.IsUnknown() {
 		if c.CustomerMetadata == nil {
@@ -637,6 +670,18 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 			m.CustomerMetadata = types.MapValueMust(types.StringType, CustomerMetadata)
 		}
 	}
+	if everything || !m.SubscriptionId.IsNull() && !m.SubscriptionId.IsUnknown() {
+		m.SubscriptionId = types.StringValue(c.SubscriptionId)
+	}
+	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		m.SuccessUrl = types.StringValue(c.SuccessUrl)
+	}
+	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		m.ReturnUrl = types.StringValue(c.ReturnUrl)
+	}
+	if everything || !m.EmbedOrigin.IsNull() && !m.EmbedOrigin.IsUnknown() {
+		m.EmbedOrigin = types.StringValue(c.EmbedOrigin)
+	}
 	if everything || !m.Locale.IsNull() && !m.Locale.IsUnknown() {
 		// NIL IS ABSENT. The server omitted it, so state says null rather than
 		// Go's zero -- otherwise the next plan proposes removing a value nobody set.
@@ -645,5 +690,8 @@ func (m *CheckoutModel) fromAnswer(c *client.Checkout, everything bool) {
 		} else {
 			m.Locale = types.StringNull()
 		}
+	}
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		m.Currency = types.StringValue(c.Currency)
 	}
 }

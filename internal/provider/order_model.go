@@ -152,4 +152,10 @@ func (m *OrderModel) fromAnswer(c *client.Order, everything bool) {
 	if everything || !m.ProductId.IsNull() && !m.ProductId.IsUnknown() {
 		m.ProductId = types.StringValue(c.ProductId)
 	}
+	if everything || !m.Currency.IsNull() && !m.Currency.IsUnknown() {
+		m.Currency = types.StringValue(c.Currency)
+	}
+	if everything || !m.Description.IsNull() && !m.Description.IsUnknown() {
+		m.Description = types.StringValue(c.Description)
+	}
 }

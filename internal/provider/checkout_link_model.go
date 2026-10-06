@@ -257,7 +257,16 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		}
 		m.Metadata = types.MapValueMust(types.StringType, Metadata)
 	}
+	if everything || !m.TrialInterval.IsNull() && !m.TrialInterval.IsUnknown() {
+		m.TrialInterval = types.StringValue(c.TrialInterval)
+	}
+	if everything || !m.TrialIntervalCount.IsNull() && !m.TrialIntervalCount.IsUnknown() {
+		m.TrialIntervalCount = types.Int64Value(int64(c.TrialIntervalCount))
+	}
 	m.PaymentProcessor = types.StringValue(c.PaymentProcessor)
+	if everything || !m.Label.IsNull() && !m.Label.IsUnknown() {
+		m.Label = types.StringValue(c.Label)
+	}
 	// A bool the server does not answer leaves the pointer nil, and a Computed
 	// attribute is UNKNOWN in the plan -- "provider still indicated an unknown
 	// value ... all values must be known after apply". Unknown becomes null; a
@@ -275,5 +284,17 @@ func (m *CheckoutLinkModel) fromAnswer(c *client.CheckoutLink, everything bool) 
 		m.RequireBillingAddress = types.BoolValue(*c.RequireBillingAddress)
 	} else if m.RequireBillingAddress.IsUnknown() {
 		m.RequireBillingAddress = types.BoolNull()
+	}
+	if everything || !m.DiscountId.IsNull() && !m.DiscountId.IsUnknown() {
+		m.DiscountId = types.StringValue(c.DiscountId)
+	}
+	if everything || !m.Seats.IsNull() && !m.Seats.IsUnknown() {
+		m.Seats = types.Int64Value(int64(c.Seats))
+	}
+	if everything || !m.SuccessUrl.IsNull() && !m.SuccessUrl.IsUnknown() {
+		m.SuccessUrl = types.StringValue(c.SuccessUrl)
+	}
+	if everything || !m.ReturnUrl.IsNull() && !m.ReturnUrl.IsUnknown() {
+		m.ReturnUrl = types.StringValue(c.ReturnUrl)
 	}
 }

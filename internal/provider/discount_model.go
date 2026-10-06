@@ -276,6 +276,21 @@ func (m *DiscountModel) fromAnswer(c *client.Discount, everything bool) {
 	if everything || !m.Name.IsNull() && !m.Name.IsUnknown() {
 		m.Name = types.StringValue(c.Name)
 	}
+	if everything || !m.Code.IsNull() && !m.Code.IsUnknown() {
+		m.Code = types.StringValue(c.Code)
+	}
+	if everything || !m.StartsAt.IsNull() && !m.StartsAt.IsUnknown() {
+		m.StartsAt = types.StringValue(c.StartsAt)
+	}
+	if everything || !m.EndsAt.IsNull() && !m.EndsAt.IsUnknown() {
+		m.EndsAt = types.StringValue(c.EndsAt)
+	}
+	if everything || !m.MaxRedemptions.IsNull() && !m.MaxRedemptions.IsUnknown() {
+		m.MaxRedemptions = types.Int64Value(int64(c.MaxRedemptions))
+	}
+	if everything || !m.MaxRedemptionsPerCustomer.IsNull() && !m.MaxRedemptionsPerCustomer.IsUnknown() {
+		m.MaxRedemptionsPerCustomer = types.Int64Value(int64(c.MaxRedemptionsPerCustomer))
+	}
 	if everything || !m.Duration.IsNull() && !m.Duration.IsUnknown() {
 		m.Duration = types.StringValue(c.Duration)
 	}

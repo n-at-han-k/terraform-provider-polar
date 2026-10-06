@@ -1752,8 +1752,19 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // owners are `Owner` going out (with a password) and `OwnerResponse`
             // coming back (without). Reading that back would drop the password
             // out of state and diff forever.
+            // POINTER-NESS IS NOT A DIFFERENT SHAPE. This asks whether the create
+            // body and the read answer carry the same type, because a position
+            // they spell differently cannot be refreshed from the answer. Once
+            // optional scalars became pointers the two models stopped agreeing
+            // about fields that are optional on the way in and always answered on
+            // the way back -- a product's `recurring_interval` is `*string` in
+            // ProductCreate and `string` in Product -- so read-back switched off
+            // and an imported product planned `+ recurring_interval = "month"`
+            // against a product that already had one. The conversions handle
+            // pointers on each side independently, so only the underlying type
+            // matters here.
             boolean sameShape = writes == null
-                    || writes.dataType.equals(String.valueOf(attribute.get("goType")));
+                    || bare(writes.dataType).equals(bare(String.valueOf(attribute.get("goType"))));
             attribute.put("inRequest", writes != null);
             attribute.put("inUpdateRequest", patchable.containsKey(name));
 
@@ -1763,6 +1774,18 @@ public class TerraformCodegen extends TerraformProviderCodegen {
             // branching on the create field's shape while assigning into the update
             // field, which is "cannot use m.Name.ValueString() (value of type
             // string) as *string value in assignment", eleven times over.
+            // AND THE CREATE BODY HAS ITS OWN. `isPointer` is the RESPONSE field's
+            // shape, because that is what the read converts from; the write has to
+            // follow the create field. A benefit's `visibility` is `string` in the
+            // answer and `*string` in BenefitCreate, which is "cannot use
+            // m.Visibility.ValueString() (value of type string) as *string value in
+            // assignment" -- the same mistake as the update side, one model over.
+            boolean createPointer = writes != null && writes.dataType != null
+                    && writes.dataType.startsWith("*");
+            attribute.put("isCreatePointer", createPointer);
+            attribute.put("createScalarType",
+                    createPointer ? writes.dataType.substring(1) : "");
+
             CodegenProperty patches = patchable.get(name);
             boolean updatePointer = patches != null && patches.dataType != null
                     && patches.dataType.startsWith("*");
